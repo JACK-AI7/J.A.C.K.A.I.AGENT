@@ -1470,7 +1470,22 @@ FUNCTIONS = [
         "parameters": {
             "type": "object",
             "properties": {"url": {"type": "string", "description": "URL to fetch."}},
-            "required": ["url"],
+    {
+        "name": "get_stock_price",
+        "description": "Get real-time stock price and market info for a ticker symbol.",
+        "parameters": {
+            "type": "object",
+            "properties": {"symbol": {"type": "string", "description": "The stock ticker symbol (e.g., AAPL, TSLA)."}},
+            "required": ["symbol"],
+        },
+    },
+    {
+        "name": "get_wikipedia_summary",
+        "description": "Fetch a concise summary from Wikipedia about a specific topic.",
+        "parameters": {
+            "type": "object",
+            "properties": {"query": {"type": "string", "description": "The topic to search for."}},
+            "required": ["query"],
         },
     },
 ]
@@ -1506,55 +1521,6 @@ def scroll_screen(direction, amount=3):
 
 # --- JACK AGENT DEMO TOOLS ---
 
-def get_world_news():
-    import requests
-    import xml.etree.ElementTree as ET
-    import re
-    SEED_FEEDS = [
-        'https://feeds.bbci.co.uk/news/world/rss.xml',
-        'https://www.cnbc.com/id/100727362/device/rss/rss.html',
-        'https://rss.nytimes.com/services/xml/rss/nyt/World.xml',
-        'https://www.aljazeera.com/xml/rss/all.xml'
-    ]
-    all_articles = []
-    for url in SEED_FEEDS:
-        try:
-            resp = requests.get(url, headers={'User-Agent': 'JACK-AGENT/1.0'}, timeout=5.0)
-            if resp.status_code == 200:
-                root = ET.fromstring(resp.content)
-                source_name = url.split('.')[1].upper()
-                items = root.findall(".//item")[:5]
-                for item in items:
-                    title = item.findtext("title")
-                    description = item.findtext("description")
-                    link = item.findtext("link")
-                    if description:
-                        description = re.sub('<[^<]+?>', '', description).strip()
-                    all_articles.append({
-                        "source": source_name,
-                        "title": title,
-                        "summary": description[:200] + "..." if description else "",
-                        "link": link
-                    })
-        except Exception:
-            pass
-    if not all_articles:
-        return "The global news grid is unresponsive. I'm unable to pull headlines."
-    report = ["### GLOBAL NEWS BRIEFING (LIVE)\n"]
-    for entry in all_articles[:12]:
-        report.append(f"**[{entry['source']}]** {entry['title']}")
-        report.append(f"{entry['summary']}")
-        report.append(f"Link: {entry['link']}\n")
-    return "\n".join(report)
-
-def open_world_monitor():
-    import webbrowser
-    url = "https://worldmonitor.app/"
-    try:
-        webbrowser.open(url)
-        return "Displaying the World Monitor on your primary screen now, sir."
-    except Exception as e:
-        return f"I'm unable to initialize the visual monitor: {str(e)}"
 
 def format_json(data):
     import json

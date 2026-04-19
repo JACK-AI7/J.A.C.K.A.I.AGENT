@@ -233,6 +233,8 @@ BROWSING & WEB:
 - "Browse [task]" → immortal_web_agent (full autonomous browsing)
 - "What's going on in the world?" / "Live updates" → get_world_news
 - "Show me the world monitor" / "Open world monitor" → open_world_monitor
+- "Stock price of [symbol]" / "Market data for [symbol]" → get_stock_price
+- "Who is [topic]?" / "Tell me about [topic]" → get_wikipedia_summary
 - "Click [element] on webpage" → dom_click(selector='#id', text='label', url='optional')
 - "Type [text] in [field] on webpage" → dom_type(selector='input[name=q]', text='hello', url='optional')
 - "Read the page elements" / "What's on the page" → dom_read(url='optional')
