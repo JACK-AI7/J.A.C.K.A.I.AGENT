@@ -50,8 +50,8 @@ RECOGNITION_SETTINGS = {
 # Faster-Whisper Settings (Offline Overdrive)
 WHISPER_SETTINGS = {
     "model_size": "small",  # Options: 'tiny', 'base', 'small', 'medium'
-    "device": "cuda",  # Accelerated via NVIDIA GPU
-    "compute_type": "float16",  # Optimized for RTX 30-series GPUs
+    "device": "cpu",  # CPU mode — no CUDA available on this machine
+    "compute_type": "int8",  # int8 is required for CPU inference
     "beam_size": 5,  # Balanced accuracy
     "vad_filter": True,  # Voice activity detection
     "vad_parameters": {"threshold": 0.15, "min_silence_duration_ms": 300},  # More sensitive segments
@@ -231,6 +231,8 @@ CLEANUP & MAINTENANCE:
 BROWSING & WEB:
 - "Search [query]" → get_web_data
 - "Browse [task]" → immortal_web_agent (full autonomous browsing)
+- "What's going on in the world?" / "Live updates" → get_world_news
+- "Show me the world monitor" / "Open world monitor" → open_world_monitor
 - "Click [element] on webpage" → dom_click(selector='#id', text='label', url='optional')
 - "Type [text] in [field] on webpage" → dom_type(selector='input[name=q]', text='hello', url='optional')
 - "Read the page elements" / "What's on the page" → dom_read(url='optional')

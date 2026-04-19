@@ -65,8 +65,61 @@ except ImportError:
 # Initialize desktop agent
 desktop_agent = DesktopAgent()
 
-# Cache for web searches
+# Cache for web searches and news
 search_cache = {}
+news_cache = {"time": 0, "data": ""}
+
+def get_world_news():
+    """Fetches the latest global headlines from major news outlets."""
+    import time
+    global news_cache
+    
+    # Simple cache to avoid spamming the APIs (5 minute cache)
+    if time.time() - news_cache["time"] < 300 and news_cache["data"]:
+        return news_cache["data"]
+
+    urls = [
+        'https://feeds.bbci.co.uk/news/world/rss.xml',
+        'https://rss.nytimes.com/services/xml/rss/nyt/World.xml',
+    ]
+    
+    import xml.etree.ElementTree as ET
+    import re
+    
+    all_articles = []
+    
+    for url in urls:
+        try:
+            response = requests.get(url, headers={'User-Agent': 'JACK-AGENT/1.0'}, timeout=5.0)
+            if response.status_code == 200:
+                source_name = url.split('.')[1].upper()
+                root = ET.fromstring(response.content)
+                items = root.findall(".//item")[:4]
+                for item in items:
+                    title = item.findtext("title")
+                    description = item.findtext("description")
+                    if description: description = re.sub('<[^<]+?>', '', description).strip()
+                    all_articles.append(f"[{source_name}] {title} - {description[:100]}..." if description else f"[{source_name}] {title}")
+        except Exception:
+            pass
+            
+    if not all_articles:
+        return "The global news grid is unresponsive. Unable to fetch live updates."
+        
+    report = "### GLOBAL NEWS BRIEFING (LIVE)\n" + "\n".join(all_articles[:8])
+    news_cache = {"time": time.time(), "data": report}
+    return report
+
+def open_world_monitor():
+    """Opens the World Monitor dashboard in the browser."""
+    url = "https://worldmonitor.app/"
+    try:
+        import webbrowser
+        webbrowser.open(url)
+        return "Displaying the real-time World Monitor on your primary screen now, Sir."
+    except Exception as e:
+        return f"Unable to initialize the visual monitor: {str(e)}"
+
 
 
 def get_wikipedia_summary(query):

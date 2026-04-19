@@ -81,26 +81,38 @@ class SpeechHandler:
             else:
                 self.use_whisper = False
 
-        # Intelligent Microphone Setup — store device index for fresh creation each listen
+        # System Microphone Setup — use the high-quality built-in system mic only
+        # No Bluetooth/headset priority: always pick the Realtek Microphone Array or OS default
         self.mic_device_index = None
         try:
+            import re as _re
             mics = sr.Microphone.list_microphone_names()
+
+            def _clean(name):
+                return _re.sub(r'[\r\n\x00-\x1f]', ' ', name).lower()
+
+            # Target the system's high-quality microphone array (built-in Realtek or similar)
+            # Completely ignore all Bluetooth, headset, and external mics
+            system_mic_keywords = ["microphone array", "mic array", "realtek"]
             
-            # Prioritize indices based on keywords for Headsets or external mics over internal arrays
-            priority_keywords = ["headset", "kdm", "bluetooth", "usb", "external"]
-            
-            for keyword in priority_keywords:
+            print("JACK Hearing: Selecting system microphone...")
+            for i, name in enumerate(mics):
+                print(f"  [{i}] {repr(name)}")
+
+            for keyword in system_mic_keywords:
                 for i, name in enumerate(mics):
-                    if keyword in name.lower():
+                    if keyword in _clean(name):
                         self.mic_device_index = i
-                        print(f"JACK Hearing: Autodetected Wireless/External Microphone - [{i}] {name}")
+                        print(f"JACK Hearing: Using system mic [{i}] {repr(name)}")
                         break
-                if self.mic_device_index is not None: break
-            
+                if self.mic_device_index is not None:
+                    break
+
             if self.mic_device_index is None:
-                print("JACK Hearing: No high-priority mic found, using system default.")
+                print("JACK Hearing: Using OS default system microphone.")
         except Exception as e:
             print(f"JACK Hearing Warning: Mic detection error ({e}), using default.")
+
     
     def _create_mic(self):
         """Create a fresh Microphone instance (prevents stale PyAudio state on Windows)."""
@@ -171,27 +183,34 @@ class SpeechHandler:
 
             # 2. Transcribe Using Local Model (Whisper) or Fallback
             if self.use_whisper:
-                # Convert speech_recognition AudioData to Whisper format (numpy)
-                wav_data = (
-                    np.frombuffer(audio_data.get_raw_data(), dtype=np.int16)
-                    .flatten()
-                    .astype(np.float32)
-                    / 32768.0
-                )
-                segments, info = self.whisper_model.transcribe(
-                    wav_data, 
-                    beam_size=WHISPER_SETTINGS.get("beam_size", 5),
-                    vad_filter=WHISPER_SETTINGS.get("vad_filter", True),
-                    vad_parameters=WHISPER_SETTINGS.get("vad_parameters", dict(min_silence_duration_ms=500)),
-                    condition_on_previous_text=False  # Blocks hallucination death spirals on silence
-                )
-                
+                # Write audio to a temp WAV file and pass the path to faster-whisper.
+                # faster-whisper uses ffmpeg internally to decode + resample to 16kHz —
+                # no manual numpy resampling needed (approach from openjarvis FasterWhisperBackend).
+                tmp_path = None
+                try:
+                    wav_bytes = audio_data.get_wav_data()
+                    with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as tmp:
+                        tmp.write(wav_bytes)
+                        tmp_path = tmp.name
+
+                    segments_iter, info = self.whisper_model.transcribe(
+                        tmp_path,
+                        beam_size=WHISPER_SETTINGS.get("beam_size", 5),
+                        vad_filter=WHISPER_SETTINGS.get("vad_filter", True),
+                        vad_parameters=WHISPER_SETTINGS.get("vad_parameters", dict(min_silence_duration_ms=500)),
+                        condition_on_previous_text=False  # Blocks hallucination death spirals on silence
+                    )
+                    segments_list = list(segments_iter)
+                finally:
+                    if tmp_path and os.path.exists(tmp_path):
+                        os.remove(tmp_path)
+
                 # If the AI strongly believes it was just noise, ignore it
                 if getattr(info, 'no_speech_prob', 0) > 0.7:
                     print(f"[SpeechHandler] Ignored audio (No speech probability: {info.no_speech_prob})")
                     return None
-                    
-                text = "".join([s.text for s in list(segments)]).strip()
+
+                text = "".join(s.text for s in segments_list).strip()
                 print(f"[SpeechHandler] Whisper transcription: '{text}'")
                 return text if text else None
             else:
