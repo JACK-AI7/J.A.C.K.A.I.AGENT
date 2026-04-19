@@ -1,19 +1,19 @@
 """
-Friday MCP Server — Entry Point
+JACK AGENT MCP Server — Entry Point
 Run with: python server.py
 """
 
 from mcp.server.fastmcp import FastMCP
-from friday.tools import register_all_tools
-from friday.prompts import register_all_prompts
-from friday.resources import register_all_resources
-from friday.config import config
+from jack_mcp.tools import register_all_tools
+from jack_mcp.prompts import register_all_prompts
+from jack_mcp.resources import register_all_resources
+from jack_mcp.config import config
 
 # Create the MCP server instance
 mcp = FastMCP(
     name=config.SERVER_NAME,
     instructions=(
-        "You are Friday, a Tony Stark-style AI assistant. "
+        "You are JACK AGENT, a Tony Stark-style AI assistant. "
         "You have access to a set of tools to help the user. "
         "Be concise, accurate, and a little witty."
     ),

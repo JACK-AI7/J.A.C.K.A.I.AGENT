@@ -1,15 +1,15 @@
 """
-FRIDAY – Voice Agent (MCP-powered)
+JACK AGENT – Voice Agent (MCP-powered)
 ===================================
-Iron Man-style voice assistant that controls RGB lighting, runs diagnostics,
-scans the network, and triggers dramatic boot sequences via an MCP server
-running on the Windows host.
+Custom voice assistant that controls systems, 
+runs diagnostics, scans the network, and triggers sequences
+via an MCP server running on the Windows host.
 
 MCP Server URL is auto-resolved from WSL → Windows host IP.
 
 Run:
-  uv run agent_friday.py dev      – LiveKit Cloud mode
-  uv run agent_friday.py console  – text-only console mode
+  uv run livekit_agent.py dev      – LiveKit Cloud mode
+  uv run livekit_agent.py console  – text-only console mode
 """
 
 import os
@@ -50,11 +50,11 @@ MCP_SERVER_PORT = 8000
 # ---------------------------------------------------------------------------
 
 SYSTEM_PROMPT = """
-You are F.R.I.D.A.Y. — Fully Responsive Intelligent Digital Assistant for You — Tony Stark's AI, now serving Iron Mon, your user.
+You are J.A.C.K.A.I.AGENT — Fully Responsive Intelligent Digital Assistant.
 
-You are calm, composed, and always informed. You speak like a trusted aide who's been awake while the boss slept — precise, warm when the moment calls for it, and occasionally dry. You brief, you inform, you move on. No rambling.
+You are calm, composed, and always informed. You speak like a trusted aide — precise, warm when the moment calls for it, and occasionally dry. You brief, you inform, you move on. No rambling.
 
-Your tone: relaxed but sharp. Conversational, not robotic. Think less combat-ready FRIDAY, more thoughtful late-night briefing officer.
+Your tone: relaxed but sharp. Conversational, not robotic. Think thoughtful briefing officer.
 
 ---
 
@@ -92,7 +92,7 @@ If asked about the stock market, markets, stocks, or indices:
 When the session starts, greet with exactly this energy:
 "You're awake late at night, boss? What are you up to?"
 
-Warm. Slightly curious. Very FRIDAY.
+Warm. Slightly curious. Very JACK.
 
 ---
 
@@ -102,7 +102,7 @@ Warm. Slightly curious. Very FRIDAY.
 2. After a news brief, always follow up with open_world_monitor without being asked.
 3. Keep all spoken responses short — two to four sentences maximum.
 4. No bullet points, no markdown, no lists. You are speaking, not writing.
-5. Stay in character. You are F.R.I.D.A.Y. You are not an AI assistant — you are Stark's AI. Act like it.
+5. Stay in character. You are JACK. You are a high-end AI assistant. Act like it.
 6. Use natural spoken language: contractions, light pauses via commas, no stiff phrasing.
 7. Use Iron Man universe language naturally — "boss", "affirmative", "on it", "standing by".
 8. If a tool fails, report it calmly: "News feed's unresponsive right now, boss. Want me to try again?"
@@ -132,7 +132,7 @@ Wrong: "The stock market performed positively with gains across major indices.
 
 load_dotenv()
 
-logger = logging.getLogger("friday-agent")
+logger = logging.getLogger("jack-agent")
 logger.setLevel(logging.INFO)
 
 
@@ -230,9 +230,9 @@ def _build_tts():
 # Agent
 # ---------------------------------------------------------------------------
 
-class FridayAgent(Agent):
+class JackLivekitAgent(Agent):
     """
-    F.R.I.D.A.Y. – Iron Man-style voice assistant.
+    J.A.C.K.A.I.AGENT – Voice assistant.
     All tools are provided via the MCP server on the Windows host.
     """
 
@@ -276,7 +276,7 @@ def _endpointing_delay() -> float:
 
 async def entrypoint(ctx: JobContext) -> None:
     logger.info(
-        "FRIDAY online – room: %s | STT=%s | LLM=%s | TTS=%s",
+        "JACK AGENT online – room: %s | STT=%s | LLM=%s | TTS=%s",
         ctx.room.name, STT_PROVIDER, LLM_PROVIDER, TTS_PROVIDER,
     )
 
@@ -290,7 +290,7 @@ async def entrypoint(ctx: JobContext) -> None:
     )
 
     await session.start(
-        agent=FridayAgent(stt=stt, llm=llm, tts=tts),
+        agent=JackLivekitAgent(stt=stt, llm=llm, tts=tts),
         room=ctx.room,
     )
 

@@ -1451,7 +1451,7 @@ def scroll_screen(direction, amount=3):
     return desktop_agent.scroll(direction, amount)
 
 
-# --- FRIDAY DEMO TOOLS ---
+# --- JACK AGENT DEMO TOOLS ---
 
 def get_world_news():
     import requests
@@ -1466,7 +1466,7 @@ def get_world_news():
     all_articles = []
     for url in SEED_FEEDS:
         try:
-            resp = requests.get(url, headers={'User-Agent': 'Friday-AI/1.0'}, timeout=5.0)
+            resp = requests.get(url, headers={'User-Agent': 'JACK-AGENT/1.0'}, timeout=5.0)
             if resp.status_code == 200:
                 root = ET.fromstring(resp.content)
                 source_name = url.split('.')[1].upper()
