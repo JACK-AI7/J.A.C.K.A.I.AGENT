@@ -8,7 +8,7 @@ from ai_handler import AIHandler
 from config import RECOGNITION_SETTINGS
 
 
-class Jarvis:
+class JackAIAgent:
     def __init__(self, hud=None):
         self.speech_handler = SpeechHandler()
         self.ai_handler = AIHandler(hud=hud)

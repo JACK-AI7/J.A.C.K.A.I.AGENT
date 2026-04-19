@@ -14,7 +14,7 @@ class ProjectManager:
         # Security Whitelist: Only these files can be modified by the AI
         self.allowed_files = [
             "hud_manager.py",
-            "jarvis.py",
+            "jack_ai_agent.py",
             "ai_handler.py",
             "tools.py",
             "project_manager.py",

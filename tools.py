@@ -517,13 +517,12 @@ def install_from_github(repo_url, branch="main"):
     return github_installer.install_skill(repo_url, branch)
 
 
-def jarvis_doctor():
-    """J.A.R.V.I.S. Diagnostics: Performs a comprehensive health check on core systems.
+def agent_doctor():
+    """J.A.C.K.A.I.AGENT Diagnostics: Performs a comprehensive health check on core systems.
     Verifies Engine status, Tool availability, and local dependencies.
     """
-    results = ["=== JARVIS SYSTEM DIAGNOSTICS ==="]
+    results = ["=== J.A.C.K.A.I.AGENT SYSTEM DIAGNOSTICS ==="]
     
-    # 1. Neural Engine Check (Git/Python)
     try:
         git_ver = subprocess.check_output(["git", "--version"], text=True).strip()
         results.append(f"[Engine] Git: {git_ver}")
@@ -955,8 +954,8 @@ FUNCTIONS = [
         },
     },
     {
-        "name": "jarvis_doctor",
-        "description": "Run a system-wide diagnostic to verify system health, tool availability, and resource status.",
+        "name": "agent_doctor",
+        "description": "Run a full system diagnostic check. Checks AI Core, CPU/RAM, and Git.",
         "parameters": {"type": "object", "properties": {}},
     },
     {
@@ -1560,7 +1559,7 @@ FUNCTION_MAP = {
     "get_stock_price": get_stock_price,
     "check_internet_speed": check_internet_speed,
     "wolfram_alpha_query": wolfram_alpha_query,
-    "jarvis_doctor": jarvis_doctor,
+    "agent_doctor": agent_doctor,
     "system_cleanup": system_cleanup,
     "autonomous_desktop_mission": autonomous_desktop_mission,
     "spawn_claw_swarm": spawn_claw_swarm,

@@ -10,7 +10,7 @@ except ImportError:
 
 
 class WebNavigator:
-    """Manages a Playwright-controlled Chromium browser for Jarvis with full DOM access."""
+    """Manages a Playwright-controlled Chromium browser for J.A.C.K.A.I.AGENT with full DOM access."""
     
     def __init__(self, headless=False):
         self.playwright = None
@@ -184,5 +184,5 @@ class WebNavigator:
             return "Automation Engine closed."
         return "No engine running."
 
-# Singleton for Jarvis
+# Singleton for J.A.C.K.A.I.AGENT
 web_navigator = WebNavigator(headless=False)

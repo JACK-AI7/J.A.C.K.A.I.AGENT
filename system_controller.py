@@ -80,7 +80,7 @@ class SystemController:
     def execute_python(self, code):
         """Execute dynamic Python code safely and capture stdout/stderr."""
         # Create a temporary file to run the code
-        fd, path = tempfile.mkstemp(suffix=".py", prefix="jarvis_temp_")
+        fd, path = tempfile.mkstemp(suffix=".py", prefix="agent_temp_")
         try:
             with os.fdopen(fd, "w") as tmp:
                 tmp.write(code)
@@ -153,7 +153,7 @@ class SystemController:
             return "Visual Engine Error: Ollama Python client not installed."
         try:
             # Save temporary screenshot
-            temp_path = os.path.join(tempfile.gettempdir(), "jarvis_eye.png")
+            temp_path = os.path.join(tempfile.gettempdir(), "agent_eye.png")
             pyautogui.screenshot(temp_path)
 
             print("Visual Engine: Engaging LLaVA for deep analysis...")

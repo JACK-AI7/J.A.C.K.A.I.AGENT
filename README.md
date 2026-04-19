@@ -9,7 +9,7 @@ The project uses a modular architecture for better maintainability and extensibi
 ```
 jack/
 ├── main.py              # Main entry point with HUD
-├── jarvis.py            # Core JACK class (voice interaction)
+├── jack_ai_agent.py            # Core JACK class (voice interaction)
 ├── config.py            # Configuration and settings
 ├── speech_handler.py    # Offline speech recognition (Faster-Whisper) and TTS
 ├── ai_handler.py        # Local Ollama AI processing with function calling
@@ -106,10 +106,10 @@ python main.py
 
 ### Programmatic Usage
 ```python
-from jarvis import Jarvis
+from jack_ai_agent import JackAIAgent
+from tools import get_system_stats
 
-# Create JACK instance
-jack = Jarvis()
+jack = JackAIAgent()
 
 # Start listening for voice commands
 jack.start()
@@ -141,7 +141,7 @@ All settings are centralized in `config.py`:
 
 ### Core Components
 
-1. **Jarvis Class** (`jarvis.py`): Main orchestrator (branded as JACK)
+1. **JackAIAgent Class** (`jack_ai_agent.py`): Main orchestrator (branded as JACK)
 2. **HUDManager** (`hud_manager.py`): Animated Qt GUI interface
 3. **SpeechHandler** (`speech_handler.py`): Offline speech recognition and TTS
 4. **AIHandler** (`ai_handler.py`): Local Ollama AI with function calling

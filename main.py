@@ -100,7 +100,7 @@ except ImportError:
     print("pywin32 not available, skipping single-instance check.")
 
 from hud_manager import HUDManager
-from jarvis import Jarvis
+from jack_ai_agent import JackAIAgent
 
 
 # --- IMMORTAL RESTART CONSTANTS ---
@@ -108,7 +108,7 @@ MAX_ASSISTANT_RESTARTS = 10
 RESTART_COOLDOWN_SECONDS = 5
 
 
-def run_assistant(jarvis, restart_counter):
+def run_assistant(agent, restart_counter):
     """Entry point for the assistant thread with COM initialization and immortal restart."""
     while restart_counter[0] < MAX_ASSISTANT_RESTARTS:
         try:
@@ -116,7 +116,7 @@ def run_assistant(jarvis, restart_counter):
             pythoncom.CoInitialize()
             
             print(f"Assistant Thread: Starting (attempt {restart_counter[0] + 1})...")
-            jarvis.start()
+            agent.start()
             
             # If start() returns normally (e.g., user said "stop"), exit cleanly
             break
@@ -131,8 +131,8 @@ def run_assistant(jarvis, restart_counter):
                 print(f"IMMORTAL MODE: Auto-restarting in {RESTART_COOLDOWN_SECONDS}s... ({restart_counter[0]}/{MAX_ASSISTANT_RESTARTS})")
                 time.sleep(RESTART_COOLDOWN_SECONDS)
                 
-                # Reset jarvis state for restart
-                jarvis.is_running = False
+                # Reset agent state for restart
+                agent.is_running = False
                 time.sleep(0.5)
             else:
                 print("IMMORTAL MODE: Max restarts reached. Assistant entering safe mode.")
@@ -151,8 +151,8 @@ def main():
         # Initialize HUD
         hud = HUDManager()
 
-        # Initialize Jarvis Assistant with HUD reference
-        assistant = Jarvis(hud=hud)
+        # Initialize J.A.C.K.A.I.AGENT Assistant with HUD reference
+        assistant = JackAIAgent(hud=hud)
         hud.set_assistant(assistant)
 
         # Restart counter (mutable list so thread can update it)
@@ -165,12 +165,12 @@ def main():
         assistant_thread.start()
 
         # Show HUD and run its event loop (main thread)
-        print("Launching J.A.R.V.I.S. Core Interface...")
+        print("Launching J.A.C.K.A.I.AGENT Core Interface...")
         hud.show()
 
         # Graceful Shutdown
         def shutdown():
-            print("\nShutting down J.A.R.V.I.S. Core...")
+            print("\nShutting down J.A.C.K.A.I.AGENT Core...")
             try:
                 assistant.stop()
             except Exception:
