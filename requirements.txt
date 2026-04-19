@@ -1,0 +1,67 @@
+# ========================================
+# J.A.C.K. TITAN — Core Dependencies
+# ========================================
+
+# --- CORE FRAMEWORK ---
+PySide6
+ollama
+requests
+pyttsx3
+SpeechRecognition
+pyaudio
+psutil
+pywin32
+python-dotenv
+pyautogui
+pillow
+numpy
+pywinauto
+comtypes
+pygame
+edge-tts
+
+# --- LOCAL AI SPEECH (Offline Whisper) ---
+faster-whisper
+torch
+torchvision
+torchaudio
+
+# --- COMPUTER VISION ---
+opencv-python
+easyocr
+
+# --- WEB AUTOMATION (Playwright) ---
+playwright
+duckduckgo-search
+
+# --- ADVANCED BROWSING & SEARCH ---
+langchain
+langchain-community
+langchain-ollama
+browser-use
+wikipedia-api
+crawl4ai
+
+# --- DATA & UTILITIES ---
+pydantic
+aiohttp
+litellm
+yfinance
+speedtest-cli
+wolframalpha
+mss
+
+# --- EXPERIMENTAL (Uncomment to enable) ---
+# smolagents
+# pydantic-ai
+crewai
+open-interpreter
+# agentops
+# tavily-python
+# github3.py
+# composio-core
+livekit-agents
+uv
+fastmcp
+httpx
+livekit-plugins-google
