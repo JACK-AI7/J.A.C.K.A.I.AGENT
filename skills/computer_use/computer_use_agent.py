@@ -72,8 +72,8 @@ Output only the action in the format: ACTION: click(100, 200)
                 
                 print(f"TITAN Brain Output: {response_text}")
                 
-                # Parse action
-                action_match = re.search(r'ACTION:\s*(\w+)\((.*)\)', response_text)
+                # Parse action (relaxed regex to handle brackets or extra spaces)
+                action_match = re.search(r'ACTION:\s*\[?(\w+)\]?\s*\((.*)\)', response_text)
                 if action_match:
                     action_type = action_match.group(1).lower()
                     params = [p.strip().strip("'").strip('"') for p in action_match.group(2).split(',')]

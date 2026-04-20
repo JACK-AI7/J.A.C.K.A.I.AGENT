@@ -99,9 +99,15 @@ class ConversationManager:
         if not self.enable_autonomous:
             return False
 
-        # Keywords that suggest complex multi-step tasks (Refined)
+        query_lower = query.lower()
+        
+        # 1. Check for specific multi-step indicators
+        # Handle "first ... then" logic correctly (not as a literal string)
+        if "first" in query_lower and "then" in query_lower:
+            return True
+            
+        # 2. Keywords that suggest complex multi-step tasks
         autonomous_keywords = [
-            "first ... then",
             "search and then",
             "after you find",
             "once you",
@@ -109,7 +115,6 @@ class ConversationManager:
             "multiple tasks",
         ]
 
-        query_lower = query.lower()
         return any(keyword in query_lower for keyword in autonomous_keywords)
 
     def create_planning_prompt(self, query: str) -> str:

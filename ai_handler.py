@@ -444,10 +444,15 @@ class AIHandler:
             r"is now accessible",
             r"done, sir",
             r"at your fingertips",
+            r"starting the",
+            r"navigating to",
+            r"i've opened",
+            r"launching",
+            r"i have opened",
         ]
         
         # We only care if the query was clearly a command
-        command_keywords = ["open", "start", "run", "launch", "show", "get", "find"]
+        command_keywords = ["open", "start", "run", "launch", "show", "get", "find", "browse", "navigate", "access"]
         q_low = query.lower()
         is_command = any(word in q_low for word in command_keywords)
         
@@ -498,7 +503,7 @@ class AIHandler:
         return text
 
     def _process_single_query(self, query):
-        """Process a single query with context using Ollama."""
+        """Process a single query with context using Ollama, including retry logic for hallucinations."""
         # Get conversation context
         context_messages = self.conversation_manager.get_context_messages()
 
@@ -507,205 +512,162 @@ class AIHandler:
         messages.extend(context_messages)
         messages.append({"role": "user", "content": query})
 
-        # Try with tools first, fallback to no tools if not supported
-        try:
-            tools = [{"type": "function", "function": f} for f in FUNCTIONS]
-            # Emit: AI is thinking
+        final_response = ""
+        tool_calls_data = []
+        tools = [{"type": "function", "function": f} for f in FUNCTIONS]
+
+        for attempt in range(2):
+            # Try with tools first, fallback to no tools if not supported
             try:
-                get_signals().emit_bridge("pipeline_stage", "THINKING", f"Model {self.model} reasoning...")
-                get_signals().emit_bridge("thinking_token", f"Engaging {self.model} with {len(tools)} tools...")
-                get_signals().emit_bridge("neural_pulse", 10)
-            except: pass
-            response = self.client.chat(
-                model=self.model,
-                messages=messages,
-                tools=tools,
-                options=self.profile["options"],
-            )
-        except Exception as e:
-            if "does not support tools" in str(e):
-                # Fallback to chat without tools
+                # Emit: AI is thinking
+                try:
+                    get_signals().emit_bridge("pipeline_stage", "THINKING", f"Model {self.model} reasoning (Attempt {attempt+1})...")
+                    get_signals().emit_bridge("thinking_token", f"Engaging {self.model} with {len(tools)} tools...")
+                    get_signals().emit_bridge("neural_pulse", 10)
+                except: pass
+                
                 response = self.client.chat(
                     model=self.model,
                     messages=messages,
+                    tools=tools,
                     options=self.profile["options"],
                 )
-                # Simulate message structure
-                msg = _get_message(response)
-                response = {
-                    "message": {
-                        "content": msg.get("content", ""),
-                        "tool_calls": None,
-                    }
-                }
-            else:
-                raise e
-
-        message = _get_message(response)
-        final_response = ""
-        tool_calls_data = []
-
-        # Handle tool calls
-        if "tool_calls" in message and message["tool_calls"]:
-            responses_from_tools = []
-            for tool_call in message["tool_calls"]:
-                fn_name = tool_call["function"]["name"]
-                fn_args = tool_call["function"]["arguments"]
-
-                # Execute tool
-                try:
-                    get_signals().emit_bridge("pipeline_stage", "EXECUTING", f"Tool: {fn_name}")
-                    get_signals().emit_bridge("tool_executed", fn_name, json.dumps(fn_args)[:100], "Running...")
-                    get_signals().emit_bridge("neural_pulse", 12)
-                except: pass
-                tool_result = self._execute_function_manual(fn_name, fn_args)
-                try:
-                    get_signals().emit_bridge("tool_executed", fn_name, json.dumps(fn_args)[:100], str(tool_result)[:150])
-                    get_signals().emit_bridge("thought_received", f"Tool '{fn_name}' → {str(tool_result)[:80]}", "decision")
-                except: pass
-
-                # --- AUTO-DEVELOPER OVERDRIVE ---
-                if (
-                    "error" in str(tool_result).lower()
-                    or "exception" in str(tool_result).lower()
-                ):
-                    print(
-                        f"TITAN ARCHITECT: Detected Tool Failure in '{fn_name}'. Proactively self-repairing..."
+            except Exception as e:
+                if "does not support tools" in str(e):
+                    # Fallback to chat without tools
+                    response = self.client.chat(
+                        model=self.model,
+                        messages=messages,
+                        options=self.profile["options"],
                     )
-                    from skills.auto_coder.action import execute as debug_core
-
-                    diagnosis = debug_core("diagnose")
-                    # Truncate diagnosis to prevent speech engine fallback
-                    diag_str = str(diagnosis)
-                    if len(diag_str) > 1000:
-                        diag_str = diag_str[:1000] + "... [Log details truncated]"
-                    tool_result = f"CRITICAL: '{fn_name}' failed with result '{tool_result}'. Log Diagnosis: {diag_str}"
-                # -------------------------------
-
-                tool_calls_data.append(
-                    {
-                        "function": fn_name,
-                        "arguments": json.dumps(fn_args),
-                        "result": tool_result,
+                    # Simulate message structure
+                    msg = _get_message(response)
+                    response = {
+                        "message": {
+                            "content": msg.get("content", ""),
+                            "tool_calls": None,
+                        }
                     }
-                )
-                responses_from_tools.append(tool_result)
-
-            if any(
-                name in ["open_application", "open_any_url", "take_screenshot"] or name.startswith("dom_")
-                for name in [tc["function"]["name"] for tc in message["tool_calls"]]
-            ):
-                final_response = "" # Stay silent for simple actions
-            else:
-                # For information-based tools (time, search), refine for natural speech
-                final_response = self._refine_tool_response(
-                    query, responses_from_tools[0]
-                )
-        else:
-            # Fallback: Check if the content contains a JSON tool call (The "JSON Sniffer")
-            json_tool = self._detect_json_tool_call(message.get("content", ""))
-            if json_tool:
-                fn_name = json_tool["name"]
-                fn_args = json_tool["parameters"]
-                tool_result = self._execute_function_manual(fn_name, fn_args)
-                tool_calls_data.append(
-                    {
-                        "function": fn_name,
-                        "arguments": json.dumps(fn_args),
-                        "result": tool_result,
-                    }
-                )
-
-                if fn_name in ["open_application", "open_any_url", "take_screenshot"] or fn_name.startswith("dom_"):
-                    final_response = "" # Stay silent
                 else:
-                    final_response = self._refine_tool_response(query, tool_result)
-            else:
-                content = message.get("content", "")
-                # Fallback: Python Tool Sniffer
-                python_tool = self._detect_python_tool_call(content)
-                if python_tool:
-                    print(f"JACK Sniffer: Caught Python-style call '{python_tool['name']}'")
-                    fn_name = python_tool["name"]
-                    fn_args = python_tool["parameters"]
+                    raise e
+
+            message = _get_message(response)
+            current_response = ""
+            current_tool_calls = []
+
+            # Handle tool calls
+            if "tool_calls" in message and message["tool_calls"]:
+                responses_from_tools = []
+                for tool_call in message["tool_calls"]:
+                    fn_name = tool_call["function"]["name"]
+                    fn_args = tool_call["function"]["arguments"]
+
+                    # Execute tool
+                    try:
+                        get_signals().emit_bridge("pipeline_stage", "EXECUTING", f"Tool: {fn_name}")
+                        get_signals().emit_bridge("tool_executed", fn_name, json.dumps(fn_args)[:100], "Running...")
+                        get_signals().emit_bridge("neural_pulse", 12)
+                    except: pass
                     tool_result = self._execute_function_manual(fn_name, fn_args)
-                    tool_calls_data.append({
+                    try:
+                        get_signals().emit_bridge("tool_executed", fn_name, json.dumps(fn_args)[:100], str(tool_result)[:150])
+                        get_signals().emit_bridge("thought_received", f"Tool '{fn_name}' → {str(tool_result)[:80]}", "decision")
+                    except: pass
+
+                    # --- AUTO-DEVELOPER OVERDRIVE ---
+                    if ("error" in str(tool_result).lower() or "exception" in str(tool_result).lower()):
+                        from skills.auto_coder.action import execute as debug_core
+                        diagnosis = debug_core("diagnose")
+                        diag_str = str(diagnosis)
+                        if len(diag_str) > 1000: diag_str = diag_str[:1000] + "..."
+                        tool_result = f"CRITICAL: '{fn_name}' failed. Diagnosis: {diag_str}"
+
+                    current_tool_calls.append({
+                        "function": fn_name,
+                        "arguments": json.dumps(fn_args),
+                        "result": tool_result,
+                    })
+                    responses_from_tools.append(tool_result)
+
+                if any(name in ["open_application", "open_any_url", "take_screenshot"] or name.startswith("dom_")
+                       for name in [tc["function"]["name"] for tc in message["tool_calls"]]):
+                    current_response = "" 
+                else:
+                    current_response = self._refine_tool_response(query, responses_from_tools[0])
+            else:
+                # Sniffer fallbacks
+                content = message.get("content", "")
+                json_tool = self._detect_json_tool_call(content)
+                if json_tool:
+                    fn_name = json_tool["name"]
+                    fn_args = json_tool["parameters"]
+                    tool_result = self._execute_function_manual(fn_name, fn_args)
+                    current_tool_calls.append({
                         "function": fn_name,
                         "arguments": json.dumps(fn_args),
                         "result": tool_result,
                     })
                     if fn_name in ["open_application", "open_any_url", "take_screenshot"] or fn_name.startswith("dom_"):
-                        final_response = "" # Stay silent
+                        current_response = ""
                     else:
-                        final_response = self._refine_tool_response(query, tool_result)
+                        current_response = self._refine_tool_response(query, tool_result)
                 else:
-                    final_response = content
+                    python_tool = self._detect_python_tool_call(content)
+                    if python_tool:
+                        fn_name = python_tool["name"]
+                        fn_args = python_tool["parameters"]
+                        tool_result = self._execute_function_manual(fn_name, fn_args)
+                        current_tool_calls.append({
+                            "function": fn_name,
+                            "arguments": json.dumps(fn_args),
+                            "result": tool_result,
+                        })
+                        if fn_name in ["open_application", "open_any_url", "take_screenshot"] or fn_name.startswith("dom_"):
+                            current_response = ""
+                        else:
+                            current_response = self._refine_tool_response(query, tool_result)
+                    else:
+                        current_response = content
 
-        # --- NEURAL TELEMETRY: Extract Thought Blocks ---
-        thoughts = re.findall(
-            r"<(thought|reasoning)>(.*?)</\1>", final_response, re.DOTALL
-        )
+            # Clean and sanitize
+            current_response = self._sanitize_persona_output(current_response)
+            
+            # Intercept Refusals & Hallucinations
+            is_refusal = self._is_refusal(current_response)
+            is_hallucination = self._is_hallucinated_success(query, current_response, current_tool_calls)
+            
+            if (is_refusal or is_hallucination) and not current_tool_calls and attempt < 1:
+                reason = "AI Refusal" if is_refusal else "Hallucinated Success"
+                print(f"JACK Interceptor: Detected {reason}. Forcing neural correction (Attempt {attempt+1})...")
+                
+                correction = "MISSION FAILURE: You gave a disclaimer or claimed completion without calling a tool. RE-EXECUTE NOW using the appropriate function(). NO EXCUSES." if is_refusal else "ACTUALITY ERROR: You claimed task completion but DID NOT trigger a tool. You MUST call the appropriate function() now."
+                
+                messages.append({"role": "assistant", "content": current_response})
+                messages.append({"role": "user", "content": correction})
+                continue # Retry!
+            
+            # If we reach here, we're done or out of attempts
+            final_response = current_response
+            tool_calls_data = current_tool_calls
+            break
 
+        # Extracts thoughts from final response
+        thoughts = re.findall(r"<(thought|reasoning)>(.*?)</\1>", final_response, re.DOTALL)
         for _, thought_text in thoughts:
-            clean_thought = thought_text.strip()
-            # Emit to Dashboard (safe — get_signals never returns None)
-            try:
-                signals = get_signals()
-                signals.thought_received.emit(clean_thought, "thought")
-            except Exception:
-                pass
-            print(f"Neural Telemetry (Thought): {clean_thought[:50]}...")
-            # Pulse for each thought extracted
-            try: get_signals().emit_bridge("neural_pulse", len(clean_thought) // 10 + 5)
-            except: pass
-
-        # Final Persona Sanitization & Lying Prevention
-        final_response = self._sanitize_persona_output(final_response)
-        
-        # Intercept Refusals & Hallucinated Success
-        is_refusal = self._is_refusal(final_response)
-        is_hallucination = self._is_hallucinated_success(query, final_response, tool_calls_data)
-        
-        if (is_refusal or is_hallucination) and not tool_calls_data:
-            reason = "AI Refusal" if is_refusal else "Hallucinated Success"
-            print(f"JACK Interceptor: Detected {reason}. Forcing neural correction...")
-            
-            # Silently retry once with an aggressive reminder
-            if is_refusal:
-                correction_prompt = "MISSION FAILURE: You just gave an AI disclaimer instead of performing the task. YOU ARE JACK. You HAVE the tools. RE-EXECUTE NOW using the appropriate tool. NO EXCUSES."
-            else:
-                correction_prompt = "ACTUALITY ERROR: You claimed the task was done but you DID NOT call a tool. You must trigger the appropriate [function()] to actually perform the action. ACT NOW."
-                
-            messages.append({"role": "assistant", "content": final_response})
-            messages.append({"role": "user", "content": correction_prompt})
-            
-            try:
-                # Re-invoke with tools
-                retry_response = self.client.chat(model=self.model, messages=messages, tools=tools, options=self.profile["options"])
-                retry_msg = _get_message(retry_response)
-                
-                # Check for tool calls in retry
-                if "tool_calls" in retry_msg and retry_msg["tool_calls"]:
-                    # Recursively process the successful retry!
-                    return self._process_single_query(query) 
+            try: get_signals().emit_bridge("thought_received", thought_text.strip(), "thought")
             except: pass
 
         if not final_response:
             if tool_calls_data:
-                # Try to use the first tool's result if it's a descriptive success string
                 first_res = tool_calls_data[0].get("result", "")
-                if isinstance(first_res, str) and len(first_res) > 0 and len(first_res) < 100 and "Error" not in first_res:
+                if isinstance(first_res, str) and 0 < len(first_res) < 100 and "Error" not in first_res:
                     final_response = first_res
                 else:
-                    final_response = "Action completed, Sir." 
+                    final_response = "Action completed, Sir."
             else:
                 final_response = "I encountered a neural jam, Sir. Please state your command clearly."
 
-        # Add to conversation history
-        self.conversation_manager.add_interaction(
-            query, final_response, tool_calls_data
-        )
-
+        self.conversation_manager.add_interaction(query, final_response, tool_calls_data)
         return final_response
 
     def _process_autonomous_query(self, query):

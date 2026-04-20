@@ -30,32 +30,49 @@ def run_health_check():
     print(" JACK TITAN: GLOBAL HEALTH AUDIT (2026)")
     print("="*40)
     
+    all_passed = True
+    
     # 1. Brain Health (Ollama)
-    check_component("Neural Brain (Ollama)", command="ollama list")
+    if not check_component("Neural Brain (Ollama)", command="ollama list"):
+        all_passed = False
     
     # 2. Vision Health (LLAVA)
-    check_component("Visual Sensors (LLAVA)", command="ollama show llava")
+    if not check_component("Visual Sensors (LLAVA)", command="ollama show llava"):
+        all_passed = False
     
     # 3. Automation Health (Playwright)
-    check_component("Browser Engine (Playwright)", command="python -m playwright --version")
+    if not check_component("Browser Engine (Playwright)", command="python -m playwright --version"):
+        all_passed = False
     
     # 4. Computer Control Health (Interpreter)
-    check_component("System Control (Interpreter)", command="python -m interpreter --version")
+    if not check_component("System Control (Interpreter)", command="interpreter --version"):
+        all_passed = False
     
     # 5. Skill Library Health
-    skills = ["youtube_master", "research_titan", "system_doctor", "auto_coder", "tool_swarm", "github_hunter", "windows_master"]
+    skills = [
+        "youtube_master", "research_titan", "system_doctor", 
+        "auto_coder", "tool_swarm", "github_hunter", 
+        "windows_master", "auto_claw", "computer_use",
+        "titan_expander"
+    ]
     passed_skills = 0
     for s in skills:
         path = os.path.join("skills", s, "action.py")
         if os.path.exists(path): passed_skills += 1
     
     print(f"[Skill Library] {passed_skills}/{len(skills)} specialized modules synced.")
+    if passed_skills < len(skills):
+        all_passed = False
     
     # 6. Integration Health
-    check_component("Silent Launcher", check_file="launch_JACK_silent.vbs")
+    if not check_component("Silent Launcher", check_file="launch_JACK_silent.vbs"):
+        all_passed = False
     
     print("="*40)
-    print(" FINAL VERDICT: JACK IS TITAN-READY.")
+    if all_passed:
+        print(" FINAL VERDICT: JACK IS TITAN-READY.")
+    else:
+        print(" FINAL VERDICT: SYSTEM DEGRADED. MANUAL INTERVENTION REQUIRED.")
     print("="*40)
 
 if __name__ == "__main__":
