@@ -345,15 +345,22 @@ class AIHandler:
         self.conversation_manager.add_interaction(query, final_response, tool_calls_data)
         return final_response
 
-    def _sanitize_persona_output(self, text):
-        """Enforce strict J.A.R.V.I.S. 'Actions over Words' output."""
-        if not text: return "Action completed, Sir."
-        # Remove thoughts
-        text = re.sub(r"<(thought|reasoning)>.*?</\1>", "", text, flags=re.DOTALL).strip()
-        # Remove raw JSON
-        if "{" in text and "}" in text:
-            text = "Action completed, Sir."
-        return text
+
+    def _is_refusal(self, text):
+        """Detect standard LLM refusal/disclaimer patterns."""
+        if not text: return False
+        refusal_patterns = [
+            r"as an ai (language )?model",
+            r"i (don't|do not) have the capability",
+            r"physically open",
+            r"i apologize for the confusion",
+            r"friendly confirmation",
+            r"i didn't actually perform any action",
+            r"cannot perform actions in the physical world",
+            r"lack the ability to",
+        ]
+        text_low = text.lower()
+        return any(re.search(p, text_low) for p in refusal_patterns)
 
     def _process_single_query(self, query):
         """Process a single query with context using Ollama."""
@@ -495,37 +502,33 @@ class AIHandler:
             try: get_signals().emit_bridge("neural_pulse", len(clean_thought) // 10 + 5)
             except: pass
 
-        # Clean the final response for the user (Remove thoughts and raw JSON artifacts)
-        final_response = re.sub(
-            r"<(thought|reasoning)>.*?</\1>", "", final_response, flags=re.DOTALL
-        ).strip()
+        # Final Persona Sanitization & Lying Prevention
+        final_response = self._sanitize_persona_output(final_response)
         
-        # JSON & Parameter Sanitizer: Strips technical leakage from verbal response
-        if any(marker in final_response for marker in ["{", "}", ":", "[", "(", "parameters"]):
-            # 1. Remove standard JSON blocks
-            final_response = re.sub(r"\{.*\}", "", final_response, flags=re.DOTALL)
+        # Intercept Refusals
+        if self._is_refusal(final_response) and not tool_calls_data:
+            print("JACK Interceptor: Detected AI Refusal. Forcing neural correction...")
+            # Silently retry once with an aggressive reminder
+            correction_prompt = "MISSION FAILURE: You just gave an AI disclaimer instead of performing the task. YOU ARE JACK. You HAVE the tools. RE-EXECUTE NOW using the appropriate tool. NO EXCUSES."
+            messages.append({"role": "assistant", "content": final_response})
+            messages.append({"role": "user", "content": correction_prompt})
             
-            # 2. Nuclear Parentheses/Bracket Strip (Removes IDs like [button:123] or (0xABC))
-            # Removes everything between () or [] if it contains a colon, a number, or hex markers
-            final_response = re.sub(r"\[[^\]]*[:\d][^\]]*\]", "", final_response)
-            final_response = re.sub(r"\([^)]*[:\d][^)]*\)", "", final_response)
-            
-            # 3. Remove 'naked' parameter keys ONLY if they are single words followed by a colon and seem technical.
-            # Avoid matching times like "12:12" or "Time: 12:12" by being more conservative.
-            final_response = re.sub(r"\b(id|class|name|type|selector|element|param|arg|result|output):\s*[\w#\.\-]+(?:\s|$)", "", final_response, flags=re.IGNORECASE)
-            
-            # 4. Final cleanup of technical keywords
-            forbidden = ["parameters", "arguments", "function", "name", "button", "control", "automation"]
-            for word in forbidden:
-                 pattern = re.compile(rf"\b{word}\w*\b", re.IGNORECASE)
-                 final_response = pattern.sub("", final_response)
-            
-            final_response = re.sub(r"\s+", " ", final_response).strip(",. ")
-            if final_response:
-                print(f"DEBUG: Nuclear Sanitization applied. Cleaned: {final_response}")
+            try:
+                # Re-invoke with tools
+                retry_response = self.client.chat(model=self.model, messages=messages, tools=tools, options=self.profile["options"])
+                retry_msg = _get_message(retry_response)
+                
+                # Check for tool calls in retry
+                if "tool_calls" in retry_msg and retry_msg["tool_calls"]:
+                    # Recursively process the successful retry!
+                    return self._process_single_query(query) 
+            except: pass
 
         if not final_response:
-            final_response = "Action completed, Sir." # Lean fallback
+            if tool_calls_data:
+                final_response = "Action completed, Sir." 
+            else:
+                final_response = "I encountered a neural jam, Sir. Please state your command clearly."
 
         # Add to conversation history
         self.conversation_manager.add_interaction(
