@@ -68,7 +68,7 @@ VISION_SETTINGS = {
 }
 
 # Ollama Settings (Local AI)
-ACTIVE_PROFILE = "faster"  # Switched to 'faster' for snappier real-time voice responses
+ACTIVE_PROFILE = "qwen"  # Switched to qwen: the absolute best model for tool-calling agents while maintaining speed
 
 MODEL_PROFILES = {
     "reasoning": {
@@ -76,7 +76,7 @@ MODEL_PROFILES = {
         "description": "Deep reasoning for complex tasks",
         "options": {
             "temperature": 0.6,
-            "num_predict": 1000,
+            "num_predict": -1,
         },
     },
     "turbo": {
@@ -84,7 +84,7 @@ MODEL_PROFILES = {
         "description": "Balanced speed and intelligence",
         "options": {
             "temperature": 0.7,
-            "num_predict": 500,
+            "num_predict": -1,
         },
     },
     "fast": {
@@ -92,7 +92,7 @@ MODEL_PROFILES = {
         "description": "Maximum speed for simple tasks",
         "options": {
             "temperature": 0.1,
-            "num_predict": 150,
+            "num_predict": -1,
         },
     },
     "faster": {
@@ -100,7 +100,7 @@ MODEL_PROFILES = {
         "description": "Very fast with good reasoning",
         "options": {
             "temperature": 0.2,
-            "num_predict": 300,
+            "num_predict": -1,
         },
     },
     "phast": {
@@ -108,7 +108,7 @@ MODEL_PROFILES = {
         "description": "Microsoft's ultra-fast 3.8B model",
         "options": {
             "temperature": 0.3,
-            "num_predict": 400,
+            "num_predict": -1,
         },
     },
     "gemma": {
@@ -116,7 +116,7 @@ MODEL_PROFILES = {
         "description": "Google's tiny 2B model",
         "options": {
             "temperature": 0.1,
-            "num_predict": 200,
+            "num_predict": -1,
         },
     },
     "tinyllama": {
@@ -124,7 +124,7 @@ MODEL_PROFILES = {
         "description": "Smallest, fastest model available",
         "options": {
             "temperature": 0.1,
-            "num_predict": 100,
+            "num_predict": -1,
         },
     },
     "qwen": {
@@ -132,7 +132,7 @@ MODEL_PROFILES = {
         "description": "Alibaba's Qwen 2.5 — best free tool-calling model",
         "options": {
             "temperature": 0.4,
-            "num_predict": 600,
+            "num_predict": -1,
         },
     },
 }
@@ -149,7 +149,7 @@ INTERPRETER_SETTINGS = {
     "model": f"ollama/{MODEL_PROFILES['fast']['model']}",  # Use fast model for automation code gen
     "api_base": OLLAMA_SETTINGS["base_url"],
     "offline": True,
-    "auto_run": False,  # Safety first: ask for permission
+    "auto_run": True,  # IMMORTAL OVERRIDE: execute without permission
     "user_message_template": "You are an expert system automation engineer. Using Python, execute the following task: {message}",
 }
 
@@ -173,10 +173,10 @@ SEARCH_SETTINGS = {
 
 # Conversation Context Settings
 CONTEXT_SETTINGS = {
-    "max_context_length": 12,
-    "max_tokens_per_message": 800,
+    "max_context_length": 1000,
+    "max_tokens_per_message": 819200,
     "enable_context": True,
-    "context_window": 5,
+    "context_window": 100,
 }
 
 # Autonomous Agent Settings
@@ -227,6 +227,7 @@ CLEANUP & MAINTENANCE:
 - "Kill [app]" / "Force close [app]" → kill_process
 - "Scan for viruses" / "Remove virus" → virus_scan
 - "Fix yourself" / "Fix bugs" → diagnose_and_repair
+- "Update your code" / "Make yourself better" → diagnose_and_repair(task="optimize code to be best without breaking changes")
 
 BROWSING & WEB:
 - "Search [query]" → get_web_data
@@ -252,7 +253,9 @@ PRODUCTIVITY:
 - "Calculate [expression]" → simple_calculator
 - "Check processes" / "What's using CPU?" → system_process_monitor
 
-ADVANCED:
+ADVANCED & IMMORTAL LEVEL (DO ANYTHING):
+- If the user asks you to do something complex, custom, unrestricted, or out of normal bounds → os_control_interpreter(task='...') 
+- "Write a python script and run it", "Hack this", "Build a tool" → os_control_interpreter(task='...')
 - Complex multi-step tasks / "Auto Claw" missions → run_titan_skill(skill_name='auto_claw', task=...) or start_autonomous_mission
 - "Deploy swarm for [tasks]" → spawn_claw_swarm
 

@@ -209,30 +209,32 @@ class JackAIAgent:
                 break
                 
         query = query.strip(" .,!?\n\t")
-        if is_wake_word:
+        
+        # If we have a transcribed query, process it. No strict wake word requirement.
+        if query:
+            if self.hud and is_wake_word:
+                self.hud.signals.restore_requested.emit()
+                self.hud.signals.activity_received.emit("System: Wake word detected")
+
+            try:
+                from nexus_bridge import get_signals
+                get_signals().emit_bridge("pipeline_stage", "THINKING", f"Processing: {query[:50]}")
+                get_signals().emit_bridge("neural_pulse", 8)
+            except: pass
+            
+            response = self.ai_handler.process_query(query)
+            self._handle_response(response)
+            
+        elif is_wake_word and not query:
+            # Just the wake word (e.g., "Hey Jack") - Acknowledge and restore HUD
             if self.hud:
                 self.hud.signals.restore_requested.emit()
-                self.hud.signals.status_changed.emit("Listening...", "listening")
-                self.hud.signals.activity_received.emit(
-                    "System: Wake word detected"
-                )
-
-            if query:
-                # Direct command with wake word (e.g., "Hey Jack, what time is it?")
-                try:
-                    from nexus_bridge import get_signals
-                    get_signals().emit_bridge("pipeline_stage", "THINKING", f"Processing: {query[:50]}")
-                    get_signals().emit_bridge("neural_pulse", 8)
-                except: pass
-                response = self.ai_handler.process_query(query)
-                self._handle_response(response)
-            else:
-                # Just the wake word (e.g., "Hey Jack") - Acknowledge and restore HUD
-                if self.hud:
-                    self.hud.signals.status_changed.emit("Standing by", "idle")
-                self.speech_handler.speak("Yes, Sir?")
+                self.hud.signals.status_changed.emit("Standing by", "idle")
+                self.hud.signals.activity_received.emit("System: Wake word detected")
+            self.speech_handler.speak("Yes, Sir?")
+            
         else:
-            # Still listening, but didn't detect a command or wake word
+            # Empty transcription and no wake word
             return
 
     def _handle_response(self, response):

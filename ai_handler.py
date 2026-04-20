@@ -446,7 +446,7 @@ class AIHandler:
                 responses_from_tools.append(tool_result)
 
             if any(
-                name in ["open_application", "open_any_url", "take_screenshot"]
+                name in ["open_application", "open_any_url", "take_screenshot"] or name.startswith("dom_")
                 for name in [tc["function"]["name"] for tc in message["tool_calls"]]
             ):
                 final_response = "" # Stay silent for simple actions
@@ -470,7 +470,7 @@ class AIHandler:
                     }
                 )
 
-                if fn_name in ["open_application", "open_any_url", "take_screenshot"]:
+                if fn_name in ["open_application", "open_any_url", "take_screenshot"] or fn_name.startswith("dom_"):
                     final_response = "" # Stay silent
                 else:
                     final_response = self._refine_tool_response(query, tool_result)
@@ -510,8 +510,9 @@ class AIHandler:
             final_response = re.sub(r"\[[^\]]*[:\d][^\]]*\]", "", final_response)
             final_response = re.sub(r"\([^)]*[:\d][^)]*\)", "", final_response)
             
-            # 3. Remove 'naked' parameter keys (e.g., "app_name:", "target:")
-            final_response = re.sub(r"\w+:\s*.*", "", final_response)
+            # 3. Remove 'naked' parameter keys ONLY if they are single words followed by a colon and seem technical.
+            # Avoid matching times like "12:12" or "Time: 12:12" by being more conservative.
+            final_response = re.sub(r"\b(id|class|name|type|selector|element|param|arg|result|output):\s*[\w#\.\-]+(?:\s|$)", "", final_response, flags=re.IGNORECASE)
             
             # 4. Final cleanup of technical keywords
             forbidden = ["parameters", "arguments", "function", "name", "button", "control", "automation"]

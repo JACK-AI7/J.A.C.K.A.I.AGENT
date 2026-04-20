@@ -28,11 +28,11 @@ from livekit.plugins import google as lk_google, openai as lk_openai, sarvam, si
 # CONFIG
 # ---------------------------------------------------------------------------
 
-STT_PROVIDER       = "sarvam"
+STT_PROVIDER       = "whisper"
 LLM_PROVIDER       = "gemini"
 TTS_PROVIDER       = "openai"
 
-GEMINI_LLM_MODEL   = "gemini-2.5-flash"
+GEMINI_LLM_MODEL   = "gemini-2.5-pro"
 OPENAI_LLM_MODEL   = "gpt-4o"
 
 OPENAI_TTS_MODEL   = "tts-1"
@@ -284,13 +284,67 @@ async def entrypoint(ctx: JobContext) -> None:
     llm = _build_llm()
     tts = _build_tts()
 
+    try:
+        from nexus_bridge import get_signals
+        model_name = GEMINI_LLM_MODEL if LLM_PROVIDER == "gemini" else OPENAI_LLM_MODEL
+        get_signals().emit_bridge("model_active", f"{LLM_PROVIDER.upper()}", f"{model_name.upper()} | STT: {STT_PROVIDER.upper()}")
+        get_signals().emit_bridge("pipeline_stage", "IDLE", "LiveKit Agent ready")
+    except Exception as e:
+        logger.error("Dashboard init emit error: %s", e)
+
     session = AgentSession(
         turn_detection=_turn_detection(),
         min_endpointing_delay=_endpointing_delay(),
     )
 
+    agent = JackLivekitAgent(stt=stt, llm=llm, tts=tts)
+
+    @agent.on("user_speech_committed")
+    def on_user_speech_committed(msg):
+        from nexus_bridge import get_signals
+        try:
+            # Add to dashboard
+            get_signals().emit_bridge("pipeline_stage", "TRANSCRIBED", "User spoke")
+            # If msg is an object, get its text, else cast to string. It could be chat_ctx.ChatMessage
+            text = getattr(msg, "content", getattr(msg, "text", str(msg)))
+            get_signals().emit_bridge("chat_received", "USER", text)
+            get_signals().emit_bridge("neural_pulse", 8)
+        except Exception as e:
+            logger.error("Dashboard emit error: %s", e)
+
+    @agent.on("agent_speech_committed")
+    def on_agent_speech_committed(msg):
+        from nexus_bridge import get_signals
+        try:
+            get_signals().emit_bridge("pipeline_stage", "SPEAKING", "Agent speaking")
+            text = getattr(msg, "content", getattr(msg, "text", str(msg)))
+            get_signals().emit_bridge("chat_received", "JACK", text)
+            get_signals().emit_bridge("neural_pulse", 5)
+        except Exception as e:
+            logger.error("Dashboard emit error: %s", e)
+            
+    @agent.on("function_calls_collected")
+    def on_function_calls_collected(called_functions):
+        from nexus_bridge import get_signals
+        try:
+            get_signals().emit_bridge("pipeline_stage", "EXECUTING", "Executing tools")
+            for f in called_functions:
+                name = getattr(f, "name", str(f))
+                get_signals().emit_bridge("tool_executed", name, "Executing MCP Tool...", "Running...")
+                get_signals().emit_bridge("neural_pulse", 15)
+        except Exception as e:
+            pass
+
+    @agent.on("function_calls_finished")
+    def on_function_calls_finished(called_functions):
+        from nexus_bridge import get_signals
+        try:
+            get_signals().emit_bridge("pipeline_stage", "THINKING", "Synthesizing response")
+        except Exception:
+            pass
+
     await session.start(
-        agent=JackLivekitAgent(stt=stt, llm=llm, tts=tts),
+        agent=agent,
         room=ctx.room,
     )
 

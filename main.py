@@ -88,7 +88,7 @@ try:
     import win32api
     import winerror
 
-    mutex_name = "JACK_Single_Instance_Mutex"
+    mutex_name = "JACK_Single_Instance_Mutex_V2"
     mutex = win32event.CreateMutex(None, False, mutex_name)
     last_error = win32api.GetLastError()
     if last_error == winerror.ERROR_ALREADY_EXISTS:
