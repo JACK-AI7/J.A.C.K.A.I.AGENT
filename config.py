@@ -37,6 +37,7 @@ RECOGNITION_SETTINGS = {
     "dynamic_energy_threshold": True,  # Enabled for auto-tuning to room noise
     "pause_threshold": 1.1,  # Increased to be more patient (prevents cutting off mid-sentence)
     "operation_timeout": 15,  # Increased to give user more time to speak initially
+    "FORCE_MICROPHONE_INDEX": None,  # Set to a specific integer to bypass auto-detection (e.g. 1)
     "wake_words": [
         "jack",
         "hey jack",

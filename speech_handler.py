@@ -83,104 +83,119 @@ class SpeechHandler:
 
         # System Microphone Setup — use the high-quality built-in system mic only
         # No Bluetooth/headset priority: always pick the Realtek Microphone Array or OS default
-        self.mic_device_index = None
-        try:
-            import re as _re
-            mics = sr.Microphone.list_microphone_names()
+        self.mic_device_index = RECOGNITION_SETTINGS.get("FORCE_MICROPHONE_INDEX")
+        self.candidate_indices = []
+        
+        if self.mic_device_index is not None:
+            print(f"JACK Hearing: FORCED microphone index {self.mic_device_index}")
+        else:
+            try:
+                import re as _re
+                mics = sr.Microphone.list_microphone_names()
 
-            def _clean(name):
-                return _re.sub(r'[\r\n\x00-\x1f]', ' ', name).lower()
+                def _clean(name):
+                    return _re.sub(r'[\r\n\x00-\x1f]', ' ', name).lower()
 
-            # Target the system's high-quality built-in microphone directly
-            # Completely ignore headsets/Bluetooth buds as per user request for device mic only
-            system_mic_keywords = ["microphone array", "mic array", "realtek", "built-in microphone"]
-            
-            print("JACK Hearing: Selecting system microphone...")
-            for i, name in enumerate(mics):
-                print(f"  [{i}] {repr(name)}")
-
-            for keyword in system_mic_keywords:
+                # Target the system's high-quality built-in microphone directly
+                # Completely ignore headsets/Bluetooth buds as per user request for device mic only
+                system_mic_keywords = ["microphone array", "mic array", "realtek", "built-in microphone"]
+                headset_keywords = ["headset", "hands-free", "bluetooth", "bud"]
+                
+                print("JACK Hearing: Scanning system microphones...")
                 for i, name in enumerate(mics):
-                    if keyword in _clean(name):
-                        self.mic_device_index = i
-                        print(f"JACK Hearing: Using system mic [{i}] {repr(name)}")
-                        break
-                if self.mic_device_index is not None:
-                    break
+                    clean_name = _clean(name)
+                    is_system = any(k in clean_name for k in system_mic_keywords)
+                    is_headset = any(k in clean_name for k in headset_keywords)
+                    
+                    if is_system and not is_headset:
+                        self.candidate_indices.append(i)
+                        print(f"  [+] CANDIDATE [{i}] {repr(name)}")
+                    else:
+                        print(f"  [ ] IGNORED   [{i}] {repr(name)}")
 
-            if self.mic_device_index is None:
-                print("JACK Hearing: Using OS default system microphone.")
-        except Exception as e:
-            print(f"JACK Hearing Warning: Mic detection error ({e}), using default.")
+                if self.candidate_indices:
+                    self.mic_device_index = self.candidate_indices[0]
+                    print(f"JACK Hearing: Preferred system mic [{self.mic_device_index}]")
+                else:
+                    print("JACK Hearing: No specific system mic found. Using OS default.")
+            except Exception as e:
+                print(f"JACK Hearing Warning: Mic detection error ({e}), using default.")
 
     
-    def _create_mic(self):
-        """Create a fresh Microphone instance (prevents stale PyAudio state on Windows)."""
+    def _get_mic_candidates(self):
+        """Return a list of indices to try, prioritized by preference."""
+        indices = []
         if self.mic_device_index is not None:
-            return sr.Microphone(device_index=self.mic_device_index)
-        return sr.Microphone()
+            indices.append(self.mic_device_index)
+        for idx in self.candidate_indices:
+            if idx not in indices:
+                indices.append(idx)
+        # Always include None as the final fallback
+        if None not in indices:
+            indices.append(None)
+        return indices
 
     def calibrate_microphone(self, duration=1.0):
         print(f"Calibrating microphone for ambient noise (duration={duration}s)...")
-        try:
-            mic = self._create_mic()
-            with mic as source:
-                print("[SpeechHandler] Listening for ambient noise calibration...")
-                self.recognizer.adjust_for_ambient_noise(source, duration=duration)
-                # Additional noise reduction: set a baseline energy threshold
-                if self.recognizer.energy_threshold < 50:
-                    self.recognizer.energy_threshold = 50
-                print(f"[SpeechHandler] Energy threshold set to: {self.recognizer.energy_threshold}")
-            print("Calibration complete. JACK is ready!")
-        except Exception as e:
-            print(f"Calibration failed, using default settings: {e}")
-            pass
+        for idx in self._get_mic_candidates():
+            try:
+                mic = sr.Microphone(device_index=idx) if idx is not None else sr.Microphone()
+                with mic as source:
+                    print(f"[SpeechHandler] Calibrating on index {idx}...")
+                    self.recognizer.adjust_for_ambient_noise(source, duration=duration)
+                    if self.recognizer.energy_threshold < 50:
+                        self.recognizer.energy_threshold = 50
+                    print(f"[SpeechHandler] Calibration complete. Energy threshold: {self.recognizer.energy_threshold}")
+                    return True
+            except Exception as e:
+                print(f"Calibration failed on index {idx}: {e}")
+                continue
+        print("All calibration attempts failed. JACK will use default sensitivity.")
+        return False
 
     def listen_for_speech(self, timeout=15, phrase_time_limit=20):
-        """Listen for speech input and return the recognized text."""
-        try:
-            print(
-                f"[SpeechHandler] Starting listen with timeout={timeout}, phrase_time_limit={phrase_time_limit}"
-            )
-            
-            # Create a fresh Microphone for each listen call to prevent stale state
-            mic = self._create_mic()
-            
-            # Wrap mic context in its own try/except — PyAudio stream can fail to open
-            # which causes 'NoneType' has no attribute 'close' in __exit__
-            audio_data = None
+        """Listen for speech input with robust device retry logic."""
+        audio_data = None
+        
+        for idx in self._get_mic_candidates():
             try:
+                print(f"[SpeechHandler] Attempting listen on index {idx}...")
+                mic = sr.Microphone(device_index=idx) if idx is not None else sr.Microphone()
+                
                 with mic as source:
-                    # 1. Listen for audio
                     print("[SpeechHandler] Listening...")
-                    # Visual feedback for listening
                     try: get_signals().emit_bridge("neural_pulse", 3)
                     except: pass
                     
-                    # Use dynamic noise suppression from config
                     if hasattr(self.recognizer, "dynamic_energy_threshold"):
                         self.recognizer.dynamic_energy_threshold = RECOGNITION_SETTINGS.get("dynamic_energy_threshold", False)
                     
                     audio_data = self.recognizer.listen(
                         source, timeout=timeout, phrase_time_limit=phrase_time_limit
                     )
-                    print("[SpeechHandler] Audio captured, now transcribing...")
-                    try: get_signals().emit_bridge("neural_pulse", 6)
-                    except: pass
-            except AttributeError as ae:
-                # Catches: 'NoneType' object has no attribute 'close' from Microphone.__exit__
-                print(f"[SpeechHandler] Microphone stream error: {ae}")
-                import time; time.sleep(2)
-                return None
-            except OSError as oe:
-                # Catches: PyAudio device busy / not available
-                print(f"[SpeechHandler] Audio device error: {oe}")
-                import time; time.sleep(2)
-                return None
-            
-            if audio_data is None:
-                return None
+                    print("[SpeechHandler] Audio captured successfully.")
+                    # If we got here, this mic worked! Update preferred index if it wasn't already set
+                    if self.mic_device_index is None and idx is not None:
+                        self.mic_device_index = idx
+                    break # Success!
+                    
+            except (AttributeError, OSError, sr.WaitTimeoutError) as e:
+                if isinstance(e, sr.WaitTimeoutError):
+                    print("[SpeechHandler] No speech detected (WaitTimeoutError).")
+                    return None
+                print(f"[SpeechHandler] Mic index {idx} failed/busy: {e}. Trying next...")
+                continue
+        
+        if audio_data is None:
+            print("[SpeechHandler] Failed to capture audio from any microphone.")
+            import time; time.sleep(1)
+            return None
 
+        try:
+            # Visual feedback for transcription
+            try: get_signals().emit_bridge("neural_pulse", 6)
+            except: pass
+            
             # 2. Transcribe Using Local Model (Whisper) or Fallback
             if self.use_whisper:
                 # Write audio to a temp WAV file and pass the path to faster-whisper.
