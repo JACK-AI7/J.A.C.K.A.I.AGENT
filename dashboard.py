@@ -850,7 +850,10 @@ class NexusDashboard(QMainWindow):
         if not DDGS: return
         try:
             def _fetch():
-                results = DDGS().news("global tech AI breakthroughs", max_results=5)
+                import warnings
+                with warnings.catch_warnings():
+                    warnings.simplefilter("ignore")
+                    results = DDGS().news("global tech AI breakthroughs", max_results=5)
                 lines = [r['title'] for r in results]
                 self.signals.headlines_updated.emit(lines)
             threading.Thread(target=_fetch, daemon=True).start()

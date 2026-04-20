@@ -91,9 +91,9 @@ class SpeechHandler:
             def _clean(name):
                 return _re.sub(r'[\r\n\x00-\x1f]', ' ', name).lower()
 
-            # Target the system's high-quality microphone array (built-in Realtek or similar)
-            # Completely ignore all Bluetooth, headset, and external mics
-            system_mic_keywords = ["microphone array", "mic array", "realtek"]
+            # Target the system's high-quality built-in microphone directly
+            # Completely ignore headsets/Bluetooth buds as per user request for device mic only
+            system_mic_keywords = ["microphone array", "mic array", "realtek", "built-in microphone"]
             
             print("JACK Hearing: Selecting system microphone...")
             for i, name in enumerate(mics):

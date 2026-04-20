@@ -51,7 +51,7 @@ class NexusSignals(QObject):
 
     def __init__(self):
         super().__init__()
-        self._bridge_port = 5050
+        self._bridge_port = 55050
         self._is_server = False
 
     def emit_bridge(self, signal_name, *args):
@@ -86,6 +86,7 @@ class NexusSignals(QObject):
         def _listen():
             with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
                 try:
+                    s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
                     s.bind(('127.0.0.1', self._bridge_port))
                     s.settimeout(1.0)  # Allow periodic checking
                     while True:

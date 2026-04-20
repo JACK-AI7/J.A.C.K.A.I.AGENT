@@ -49,10 +49,10 @@ RECOGNITION_SETTINGS = {
 
 # Faster-Whisper Settings (Offline Overdrive)
 WHISPER_SETTINGS = {
-    "model_size": "small",  # Options: 'tiny', 'base', 'small', 'medium'
+    "model_size": "base",  # Switched to 'base' for faster CPU transcription
     "device": "cpu",  # CPU mode — no CUDA available on this machine
     "compute_type": "int8",  # int8 is required for CPU inference
-    "beam_size": 5,  # Balanced accuracy
+    "beam_size": 1,  # Greedy decoding for maximum speed
     "vad_filter": True,  # Voice activity detection
     "vad_parameters": {"threshold": 0.15, "min_silence_duration_ms": 300},  # More sensitive segments
 }
@@ -68,7 +68,7 @@ VISION_SETTINGS = {
 }
 
 # Ollama Settings (Local AI)
-ACTIVE_PROFILE = "reasoning"  # Options: 'reasoning', 'turbo', 'fast', 'faster', 'phast', 'gemma', 'tinyllama', 'qwen'
+ACTIVE_PROFILE = "faster"  # Switched to 'faster' for snappier real-time voice responses
 
 MODEL_PROFILES = {
     "reasoning": {

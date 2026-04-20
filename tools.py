@@ -1470,6 +1470,8 @@ FUNCTIONS = [
         "parameters": {
             "type": "object",
             "properties": {"url": {"type": "string", "description": "URL to fetch."}},
+        },
+    },
     {
         "name": "get_stock_price",
         "description": "Get real-time stock price and market info for a ticker symbol.",
