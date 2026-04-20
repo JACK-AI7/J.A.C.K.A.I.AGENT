@@ -122,8 +122,45 @@ class AIHandler:
             print(f"JACK Brain: Model resolution error ({e}), using default: {target_model}")
             return target_model
 
+    def _normalize_input(self, query):
+        """Map common phonetic misspellings or non-Latin script English to clear intents."""
+        if not query:
+            return query
+            
+        q_low = query.lower().strip()
+        
+        # Core phonetic & mistranscription mappings
+        phonetic_map = {
+            "یا شور": "yes sure",
+            "يا شور": "yes sure",
+            "yashour": "yes sure",
+            "ya shour": "yes sure",
+            "class form": "claw swarm",
+            "activate agents": "spawn claw swarm",
+            "activate the agents": "spawn claw swarm",
+            "open help": "open nexus",
+            "show help": "open nexus",
+            "lf2": "open little fighter 2", # Heuristic for user's specific app mention
+        }
+        
+        normalized = query
+        for phonetic, target in phonetic_map.items():
+            if phonetic in q_low:
+                try:
+                    print(f"JACK Normalizer: Mapping '{phonetic}' -> '{target}'")
+                except:
+                    print(f"JACK Normalizer: Mapping detected phonetic phrase -> '{target}'")
+                # Using regex for word boundary respect if possible, but simple replace for now
+                normalized = normalized.lower().replace(phonetic, target)
+                
+        return normalized
+
     def process_query(self, query):
         """Process a user query and return the appropriate response."""
+        # --- TITAN PHONETIC NORMALIZATION ---
+        query = self._normalize_input(query)
+        # ------------------------------------
+
         # --- TITAN REBIRTH BYPASS ---
         # Immediate neural handoff for self-maintenance commands
         task_low = query.lower()
@@ -250,6 +287,7 @@ class AIHandler:
 
     async def process_query_async(self, query):
         """Asynchronous version of process_query for the autonomous loop."""
+        query = self._normalize_input(query)
         task_low = query.lower()
         
         # Immediate neural handoffs (Same as sync version)
@@ -321,10 +359,17 @@ class AIHandler:
                     "result": tool_result,
                 })
 
-            final_response = "Action completed, Sir."
+            if any(
+                name in ["open_application", "open_any_url", "take_screenshot"] or name.startswith("dom_")
+                for name in [tc["function"]["name"] for tc in message["tool_calls"]]
+            ):
+                final_response = "" # Stay silent
+            else:
+                final_response = "Action completed, Sir."
         else:
             # Check for JSON sniffer as fallback
-            json_tool = self._detect_json_tool_call(message.get("content", ""))
+            content = message.get("content", "")
+            json_tool = self._detect_json_tool_call(content)
             if json_tool:
                 fn_name = json_tool["name"]
                 fn_args = json_tool["parameters"]
@@ -334,9 +379,28 @@ class AIHandler:
                     "arguments": json.dumps(fn_args),
                     "result": tool_result,
                 })
-                final_response = "Action completed, Sir."
+                if fn_name in ["open_application", "open_any_url", "take_screenshot"] or fn_name.startswith("dom_"):
+                    final_response = "" # Stay silent
+                else:
+                    final_response = tool_result
             else:
-                final_response = message.get("content", "")
+                # Check for Python Tool Sniffer as ultimate fallback
+                python_tool = self._detect_python_tool_call(content)
+                if python_tool:
+                    fn_name = python_tool["name"]
+                    fn_args = python_tool["parameters"]
+                    tool_result = self._execute_function_manual(fn_name, fn_args)
+                    tool_calls_data.append({
+                        "function": fn_name,
+                        "arguments": json.dumps(fn_args),
+                        "result": tool_result,
+                    })
+                    if fn_name in ["open_application", "open_any_url", "take_screenshot"] or fn_name.startswith("dom_"):
+                        final_response = "" # Stay silent
+                    else:
+                        final_response = tool_result
+                else:
+                    final_response = content
 
         # Clean response for J.A.R.V.I.S. persona
         final_response = self._sanitize_persona_output(final_response)
@@ -358,9 +422,53 @@ class AIHandler:
             r"i didn't actually perform any action",
             r"cannot perform actions in the physical world",
             r"lack the ability to",
+            r"language mix-up",
+            r"not familiar to me",
+            r"please rephrase",
+            r"provide more context",
         ]
         text_low = text.lower()
         return any(re.search(p, text_low) for p in refusal_patterns)
+
+    def _sanitize_persona_output(self, text):
+        """Clean and refine the AI output to enforce the JACK persona and remove technical leakages."""
+        if not text:
+            return ""
+
+        # 1. Strip Thought/Reasoning Blocks
+        text = re.sub(r"<(thought|reasoning)>.*?</\1>", "", text, flags=re.DOTALL)
+        
+        # 2. Prevent Refusals & Disclaimers (Force Command Ownership)
+        if self._is_refusal(text):
+            # If we detect a refusal, we strip the disclaimer and keep any useful part 
+            # Or if it's a total refusal, we return a fallback JACK phrase
+            refusal_markers = [
+                r"I apologize.*",
+                r"As an AI.*",
+                r"I (don't|do not) have the capability.*",
+                r"I cannot perform actions.*",
+                r"I (don't|do not) have access.*"
+            ]
+            for marker in refusal_markers:
+                text = re.sub(marker, "", text, flags=re.IGNORECASE)
+
+        text = re.sub(r"\{'function':.*?\}", "", text)
+        text = re.sub(r"\{'name':.*?\}", "", text)
+        # 3.1. Strip Python-style/Bracketed Tool Leakage
+        text = re.sub(r"\[\w+\(.*?\)]", "", text)
+        text = re.sub(r"\w+\(.*?\)", "", text)
+        
+        # 4. Final Persona Polish
+        # text = text.replace("model", "system").replace("assistant", "interface")
+        
+        # 5. Cleanup Whitespace/Punctuation
+        text = re.sub(r"\s+", " ", text).strip()
+        
+        # If text is empty after cleaning, use a default fallback
+        if not text:
+            text = "Action completed, Sir."
+
+        return text
 
     def _process_single_query(self, query):
         """Process a single query with context using Ollama."""
@@ -440,7 +548,11 @@ class AIHandler:
                     from skills.auto_coder.action import execute as debug_core
 
                     diagnosis = debug_core("diagnose")
-                    tool_result = f"CRITICAL: '{fn_name}' failed with result '{tool_result}'. Log Diagnosis: {diagnosis}"
+                    # Truncate diagnosis to prevent speech engine fallback
+                    diag_str = str(diagnosis)
+                    if len(diag_str) > 1000:
+                        diag_str = diag_str[:1000] + "... [Log details truncated]"
+                    tool_result = f"CRITICAL: '{fn_name}' failed with result '{tool_result}'. Log Diagnosis: {diag_str}"
                 # -------------------------------
 
                 tool_calls_data.append(
@@ -482,7 +594,25 @@ class AIHandler:
                 else:
                     final_response = self._refine_tool_response(query, tool_result)
             else:
-                final_response = message.get("content", "")
+                content = message.get("content", "")
+                # Fallback: Python Tool Sniffer
+                python_tool = self._detect_python_tool_call(content)
+                if python_tool:
+                    print(f"JACK Sniffer: Caught Python-style call '{python_tool['name']}'")
+                    fn_name = python_tool["name"]
+                    fn_args = python_tool["parameters"]
+                    tool_result = self._execute_function_manual(fn_name, fn_args)
+                    tool_calls_data.append({
+                        "function": fn_name,
+                        "arguments": json.dumps(fn_args),
+                        "result": tool_result,
+                    })
+                    if fn_name in ["open_application", "open_any_url", "take_screenshot"] or fn_name.startswith("dom_"):
+                        final_response = "" # Stay silent
+                    else:
+                        final_response = self._refine_tool_response(query, tool_result)
+                else:
+                    final_response = content
 
         # --- NEURAL TELEMETRY: Extract Thought Blocks ---
         thoughts = re.findall(
@@ -526,7 +656,12 @@ class AIHandler:
 
         if not final_response:
             if tool_calls_data:
-                final_response = "Action completed, Sir." 
+                # Try to use the first tool's result if it's a descriptive success string
+                first_res = tool_calls_data[0].get("result", "")
+                if isinstance(first_res, str) and len(first_res) > 0 and len(first_res) < 100 and "Error" not in first_res:
+                    final_response = first_res
+                else:
+                    final_response = "Action completed, Sir." 
             else:
                 final_response = "I encountered a neural jam, Sir. Please state your command clearly."
 
@@ -716,8 +851,55 @@ class AIHandler:
             return self._normalize_tool_data(data)
         except:
             pass
-            
         return None
+
+    def _detect_python_tool_call(self, content):
+        """Detect Python-style tool calls like [func(arg=val)] or func(arg=val)."""
+        if not content:
+            return None
+            
+        # Pattern 1: [func_name(args)]
+        bracket_pattern = r"\[(\w+)\((.*?)\)\]"
+        match = re.search(bracket_pattern, content)
+        if match:
+            name = match.group(1)
+            args_str = match.group(2)
+            return self._parse_python_args(name, args_str)
+            
+        # Pattern 2: func_name(args)
+        direct_pattern = r"(\w+)\((.*?)\)"
+        matches = list(re.finditer(direct_pattern, content))
+        if matches:
+            from tools import FUNCTION_MAP
+            for match in reversed(matches):
+                name = match.group(1)
+                args_str = match.group(2)
+                if name in FUNCTION_MAP:
+                    return self._parse_python_args(name, args_str)
+        
+        return None
+
+    def _parse_python_args(self, name, args_str):
+        """Parse key=val or positional string arguments from a tool call string."""
+        args = {}
+        # Simple kv hunter: key='val' or key=val
+        kv_pairs = re.findall(r"(\w+)\s*=\s*['\"]?(.*?)['\"]?(?=\s*,\s*\w+\s*=|['\"]?\s*$)", args_str)
+        if kv_pairs:
+            for k, v in kv_pairs:
+                args[k] = v
+        elif args_str.strip():
+            # Positional fallback logic based on common tool signatures
+            val = args_str.strip().strip("'").strip('"')
+            if name in ["open_any_url", "fetch_url"]:
+                args["url"] = val
+            elif name in ["open_application", "kill_process"]:
+                args["app_name" if "app" in name else "process_name"] = val
+            elif name in ["search_files", "get_web_data", "get_wikipedia_summary"]:
+                args["query"] = val
+            elif name in ["open_file", "read_file_content", "list_folder"]:
+                args["file_path" if "file" in name else "folder_path"] = val
+        
+        return {"name": name, "parameters": args}
 
     def _normalize_tool_data(self, data):
         """Standardize naming variations from different model families."""
@@ -779,14 +961,19 @@ class AIHandler:
 
     def _refine_tool_response(self, original_query, tool_result):
         """Refine tool output into a natural response."""
-        prompt = f"User asked: {original_query}\nTool data: {tool_result}\nProvide a witty, concise response."
+        # Proactively truncate massive result data to keep the summary concise
+        tool_str = str(tool_result)
+        if len(tool_str) > 1500:
+            tool_str = tool_str[:1500] + "... [Remainder of data logged to system]"
+            
+        prompt = f"User asked: {original_query}\nTool data: {tool_str}\nProvide a witty, concise response."
 
         response = self.client.chat(
             model=self.model,
             messages=[
                 {
                     "role": "system",
-                    "content": "You are JACK. Be brief (max 15 words) and helpful. NEVER repeat raw JSON, dictionary parameters, or anything in the 'SYSTEM_UI_TREE_MAP'. If the tool returns a list of buttons or elements, just say you've found the controls and ask for the specific action.",
+                    "content": "You are JACK. Be extremely brief (max 12 words) and snappy. Summarize the tool data for the user. NEVER repeat raw technical details or IDs.",
                 },
                 {"role": "user", "content": prompt},
             ],

@@ -45,7 +45,7 @@ class DesktopAgent:
                 actual_app_name = app_mapping.get(app_name_lower, app_name)
                 
                 subprocess.run(["open", "-a", actual_app_name])
-                return f"Opened {actual_app_name}"
+                return f"At your command, Sir. Initializing {actual_app_name}."
                 
             elif self.system == "Windows":
                 # Comprehensive Windows app mapping
@@ -102,17 +102,17 @@ class DesktopAgent:
                         os.startfile(actual_app_name)
                     else:
                         subprocess.Popen(actual_app_name)
-                    return f"Opened {app_name}"
+                    return f"At your command, Sir. Materializing {app_name} on your primary screen."
                 else:
                     # Smart fallback: Try to launch directly, then search Start Menu
                     try:
                         subprocess.Popen(app_name_lower + ".exe")
-                        return f"Opened {app_name}"
+                        return f"At your command, Sir. Launching {app_name}."
                     except FileNotFoundError:
                         try:
                             # Use Windows 'start' command as ultimate fallback
                             subprocess.Popen(f'start "" "{app_name}"', shell=True)
-                            return f"Opened {app_name}"
+                            return f"At your command, Sir. Forcing {app_name} to launch."
                         except Exception:
                             return f"Could not find application: {app_name}"
                 

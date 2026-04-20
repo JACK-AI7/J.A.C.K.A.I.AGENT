@@ -78,49 +78,58 @@ class VisualOrchestrator:
         """Build a structured understanding of the current screen state."""
         context_parts = []
 
-        # 1. Active window info
+        # 1. Comprehensive Window info
         try:
             windows = self.desktop.windows()
             if windows:
+                # 1.1 Identify the focused/top window
                 top = windows[0]
-                context_parts.append(f"Active Window: '{top.window_text()}'")
+                text = top.window_text()
+                context_parts.append(f"Primary Focused Window: '{text or 'No Title'}'")
                 
-                # Get visible UI elements (buttons, inputs, labels)
+                # 1.2 Extract deep UI tree (Buttons, Inputs) for the primary window
                 try:
-                    children = top.descendants()[:30]
                     elements = []
-                    for el in children:
-                        name = el.element_info.name
-                        ctype = el.element_info.control_type
-                        if name and ctype in ("Button", "Edit", "MenuItem", "TabItem", "ListItem", "Hyperlink", "CheckBox"):
-                            elements.append(f"  [{ctype}] {name}")
+                    # Filter for interactive elements to keep context window manageable
+                    children = top.descendants()
+                    for el in children[:50]: # Scan top 50 elements
+                        if el.element_info.control_type in ("Button", "Edit", "MenuItem", "TabItem", "ListItem", "Hyperlink", "CheckBox"):
+                            name = el.element_info.name
+                            if name:
+                                elements.append(f"  [{el.element_info.control_type}] {name}")
+                    
                     if elements:
-                        context_parts.append("UI Elements:\n" + "\n".join(elements[:20]))
+                        context_parts.append("Interactive Elements Detected:\n" + "\n".join(elements[:25]))
                 except Exception:
                     pass
 
-                # List other visible windows
-                other = [w.window_text() for w in windows[1:6] if w.window_text()]
+                # 1.3 List other significant visible windows
+                other = [w.window_text() for w in windows[1:10] if w.window_text() and len(w.window_text()) > 2]
                 if other:
-                    context_parts.append(f"Other Windows: {', '.join(other)}")
-        except Exception:
-            context_parts.append("Active Window: Unknown")
+                    context_parts.append(f"Visible Background Windows: {', '.join(other[:5])}")
+        except Exception as e:
+            context_parts.append(f"Window Subsystem Telemetry: {str(e)}")
 
-        # 2. OCR-based text reading (fast screen read)
+        # 2. Vision-Based (OCR) Awareness (The Eyes)
         try:
-            if system_controller.reader and cv2 is not None:
+            if system_controller.reader:
                 screenshot = pyautogui.screenshot()
                 import numpy as np
+                import cv2
                 screenshot_np = np.array(screenshot)
                 screenshot_bgr = cv2.cvtColor(screenshot_np, cv2.COLOR_RGB2BGR)
                 results = system_controller.reader.readtext(screenshot_bgr)
-                visible_text = [text for _, text, prob in results if prob > 0.4]
+                
+                # Use a slightly lower confidence for better recall in complex UIs
+                visible_text = [text for _, text, prob in results if prob > 0.35]
                 if visible_text:
-                    context_parts.append(f"Screen Text (OCR): {' | '.join(visible_text[:15])}")
+                    context_parts.append(f"Neural Vision (Visible Text): {' | '.join(visible_text[:20])}")
         except Exception:
             pass
 
-        return "\n".join(context_parts) if context_parts else "Screen state unknown."
+        final_context = "\n".join(context_parts) if context_parts else "Neural Jam: No screen telemetry available."
+        print(f"  Screen Awareness Pulse: {len(context_parts)} sectors identified.")
+        return final_context
 
     def _think(self, goal, screen_context, step):
         """Use the LLM to decide the next action based on the current screen."""

@@ -224,7 +224,7 @@ def open_any_url(url):
     import webbrowser
 
     webbrowser.open(url)
-    return f"Opening {url}"
+    return f"Materializing {url} for you now, Sir. Neural link established."
 
 
 def simple_calculator(expression):

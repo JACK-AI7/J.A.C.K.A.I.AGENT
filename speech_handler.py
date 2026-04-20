@@ -262,9 +262,11 @@ class SpeechHandler:
         # Check for technical patterns
         for pattern in technical_patterns:
             if re.search(pattern, text, re.IGNORECASE):
-                print(f"BABEL FILTER: Blocked technical sequence in speech input.")
-                text = "I've analyzed the system, Sir. How should I proceed?"
-                break
+                # Trigger a cleaner summary ONLY if the text is long or complex
+                if len(text) > 80 or text.count('\n') > 1:
+                    print(f"BABEL FILTER: Refining technical sequence in speech.")
+                    text = "I've analyzed the system data, Sir. Proceeding now."
+                    break
 
         # Physical Strip of Forbidden Words
         for word in forbidden_words:
@@ -281,8 +283,12 @@ class SpeechHandler:
             text = "Action synchronized, Sir."
 
         # Limit speech length for logs that missed patterns
-        if text.count("\n") > 2 or len(text) > 150:
-            text = "I have logged the diagnostic details, Sir."
+        # Limit speech length for logs that missed patterns
+        if text.count("\n") > 3 or len(text) > 350:
+            original_len = len(text)
+            # Truncate at nearest word
+            text = text[:300].rsplit(' ', 1)[0] + "... and I've logged the full details for your review, Sir."
+            print(f"JACK Speech Refinement: Truncated {original_len} chars to concise verbal summary.")
         # ------------------------
 
         with self.speech_lock:

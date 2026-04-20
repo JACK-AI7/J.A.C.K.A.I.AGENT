@@ -51,3 +51,8 @@ Traceback (most recent call last):
     ^
 SyntaxError: closing parenthesis ']' does not match opening parenthesis '{' on line 1470
 
+2026-04-20 12:45:15,655 - ERROR - AI Processing Error: 'AIHandler' object has no attribute '_sanitize_persona_output'
+2026-04-20 12:45:44,027 - ERROR - AI Processing Error: 'AIHandler' object has no attribute '_sanitize_persona_output'
+2026-04-20 12:46:33,241 - ERROR - AI Processing Error: 'AIHandler' object has no attribute '_sanitize_persona_output'
+2026-04-20 12:47:41,383 - ERROR - AI Processing Error: 'AIHandler' object has no attribute '_sanitize_persona_output'
+2026-04-20 12:48:45,564 - ERROR - AI Processing Error: 'AIHandler' object has no attribute '_sanitize_persona_output'
