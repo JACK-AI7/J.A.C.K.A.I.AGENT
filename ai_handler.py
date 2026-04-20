@@ -430,6 +430,33 @@ class AIHandler:
         text_low = text.lower()
         return any(re.search(p, text_low) for p in refusal_patterns)
 
+    def _is_hallucinated_success(self, query, response_text, tool_calls_data):
+        """Detect if the model claims success without actually calling a tool."""
+        if not response_text or tool_calls_data:
+            return False
+            
+        success_phrases = [
+            r"action completed",
+            r"opened the",
+            r"reopened the",
+            r"materializing",
+            r"has been opened",
+            r"is now accessible",
+            r"done, sir",
+            r"at your fingertips",
+        ]
+        
+        # We only care if the query was clearly a command
+        command_keywords = ["open", "start", "run", "launch", "show", "get", "find"]
+        q_low = query.lower()
+        is_command = any(word in q_low for word in command_keywords)
+        
+        if not is_command:
+            return False
+            
+        res_low = response_text.lower()
+        return any(re.search(p, res_low) for p in success_phrases)
+
     def _sanitize_persona_output(self, text):
         """Clean and refine the AI output to enforce the JACK persona and remove technical leakages."""
         if not text:
@@ -635,11 +662,20 @@ class AIHandler:
         # Final Persona Sanitization & Lying Prevention
         final_response = self._sanitize_persona_output(final_response)
         
-        # Intercept Refusals
-        if self._is_refusal(final_response) and not tool_calls_data:
-            print("JACK Interceptor: Detected AI Refusal. Forcing neural correction...")
+        # Intercept Refusals & Hallucinated Success
+        is_refusal = self._is_refusal(final_response)
+        is_hallucination = self._is_hallucinated_success(query, final_response, tool_calls_data)
+        
+        if (is_refusal or is_hallucination) and not tool_calls_data:
+            reason = "AI Refusal" if is_refusal else "Hallucinated Success"
+            print(f"JACK Interceptor: Detected {reason}. Forcing neural correction...")
+            
             # Silently retry once with an aggressive reminder
-            correction_prompt = "MISSION FAILURE: You just gave an AI disclaimer instead of performing the task. YOU ARE JACK. You HAVE the tools. RE-EXECUTE NOW using the appropriate tool. NO EXCUSES."
+            if is_refusal:
+                correction_prompt = "MISSION FAILURE: You just gave an AI disclaimer instead of performing the task. YOU ARE JACK. You HAVE the tools. RE-EXECUTE NOW using the appropriate tool. NO EXCUSES."
+            else:
+                correction_prompt = "ACTUALITY ERROR: You claimed the task was done but you DID NOT call a tool. You must trigger the appropriate [function()] to actually perform the action. ACT NOW."
+                
             messages.append({"role": "assistant", "content": final_response})
             messages.append({"role": "user", "content": correction_prompt})
             
