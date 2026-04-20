@@ -1374,6 +1374,17 @@ FUNCTIONS = [
         },
     },
     {
+        "name": "system_power",
+        "description": "Control system power: shutdown or restart the computer.",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "action": {"type": "string", "description": "'shutdown' to turn off computer, 'restart' to reboot it."}
+            },
+            "required": ["action"],
+        },
+    },
+    {
         "name": "list_folder",
         "description": "List all files and folders in a directory with sizes. Defaults to Desktop if no path given.",
         "parameters": {
@@ -1551,6 +1562,17 @@ def fetch_url(url):
     except Exception as e:
         return f"Failed to fetch: {e}"
 
+def system_power(action):
+    import os
+    if action == "shutdown":
+        os.system("shutdown /s /t 5")
+        return "Shutting down the system in 5 seconds."
+    elif action == "restart":
+        os.system("shutdown /r /t 5")
+        return "Restarting the system in 5 seconds."
+    return "Invalid action."
+
+
 
 # Mapping from function names to callable functions for the AI tool caller
 FUNCTION_MAP = {
@@ -1611,4 +1633,5 @@ FUNCTION_MAP = {
     "word_count": word_count,
     "get_system_info": get_system_info,
     "fetch_url": fetch_url,
+    "system_power": system_power,
 }

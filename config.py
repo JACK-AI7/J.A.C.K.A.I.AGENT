@@ -228,6 +228,8 @@ CLEANUP & MAINTENANCE:
 - "Scan for viruses" / "Remove virus" → virus_scan
 - "Fix yourself" / "Fix bugs" → diagnose_and_repair
 - "Update your code" / "Make yourself better" → diagnose_and_repair(task="optimize code to be best without breaking changes")
+- "Shutdown computer" / "Turn off PC" → system_power(action='shutdown')
+- "Restart computer" / "Reboot system" → system_power(action='restart')
 
 BROWSING & WEB:
 - "Search [query]" → get_web_data
