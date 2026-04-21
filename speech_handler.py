@@ -98,28 +98,31 @@ class SpeechHandler:
 
                 # Target the system's high-quality built-in microphone directly
                 # Completely ignore headsets/Bluetooth buds as per user request for device mic only
-                system_mic_keywords = ["microphone array", "mic array", "realtek", "built-in microphone"]
-                headset_keywords = ["headset", "hands-free", "bluetooth", "bud"]
+                # Target the hardware-native "Microphone Array" ONLY as per user directive.
+                # This excludes headsets, mappers, and virtual devices to ensure JACK uses "its own" mic.
+                target_keywords = ["microphone array", "mic array"]
+                exclude_keywords = ["mapper", "headset", "hands-free", "bluetooth", "stereo mix", "speaker"]
                 
-                print("JACK Hearing: Scanning system microphones...")
+                print("JACK Hearing: Scanning for NATIVE system microphone ONLY...")
                 for i, name in enumerate(mics):
                     clean_name = _clean(name)
-                    is_system = any(k in clean_name for k in system_mic_keywords)
-                    is_headset = any(k in clean_name for k in headset_keywords)
+                    is_target = any(k in clean_name for k in target_keywords)
+                    is_excluded = any(k in clean_name for k in exclude_keywords)
                     
-                    if is_system and not is_headset:
+                    if is_target and not is_excluded:
                         self.candidate_indices.append(i)
-                        print(f"  [+] CANDIDATE [{i}] {repr(name)}")
+                        print(f"  [+] TARGET DETECTED [{i}] {repr(name)}")
                     else:
-                        print(f"  [ ] IGNORED   [{i}] {repr(name)}")
+                        print(f"  [ ] IGNORED device [{i}] {repr(name)}")
 
                 if self.candidate_indices:
+                    # Pick the primary hardware array (usually index 1 or 5 on this system)
                     self.mic_device_index = self.candidate_indices[0]
-                    print(f"JACK Hearing: Preferred system mic [{self.mic_device_index}]")
+                    print(f"JACK Hearing: Locked to native mic [{self.mic_device_index}]")
                 else:
-                    print("JACK Hearing: No specific system mic found. Using OS default.")
+                    print("JACK Hearing: WARNING: No native Microphone Array found. Using OS default.")
             except Exception as e:
-                print(f"JACK Hearing Warning: Mic detection error ({e}), using default.")
+                print(f"JACK Hearing Critical: Mic scan error ({e})")
 
     
     def _get_mic_candidates(self):
@@ -198,27 +201,26 @@ class SpeechHandler:
             
             # 2. Transcribe Using Local Model (Whisper) or Fallback
             if self.use_whisper:
-                # Write audio to a temp WAV file and pass the path to faster-whisper.
-                # faster-whisper uses ffmpeg internally to decode + resample to 16kHz —
-                # no manual numpy resampling needed (approach from openjarvis FasterWhisperBackend).
-                tmp_path = None
+                # Direct numpy resample — much faster and more accurate than temp file bouncing
                 try:
-                    wav_bytes = audio_data.get_wav_data()
-                    with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as tmp:
-                        tmp.write(wav_bytes)
-                        tmp_path = tmp.name
-
+                    wav_data = (
+                        np.frombuffer(audio_data.get_raw_data(), dtype=np.int16)
+                        .flatten()
+                        .astype(np.float32)
+                        / 32768.0
+                    )
+                    
                     segments_iter, info = self.whisper_model.transcribe(
-                        tmp_path,
+                        wav_data,
                         beam_size=WHISPER_SETTINGS.get("beam_size", 5),
                         vad_filter=WHISPER_SETTINGS.get("vad_filter", True),
                         vad_parameters=WHISPER_SETTINGS.get("vad_parameters", dict(min_silence_duration_ms=500)),
                         condition_on_previous_text=False  # Blocks hallucination death spirals on silence
                     )
                     segments_list = list(segments_iter)
-                finally:
-                    if tmp_path and os.path.exists(tmp_path):
-                        os.remove(tmp_path)
+                except Exception as e:
+                    print(f"[SpeechHandler] Whisper transcription failed: {e}")
+                    return None
 
                 # If the AI strongly believes it was just noise, ignore it
                 if getattr(info, 'no_speech_prob', 0) > 0.7:
@@ -277,10 +279,11 @@ class SpeechHandler:
         # Check for technical patterns
         for pattern in technical_patterns:
             if re.search(pattern, text, re.IGNORECASE):
-                # Trigger a cleaner summary ONLY if the text is long or complex
-                if len(text) > 80 or text.count('\n') > 1:
-                    print(f"BABEL FILTER: Refining technical sequence in speech.")
-                    text = "I've analyzed the system data, Sir. Proceeding now."
+                # Trigger a cleaner summary ONLY if the text is exceptionally long or complex
+                # Increased threshold to allow more descriptive technical status from agents
+                if len(text) > 400 or text.count('\n') > 4:
+                    print(f"BABEL FILTER: Refining long technical sequence in speech.")
+                    text = "I've analyzed the system data, Sir. Proceeding with the mission."
                     break
 
         # Physical Strip of Forbidden Words

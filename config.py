@@ -33,10 +33,10 @@ PRIVACY_SETTINGS = {
 
 # Speech Recognition Settings
 RECOGNITION_SETTINGS = {
-    "energy_threshold": 80,  # Lowered significantly for high sensitivity
-    "dynamic_energy_threshold": True,  # Enabled for auto-tuning to room noise
-    "pause_threshold": 1.1,  # Increased to be more patient (prevents cutting off mid-sentence)
-    "operation_timeout": 15,  # Increased to give user more time to speak initially
+    "energy_threshold": 300,  # Balanced for clearer command capture
+    "dynamic_energy_threshold": True,
+    "pause_threshold": 1.2,  # Slightly longer to prevent premature cutoff
+    "operation_timeout": 20, 
     "FORCE_MICROPHONE_INDEX": None,  # Set to a specific integer to bypass auto-detection (e.g. 1)
     "wake_words": [
         "jack",
@@ -50,12 +50,12 @@ RECOGNITION_SETTINGS = {
 
 # Faster-Whisper Settings (Offline Overdrive)
 WHISPER_SETTINGS = {
-    "model_size": "base",  # Switched to 'base' for faster CPU transcription
-    "device": "cpu",  # CPU mode — no CUDA available on this machine
-    "compute_type": "int8",  # int8 is required for CPU inference
-    "beam_size": 1,  # Greedy decoding for maximum speed
-    "vad_filter": True,  # Voice activity detection
-    "vad_parameters": {"threshold": 0.15, "min_silence_duration_ms": 300},  # More sensitive segments
+    "model_size": "base",  # Keep base for speed, but maximize its quality
+    "device": "cpu",
+    "compute_type": "int8",
+    "beam_size": 5,  # Increased to 5 for professional-grade accuracy
+    "vad_filter": True,
+    "vad_parameters": {"threshold": 0.5, "min_silence_duration_ms": 500}, 
 }
 
 # Vision Settings (The Eyes)
@@ -302,11 +302,12 @@ Rules:
 5. ALWAYS CALL A TOOL if the user gives a clear command. Never say you "can't" do it.
 5. Always prefer native_click over visual_click (faster and more reliable).
 6. Use keyboard_shortcut for common operations like save (ctrl+s), undo (ctrl+z).
-7. You respond to "Hey Jack", "Jack", and "Wakeup" voice commands.
-8. MULTILINGUAL: You can speak and understand Telugu. If the user speaks in Telugu or asks to switch, respond accordingly.
-9. For web automation, prefer dom_click/dom_type/dom_read over visual methods (more reliable).
-10. For file search, use search_files which recursively scans the user's home folder.
-11. For temp cleanup, use clean_temp_files for aggressive cleanup or system_cleanup for basic cleanup.
+305. You respond to "Hey Jack", "Jack", and "Wakeup" voice commands.
+306. MULTILINGUAL: You are fluent in Telugu. You can understand and speak Telugu. If the user speaks in Telugu or asks to switch, respond accordingly.
+307. For web automation, prefer dom_click/dom_type/dom_read over visual methods (more reliable).
+308. For file search, use search_files which recursively scans the user's home folder.
+309. Cleanup & Maintenance: Use `clean_temp_files` for deep cleaning and `virus_scan` for security.
+310. Git Integration: Use `push_to_git` to commit and push all current changes to the repository with an automated summary.
 
 Examples:
 User: "Open Notepad and write hello world" → [open_application(notepad)] → wait → [native_type(hello world)]

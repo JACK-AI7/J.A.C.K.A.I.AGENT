@@ -184,6 +184,14 @@ def main():
 
         hud.app.aboutToQuit.connect(shutdown)
         print("TITAN_SYSTEM: ONLINE")
+        
+        # Dashboard Lively Feed
+        try:
+            from nexus_bridge import get_signals
+            signals = get_signals()
+            signals.emit_bridge("pipeline_stage", "INITIALIZED", "TITAN SYSTEM ONLINE")
+            signals.emit_bridge("neural_pulse", 20)
+        except: pass
 
         # Run the Qt event loop
         return hud.app.exec()

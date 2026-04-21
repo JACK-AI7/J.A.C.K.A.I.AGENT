@@ -56,3 +56,9 @@ SyntaxError: closing parenthesis ']' does not match opening parenthesis '{' on l
 2026-04-20 12:46:33,241 - ERROR - AI Processing Error: 'AIHandler' object has no attribute '_sanitize_persona_output'
 2026-04-20 12:47:41,383 - ERROR - AI Processing Error: 'AIHandler' object has no attribute '_sanitize_persona_output'
 2026-04-20 12:48:45,564 - ERROR - AI Processing Error: 'AIHandler' object has no attribute '_sanitize_persona_output'
+2026-04-21 12:48:14,970 - ERROR - AI Processing Error: [WinError 10054] An existing connection was forcibly closed by the remote host
+2026-04-21 20:56:04,924 - ERROR - AI Processing Error: timed out
+2026-04-21 20:59:57,753 - ERROR - AI Processing Error: timed out
+2026-04-21 23:36:12,534 - ERROR - AI Processing Error: timed out
+2026-04-21 23:43:35,326 - ERROR - AI Processing Error: timed out
+2026-04-21 23:45:43,150 - ERROR - AI Processing Error: timed out

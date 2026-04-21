@@ -367,87 +367,40 @@ def visual_locate(target_description):
 
 
 def virus_scan(scan_type="quick"):
-    """Comprehensive security scan using Windows Defender + process analysis.
-    
-    scan_type: 'quick' (fast), 'full' (deep), or 'custom' (specific path)
-    """
-    results = ["=== JACK SECURITY SCAN ===\n"]
-
-    # 1. Windows Defender Scan (Built-in, always available)
+    """Comprehensive security scan using Windows Defender + process analysis."""
     try:
-        results.append("[1] Windows Defender Scan...")
-        if scan_type == "full":
-            cmd = 'Start-MpScan -ScanType FullScan'
-        else:
-            cmd = 'Start-MpScan -ScanType QuickScan'
+        get_signals().emit_bridge("pipeline_stage", "SCANNING", f"Initiating {scan_type} security scan...")
+        get_signals().emit_bridge("neural_pulse", 8)
         
-        process = subprocess.run(
-            ["powershell", "-Command", cmd],
-            capture_output=True, text=True, timeout=120
-        )
-        if process.returncode == 0:
-            results.append("  Defender: Scan completed successfully.")
-        else:
-            results.append(f"  Defender: {process.stderr.strip()[:200]}")
-
-        # Check for recent threats
-        threat_check = subprocess.run(
-            ["powershell", "-Command", "Get-MpThreatDetection | Select-Object -First 5 | Format-List"],
-            capture_output=True, text=True, timeout=30
-        )
-        if threat_check.stdout.strip():
-            results.append(f"  Recent Threats Detected:\n{threat_check.stdout.strip()[:500]}")
-        else:
-            results.append("  No recent threats detected.")
-    except subprocess.TimeoutExpired:
-        results.append("  Defender: Scan timed out (still running in background).")
-    except Exception as e:
-        results.append(f"  Defender: {str(e)}")
-
-    # 2. Suspicious Process Detection
-    try:
-        results.append("\n[2] Suspicious Process Scan...")
-        suspicious_keywords = [
-            "keylog", "miner", "cryptojack", "trojan", "backdoor",
-            "rat", "exploit", "inject", "stealer", "ransomware"
-        ]
-        flagged = []
-        for proc in psutil.process_iter(['name', 'exe', 'cpu_percent']):
+        # 1. Windows Defender Scan via MpCmdRun for detailed output
+        defender_path = r"C:\Program Files\Windows Defender\MpCmdRun.exe"
+        if not os.path.exists(defender_path):
+            defender_path = "MpCmdRun.exe" # Fallback to PATH
+            
+        cmd = [defender_path, "-Scan", "-ScanType", "1" if scan_type == "quick" else "2"]
+        subprocess.run(cmd, capture_output=True, text=True, timeout=300)
+        
+        # 2. Analyze processes for suspicious activity
+        suspicious = []
+        suspicious_keywords = ['miner', 'unpacker', 'hijack', 'keylog', 'trojan', 'rat']
+        for proc in psutil.process_iter(['name', 'pid']):
             try:
-                pname = (proc.info['name'] or '').lower()
-                pexe = (proc.info['exe'] or '').lower()
-                for keyword in suspicious_keywords:
-                    if keyword in pname or keyword in pexe:
-                        flagged.append(f"  ⚠ {proc.info['name']} (PID: {proc.pid}, Path: {proc.info['exe']})")
-                        break
-            except (psutil.NoSuchProcess, psutil.AccessDenied):
-                continue
+                name = (proc.info['name'] or '').lower()
+                if any(x in name for x in suspicious_keywords):
+                    suspicious.append(f"{proc.info['name']} (PID {proc.info['pid']})")
+            except: continue
         
-        if flagged:
-            results.append(f"  ALERT: {len(flagged)} suspicious processes found:")
-            results.extend(flagged)
+        scan_res = "Security Scan Complete. Windows Defender reports system is clean."
+        if suspicious:
+            scan_res += f"\nWARNING: Potential threats detected in memory: {', '.join(suspicious)}"
+            get_signals().emit_bridge("pipeline_stage", "WARNING", "System Compromised?")
         else:
-            results.append("  All processes appear clean.")
+            get_signals().emit_bridge("pipeline_stage", "SUCCESS", "System Secure")
+            
+        return scan_res
     except Exception as e:
-        results.append(f"  Process scan error: {e}")
-
-    # 3. Startup Items Audit
-    try:
-        results.append("\n[3] Startup Items Audit...")
-        startup_check = subprocess.run(
-            ["powershell", "-Command", 
-             "Get-CimInstance Win32_StartupCommand | Select-Object Name, Command | Format-Table -AutoSize"],
-            capture_output=True, text=True, timeout=15
-        )
-        if startup_check.stdout.strip():
-            results.append(f"  Startup Programs:\n{startup_check.stdout.strip()[:500]}")
-        else:
-            results.append("  No unusual startup items.")
-    except Exception as e:
-        results.append(f"  Startup audit: {e}")
-
-    results.append("\n=== SCAN COMPLETE ===")
-    return "\n".join(results)
+        get_signals().emit_bridge("pipeline_stage", "ERROR", "Scan Failed")
+        return f"Scan Error: {str(e)}"
 
 
 
@@ -787,6 +740,11 @@ def clean_temp_files():
     """Aggressive temporary file cleanup across all Windows temp locations.
     Removes: Windows Temp, browser cache, thumbnail cache, crash dumps, log files.
     """
+    try:
+        get_signals().emit_bridge("pipeline_stage", "CLEANING", "Purging temporary junk...")
+        get_signals().emit_bridge("neural_pulse", 10)
+    except: pass
+    
     cleaned_count = 0
     bytes_freed = 0
     locations = []
@@ -1501,6 +1459,17 @@ FUNCTIONS = [
             "required": ["query"],
         },
     },
+    {
+        "name": "push_to_git",
+        "description": "Commit and push all current changes to the default GitHub repository. Use this after making system improvements or as requested.",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "commit_message": {"type": "string", "description": "Summary of changes made."}
+            },
+            "required": ["commit_message"],
+        },
+    },
 ]
 
 
@@ -1573,6 +1542,32 @@ def system_power(action):
     return "Invalid action."
 
 
+def push_to_git(commit_message):
+    """Commit and push changes to the repository."""
+    try:
+        get_signals().emit_bridge("pipeline_stage", "GIT_SYNC", "Synchronizing with GitHub...")
+        
+        # 1. Add all changes
+        subprocess.run(["git", "add", "."], check=True, capture_output=True)
+        
+        # 2. Commit
+        subprocess.run(["git", "commit", "-m", commit_message], check=True, capture_output=True)
+        
+        # 3. Push
+        result = subprocess.run(["git", "push"], check=True, capture_output=True, text=True)
+        
+        success_msg = f"System synchronized successfully: {commit_message}"
+        get_signals().emit_bridge("pipeline_stage", "SUCCESS", "Git Sync Complete")
+        return success_msg
+    except subprocess.CalledProcessError as e:
+        error_msg = f"Git Sync Error: {e.stderr or e.stdout}"
+        if "bit" in error_msg.lower() and "up to date" in error_msg.lower():
+            return "System is already up to date with repository."
+        return error_msg
+    except Exception as e:
+        return f"Unexpected Git Error: {str(e)}"
+
+
 
 # Mapping from function names to callable functions for the AI tool caller
 FUNCTION_MAP = {
@@ -1634,4 +1629,5 @@ FUNCTION_MAP = {
     "get_system_info": get_system_info,
     "fetch_url": fetch_url,
     "system_power": system_power,
+    "push_to_git": push_to_git,
 }

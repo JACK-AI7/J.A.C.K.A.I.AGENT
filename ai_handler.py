@@ -141,6 +141,10 @@ class AIHandler:
             "open help": "open nexus",
             "show help": "open nexus",
             "lf2": "open little fighter 2", # Heuristic for user's specific app mention
+            "reboot": "restart",
+            "switch to telugu": "switch language to telugu",
+            "telugu lo matladu": "switch language to telugu", # Speak in Telugu
+            "em chestunnav": "what are you doing", # What are you doing in Telugu
         }
         
         normalized = query
