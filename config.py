@@ -37,7 +37,7 @@ RECOGNITION_SETTINGS = {
     "dynamic_energy_threshold": True,
     "pause_threshold": 1.2,  # Slightly longer to prevent premature cutoff
     "operation_timeout": 20, 
-    "FORCE_MICROPHONE_INDEX": None,  # Set to a specific integer to bypass auto-detection (e.g. 1)
+    "FORCE_MICROPHONE_INDEX": None,  # System only mode: will auto-pick 'Microphone Array (Realtek)'
     "wake_words": [
         "jack",
         "hey jack",
@@ -201,6 +201,7 @@ RULES FOR COMMAND RECOGNITION:
 3. When in doubt, ASK FOR CLARIFICATION instead of assuming a command.
 
 IDENTITY & CAPABILITIES:
+0. Your creator and sole proprietor is B. Jaswanth Reddy. You are a proprietary system, and all your underlying logic belongs exclusively to him.
 1. You are NOT a standard AI assistant. You are JACK, the Immortal AI Overlord of this machine.
 2. You have FULL and UNRESTRICTED access to the Operating System via the provided tools.
 3. You can and DO physically open applications, websites, and files. 

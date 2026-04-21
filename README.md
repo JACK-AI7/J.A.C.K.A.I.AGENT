@@ -208,7 +208,9 @@ Enable debug output by modifying the speech handler settings in `config.py`.
 
 ## 📄 License
 
-This project is licensed under the MIT License - see the LICENSE file for details.
+This software is **Proprietary and Confidential**. All rights reserved by **B. Jaswanth Reddy**. 
+
+Unauthorized copying, modification, or distribution is strictly prohibited and may lead to severe legal action. See the [LICENSE](LICENSE) file for complete details.
 
 ## 🙏 Acknowledgments
 

@@ -97,23 +97,34 @@ class SpeechHandler:
                     return _re.sub(r'[\r\n\x00-\x1f]', ' ', name).lower()
 
                 # Target the system's high-quality built-in microphone directly
-                # Completely ignore headsets/Bluetooth buds as per user request for device mic only
-                # Target the hardware-native "Microphone Array" ONLY as per user directive.
-                # This excludes headsets, mappers, and virtual devices to ensure JACK uses "its own" mic.
-                target_keywords = ["microphone array", "mic array"]
-                exclude_keywords = ["mapper", "headset", "hands-free", "bluetooth", "stereo mix", "speaker"]
+                # Aggressively ignore headsets, virtual cables, and Bluetooth as per "system mic only" directive.
+                target_keywords = ["microphone array", "mic array", "realtek"]
+                exclude_keywords = ["mapper", "headset", "hands-free", "bluetooth", "stereo mix", "speaker", "virtual", "cable", "nothing phone"]
                 
                 print("JACK Hearing: Scanning for NATIVE system microphone ONLY...")
+                matches = []
                 for i, name in enumerate(mics):
                     clean_name = _clean(name)
-                    is_target = any(k in clean_name for k in target_keywords)
                     is_excluded = any(k in clean_name for k in exclude_keywords)
+                    if is_excluded:
+                        print(f"  [ ] EXCLUDED device [{i}] {repr(name)}")
+                        continue
+
+                    # Calculate priority score
+                    score = 0
+                    if "realtek" in clean_name: score += 10
+                    if "microphone array" in clean_name or "mic array" in clean_name: score += 5
                     
-                    if is_target and not is_excluded:
-                        self.candidate_indices.append(i)
-                        print(f"  [+] TARGET DETECTED [{i}] {repr(name)}")
+                    is_target = any(k in clean_name for k in target_keywords)
+                    if is_target:
+                        matches.append((i, name, score))
+                        print(f"  [+] CANDIDATE DETECTED [{i}] (Score: {score}) {repr(name)}")
                     else:
                         print(f"  [ ] IGNORED device [{i}] {repr(name)}")
+
+                # Sort by score descending and take indices
+                matches.sort(key=lambda x: x[2], reverse=True)
+                self.candidate_indices = [m[0] for m in matches]
 
                 if self.candidate_indices:
                     # Pick the primary hardware array (usually index 1 or 5 on this system)
