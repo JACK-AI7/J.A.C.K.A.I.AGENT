@@ -152,7 +152,11 @@ class JACKCore(QWidget):
         self.pulse_timer = 0
 
     def update_animation(self):
-        self.angle = (self.angle + 3) % 360  # Faster rotation
+        # Multiple rotation speeds for Arc Reactor effect
+        self.angle = (self.angle + 3) % 360
+        self.angle_fast = (self.angle * 2) % 360
+        self.angle_slow = (self.angle // 2) % 360
+        
         self.pulse_timer += 0.08
         self.pulse = (math.sin(self.pulse_timer) + 1) / 2
         self.update()
@@ -168,45 +172,77 @@ class JACKCore(QWidget):
         center = self.rect().center()
         radius = min(self.width(), self.height()) // 2 - 20
 
-        # Colors based on status
-        base_color = QColor(0, 191, 255)  # DeepSkyBlue
+        # Colors based on status (MOLTBOT Palette)
+        base_color = QColor(0, 255, 255)  # Cyan (Default)
         if self.status == "listening":
             base_color = QColor(0, 255, 127)  # SpringGreen
         elif self.status == "thinking":
-            base_color = QColor(255, 165, 0)  # Orange
+            base_color = QColor(0, 191, 255)  # DeepSkyBlue
         elif self.status == "speaking":
-            base_color = QColor(255, 69, 0)  # Red-Orange
+            base_color = QColor(255, 0, 100)  # Neon Pink/Red
         elif self.status == "executing":
             base_color = QColor(138, 43, 226)  # BlueViolet
         elif self.status == "vision_analyzing":
-            base_color = QColor(0, 255, 255)  # Cyan (Scanning)
+            base_color = QColor(255, 255, 0)  # Yellow (Scanning)
 
-        # Draw Glow
-        glow = QRadialGradient(center, radius + 20)
+        # 1. Background Glow (Aura)
+        glow = QRadialGradient(center, radius + 30)
         glow.setColorAt(0, base_color.lighter(150))
-        glow.setColorAt(0.6, base_color.darker(150))
+        glow.setColorAt(0.5, QColor(base_color.red(), base_color.green(), base_color.blue(), 50))
         glow.setColorAt(1, Qt.transparent)
         painter.setBrush(QBrush(glow))
         painter.setPen(Qt.NoPen)
-        painter.drawEllipse(center, radius + 20, radius + 20)
+        painter.setOpacity(0.4 + (0.2 * self.pulse))
+        painter.drawEllipse(center, radius + 30, radius + 30)
+        painter.setOpacity(1.0)
 
-        # Draw Outer Rings
-        for i in range(3):
-            painter.setPen(QPen(base_color, 2 - i * 0.5, Qt.SolidLine))
-            r = radius - (i * 10)
-            offset = (self.angle * (1 if i % 2 == 0 else -1)) + (i * 45)
-            painter.drawArc(
-                center.x() - r, center.y() - r, r * 2, r * 2, offset * 16, 270 * 16
-            )
+        # 2. Segmented Middle Ring (The Reactor Ring)
+        pen = QPen(base_color)
+        pen.setWidth(10)
+        pen.setCapStyle(Qt.FlatCap)
+        pen.setDashPattern([15, 10]) # Segmented look
+        painter.setPen(pen)
+        
+        r_mid = radius - 15
+        painter.save()
+        painter.translate(center.x(), center.y())
+        painter.rotate(self.angle)
+        painter.drawEllipse(QPointF(0, 0), r_mid, r_mid)
+        painter.restore()
 
-        # Draw Inner Core
-        core_radius = 40 + (self.pulse * 10 if self.status != "idle" else 0)
-        core_gradient = QRadialGradient(center, core_radius)
-        core_gradient.setColorAt(0, base_color.lighter(200))
-        core_gradient.setColorAt(1, base_color.darker(200))
-        painter.setBrush(QBrush(core_gradient))
-        painter.setPen(QPen(base_color.lighter(200), 2))
+        # 3. Inner Rotating Gear (Thin Dashed)
+        pen = QPen(Qt.white)
+        pen.setWidth(2)
+        pen.setDashPattern([5, 5])
+        painter.setPen(pen)
+        
+        r_inner = radius - 40
+        painter.save()
+        painter.translate(center.x(), center.y())
+        painter.rotate(-self.angle_fast) # Reverse rotation
+        painter.drawEllipse(QPointF(0, 0), r_inner, r_inner)
+        painter.restore()
+
+        # 4. Outer Brackets (Semi-circles)
+        pen = QPen(base_color)
+        pen.setWidth(3)
+        painter.setPen(pen)
+        r_outer = radius + 5
+        rect_outer = QRectF(center.x() - r_outer, center.y() - r_outer, 2*r_outer, 2*r_outer)
+        painter.drawArc(rect_outer, (self.angle_slow + 45) * 16, 90 * 16)
+        painter.drawArc(rect_outer, (self.angle_slow + 225) * 16, 90 * 16)
+
+        # 5. The "Power Core"
+        core_radius = 35 + (self.pulse * 8 if self.status != "idle" else 2)
+        core_grad = QRadialGradient(center, core_radius)
+        core_grad.setColorAt(0, Qt.white)
+        core_grad.setColorAt(0.3, base_color.lighter(200))
+        core_grad.setColorAt(1, base_color.darker(300))
+        
+        painter.setBrush(QBrush(core_grad))
+        painter.setPen(QPen(base_color.lighter(250), 2))
         painter.drawEllipse(center, core_radius, core_radius)
+
 
         # Draw "Immortal Eye" Scanning Line if analyzing vision
         if self.status == "vision_analyzing":

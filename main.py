@@ -147,13 +147,21 @@ def run_assistant(agent, restart_counter):
 
 def main():
     """Main entry point with global error catching."""
+    import argparse
+    parser = argparse.ArgumentParser(description="J.A.C.K.A.I.AGENT Core")
+    parser.add_argument("--text", action="store_true", help="Run in text-only CLI mode")
+    args = parser.parse_args()
+
     try:
-        # Initialize HUD
-        hud = HUDManager()
+        hud = None
+        if not args.text:
+            # Initialize HUD
+            hud = HUDManager()
 
         # Initialize J.A.C.K.A.I.AGENT Assistant with HUD reference
-        assistant = JackAIAgent(hud=hud)
-        hud.set_assistant(assistant)
+        assistant = JackAIAgent(hud=hud, mode="text" if args.text else "voice")
+        if hud:
+            hud.set_assistant(assistant)
 
         # Restart counter (mutable list so thread can update it)
         restart_counter = [0]
@@ -164,9 +172,13 @@ def main():
         )
         assistant_thread.start()
 
-        # Show HUD and run its event loop (main thread)
-        print("Launching J.A.C.K.A.I.AGENT Core Interface...")
-        hud.show()
+        if not args.text:
+            # Show HUD and run its event loop (main thread)
+            print("Launching J.A.C.K.A.I.AGENT Core Interface...")
+            hud.show()
+        else:
+            print("J.A.C.K.A.I.AGENT running in TEXT MODE.")
+
 
         # Graceful Shutdown
         def shutdown():

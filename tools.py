@@ -1065,7 +1065,25 @@ FUNCTIONS = [
             "properties": {
                 "skill_name": {
                     "type": "string",
-                    "description": "The name of the skill (e.g., 'research_titan', 'system_doctor').",
+                    "description": "The name of the skill (e.g., 'research_titan', 'system_doctor', 'memory', 'messaging', 'detection').",
+                },
+                "task": {
+                    "type": "string",
+                    "description": "The specific objective for the skill.",
+                },
+            },
+            "required": ["skill_name"],
+        },
+    },
+    {
+        "name": "execute_titan_skill",
+        "description": "Alternative alias for run_titan_skill. Execute a specialized TITAN skill from the library.",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "skill_name": {
+                    "type": "string",
+                    "description": "The name of the skill (e.g., 'memory', 'messaging', 'detection').",
                 },
                 "task": {
                     "type": "string",
@@ -1591,6 +1609,7 @@ FUNCTION_MAP = {
     "os_control_interpreter": os_control_interpreter,
     "windows_ui_sniffer": windows_ui_sniffer,
     "run_titan_skill": execute_titan_skill,
+    "execute_titan_skill": execute_titan_skill,
     "diagnose_and_repair": diagnose_and_repair,
     "install_from_github": install_from_github,
     "absorb_github_technology": install_from_github,

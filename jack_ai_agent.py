@@ -9,8 +9,9 @@ from config import RECOGNITION_SETTINGS
 
 
 class JackAIAgent:
-    def __init__(self, hud=None):
-        self.speech_handler = SpeechHandler()
+    def __init__(self, hud=None, mode="voice"):
+        self.mode = mode
+        self.speech_handler = SpeechHandler() if mode == "voice" else None
         self.ai_handler = AIHandler(hud=hud)
         self.is_running = False
         self.is_active = True  # Tracks if AI brain is actually listening
@@ -40,7 +41,8 @@ class JackAIAgent:
 
         # Complete Calibrate
         try:
-            self.speech_handler.calibrate_microphone()
+            if self.speech_handler:
+                self.speech_handler.calibrate_microphone()
         except Exception as e:
             print(f"Calibration warning: {e}")
 
@@ -84,10 +86,11 @@ class JackAIAgent:
                     
                     # Try to reinitialize speech handler
                     try:
-                        print("Attempting speech handler recovery...")
-                        self.speech_handler = SpeechHandler()
-                        self.speech_handler.calibrate_microphone()
-                        print("Speech handler recovered!")
+                        if self.mode == "voice":
+                            print("Attempting speech handler recovery...")
+                            self.speech_handler = SpeechHandler()
+                            self.speech_handler.calibrate_microphone()
+                            print("Speech handler recovered!")
                     except Exception as reinit_err:
                         print(f"Speech recovery failed: {reinit_err}")
                         time.sleep(10)
@@ -116,8 +119,15 @@ class JackAIAgent:
             get_signals().emit_bridge("neural_pulse", 2)
         except: pass
 
-        # Listen for speech
-        text = self.speech_handler.listen_for_speech()
+        # Listen for speech or get console input
+        if self.mode == "voice":
+            text = self.speech_handler.listen_for_speech()
+        else:
+            try:
+                text = input("\n[MOLTBOT] Awaiting Command Sir: ").strip()
+            except EOFError:
+                self.stop()
+                return
 
         if not text:
             return
@@ -254,7 +264,8 @@ class JackAIAgent:
         except: pass
 
         try:
-            self.speech_handler.speak(response, lang=self.current_language)
+            if self.mode == "voice" and self.speech_handler:
+                self.speech_handler.speak(response, lang=self.current_language)
         except Exception as e:
             print(f"Speech output error: {e}")
 
