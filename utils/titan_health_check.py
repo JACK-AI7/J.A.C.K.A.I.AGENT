@@ -3,32 +3,55 @@ import sys
 import subprocess
 import shutil
 
-def check_component(name, command=None, check_file=None):
+def check_component(name, command=None, check_file=None, check_module=None):
     print(f"[{name}] Check Initiated...")
     try:
+        # 1. Check Python Module
+        if check_module:
+            try:
+                __import__(check_module)
+                print(f"  - Status: PASSED (Module '{check_module}' available)")
+                return True
+            except ImportError as e:
+                print(f"  - Status: FAILED (Module '{check_module}' missing: {e})")
+                return False
+
+        # 2. Check CLI Command
         if command:
+            # First check if the command exists at all to avoid shell errors
+            cmd_root = command.split()[0]
+            if not shutil.which(cmd_root) and not check_module: 
+                # If which fails, it might still be a builtin or internal command, but usually it's a fail on Windows
+                pass 
+                
             result = subprocess.run(command, capture_output=True, text=True, shell=True)
             if result.returncode == 0:
-                print(f"  - Status: PASSED\n  - Data: {result.stdout.strip().split('\\n')[0][:50]}...")
+                output = result.stdout.strip().split('\n')[0][:50]
+                print(f"  - Status: PASSED\n  - Data: {output}...")
                 return True
             else:
-                print(f"  - Status: FAILED ({result.stderr.strip()})")
+                print(f"  - Status: FAILED ({result.stderr.strip()[:100]})")
                 return False
+
+        # 3. Check File Existence
         if check_file:
-            if os.path.exists(check_file):
+            # Resolve relative to project root (one level up from utils/)
+            root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+            target_path = os.path.join(root_dir, check_file)
+            if os.path.exists(target_path):
                 print(f"  - Status: PASSED (Found at {check_file})")
                 return True
             else:
-                print(f"  - Status: FAILED (Not found)")
+                print(f"  - Status: FAILED (Not found at {check_file})")
                 return False
     except Exception as e:
         print(f"  - Status: ERROR ({str(e)})")
         return False
 
 def run_health_check():
-    print("="*40)
-    print(" JACK TITAN: GLOBAL HEALTH AUDIT (2026)")
-    print("="*40)
+    print("="*45)
+    print(" J.A.C.K. TITAN: GLOBAL HEALTH AUDIT (2026)")
+    print("="*45)
     
     all_passed = True
     
@@ -40,40 +63,61 @@ def run_health_check():
     if not check_component("Visual Sensors (LLAVA)", command="ollama show llava"):
         all_passed = False
     
-    # 3. Automation Health (Playwright)
+    # 3. UI Framework (PySide6)
+    if not check_component("UI Framework (PySide6)", check_module="PySide6"):
+        all_passed = False
+
+    # 4. Automation Health (Playwright)
     if not check_component("Browser Engine (Playwright)", command="python -m playwright --version"):
         all_passed = False
     
-    # 4. Computer Control Health (Interpreter)
-    if not check_component("System Control (Interpreter)", command="interpreter --version"):
+    # 5. Computer Control Health (Interpreter)
+    if not check_component("System Control (Interpreter)", check_module="interpreter"):
         all_passed = False
     
-    # 5. Skill Library Health
+    # 6. Skill Library Health (Comprehensive Audit)
     skills = [
-        "youtube_master", "research_titan", "system_doctor", 
-        "auto_coder", "tool_swarm", "github_hunter", 
-        "windows_master", "auto_claw", "computer_use",
-        "titan_expander"
+        "auto_claw", "auto_coder", "camera_skill", "computer_use",
+        "datetime_ops", "detection_skill", "email_ops", "file_ops",
+        "github_hunter", "httpx", "memory_ops", "multimodal_live_skill",
+        "research_titan", "screenshot_ops", "system_doctor", "system_ops",
+        "titan_expander", "tool_swarm", "web_ops", "whatsapp_skill",
+        "windows_master", "youtube_master"
     ]
-    passed_skills = 0
-    for s in skills:
-        path = os.path.join("skills", s, "action.py")
-        if os.path.exists(path): passed_skills += 1
     
-    print(f"[Skill Library] {passed_skills}/{len(skills)} specialized modules synced.")
+    print(f"[Skill Library] Commencing verification of {len(skills)} modules...")
+    passed_skills = 0
+    root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    for s in skills:
+        path = os.path.join(root_dir, "skills", s, "action.py")
+        if os.path.exists(path):
+            passed_skills += 1
+        else:
+            # Fallback for meta-skills or those without action.py
+            if os.path.exists(os.path.join(root_dir, "skills", s, "SKILL.md")):
+                passed_skills += 1
+            else:
+                print(f"  ! Warning: Skill '{s}' missing entry point.")
+    
+    print(f"  - Skill Sync: {passed_skills}/{len(skills)} modules verified.")
     if passed_skills < len(skills):
         all_passed = False
     
-    # 6. Integration Health
-    if not check_component("Silent Launcher", check_file="launch_JACK_silent.vbs"):
+    # 7. Integration Health (Startup & Persistence)
+    if not check_component("Silent Launcher", check_file="setup/launch_JACK_silent.vbs"):
         all_passed = False
-    
-    print("="*40)
+        
+    if not check_component("Startup Batch", check_file="setup/START_JACK.bat"):
+        all_passed = False
+
+    print("="*45)
     if all_passed:
         print(" FINAL VERDICT: JACK IS TITAN-READY.")
+        print(" ALL SYSTEMS NOMINAL. MISSION START AUTHORIZED.")
     else:
-        print(" FINAL VERDICT: SYSTEM DEGRADED. MANUAL INTERVENTION REQUIRED.")
-    print("="*40)
+        print(" FINAL VERDICT: SYSTEM DEGRADED.")
+        print(" MANUAL INTERVENTION REQUIRED FOR FULL PERFORMANCE.")
+    print("="*45)
 
 if __name__ == "__main__":
     run_health_check()
