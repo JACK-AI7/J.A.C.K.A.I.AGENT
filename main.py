@@ -44,7 +44,14 @@ sys.stdout = SafeWriter(sys.stdout)
 sys.stderr = SafeWriter(sys.stderr)
 
 # --- Force working directory to the script's own folder ---
-os.chdir(os.path.dirname(os.path.abspath(__file__)))
+script_dir = os.path.dirname(os.path.abspath(__file__))
+os.chdir(script_dir)
+
+# --- Add subdirectories to sys.path for modular imports ---
+for folder in ["core", "agents", "gui", "utils", "setup"]:
+    folder_path = os.path.join(script_dir, folder)
+    if folder_path not in sys.path:
+        sys.path.insert(0, folder_path)
 
 # Set up logging to file for debugging "just closing" issues
 logging.basicConfig(
@@ -99,8 +106,8 @@ except ImportError:
     mutex = None
     print("pywin32 not available, skipping single-instance check.")
 
-from hud_manager import HUDManager
-from jack_ai_agent import JackAIAgent
+from core.jack_ai_agent import JackAIAgent
+from gui.hud_manager import HUDManager
 
 
 # --- IMMORTAL RESTART CONSTANTS ---
@@ -194,7 +201,8 @@ def main():
                 except Exception:
                     pass
 
-        hud.app.aboutToQuit.connect(shutdown)
+        if hud:
+            hud.app.aboutToQuit.connect(shutdown)
         print("TITAN_SYSTEM: ONLINE")
         
         # Dashboard Lively Feed

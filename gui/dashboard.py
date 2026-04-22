@@ -1,6 +1,16 @@
 import sys
 import os
 
+# --- Add parent and sibling directories to sys.path for standalone launch ---
+script_dir = os.path.dirname(os.path.abspath(__file__))
+project_root = os.path.dirname(script_dir)
+if project_root not in sys.path:
+    sys.path.insert(0, project_root)
+for folder in ["core", "agents", "utils"]:
+    folder_path = os.path.join(project_root, folder)
+    if folder_path not in sys.path:
+        sys.path.insert(0, folder_path)
+
 # Suppress technical noise in the console for a premium feel
 os.environ["OPENCV_VIDEOIO_PRIORITY_MSMF"] = "0"
 os.environ["OPENCV_LOG_LEVEL"] = "ERROR"

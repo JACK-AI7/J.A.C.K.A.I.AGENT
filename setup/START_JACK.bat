@@ -3,7 +3,7 @@ echo ==========================================
 echo      J.A.C.K. TITAN - IMMORTAL START
 echo ==========================================
 echo.
-cd /d "%~dp0"
+cd /d "%~dp0.."
 
 :: Activate virtual environment
 if exist "venv\Scripts\activate.bat" (
@@ -24,7 +24,7 @@ if %errorlevel% neq 0 (
 
 echo [INIT] Launching J.A.R.V.I.S. Immortal Core (Watchdog)...
 echo.
-python titan_immortal.py
+python main.py
 echo.
 
 :: If python exits with error, show the log

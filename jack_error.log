@@ -63,3 +63,41 @@ SyntaxError: closing parenthesis ']' does not match opening parenthesis '{' on l
 2026-04-21 23:43:35,326 - ERROR - AI Processing Error: timed out
 2026-04-21 23:45:43,150 - ERROR - AI Processing Error: timed out
 2026-04-22 01:02:05,235 - ERROR - AI Processing Error: an error was encountered while running the model: read tcp 127.0.0.1:60653->127.0.0.1:60634: wsarecv: An existing connection was forcibly closed by the remote host. (status code: 500)
+2026-04-22 10:53:06,056 - ERROR - AI Processing Error: timed out
+2026-04-22 11:10:19,241 - ERROR - UNHANDLED EXCEPTION:
+Traceback (most recent call last):
+  File "c:\Users\bjasw\Downloads\jarvis-main\jarvis-main\main.py", line 109, in <module>
+    from core.jack_ai_agent import JackAIAgent
+SyntaxError: source code string cannot contain null bytes
+
+2026-04-22 11:10:29,271 - ERROR - UNHANDLED EXCEPTION:
+Traceback (most recent call last):
+  File "C:\Users\bjasw\Downloads\jarvis-main\jarvis-main\main.py", line 109, in <module>
+    from core.jack_ai_agent import JackAIAgent
+SyntaxError: source code string cannot contain null bytes
+
+2026-04-22 11:13:40,850 - ERROR - UNHANDLED EXCEPTION:
+Traceback (most recent call last):
+  File "C:\Users\bjasw\Downloads\jarvis-main\jarvis-main\main.py", line 109, in <module>
+    from core.jack_ai_agent import JackAIAgent
+  File "C:\Users\bjasw\Downloads\jarvis-main\jarvis-main\core\jack_ai_agent.py", line 7, in <module>
+    from ai_handler import AIHandler
+  File "C:\Users\bjasw\Downloads\jarvis-main\jarvis-main\core\ai_handler.py", line 16, in <module>
+    from tools import FUNCTIONS, FUNCTION_MAP
+  File "C:\Users\bjasw\Downloads\jarvis-main\jarvis-main\core\tools.py", line 29, in <module>
+    from setup_tools.github_installer import GitHubInstaller
+ModuleNotFoundError: No module named 'setup_tools'
+
+2026-04-22 11:15:27,987 - ERROR - UNHANDLED EXCEPTION:
+Traceback (most recent call last):
+  File "C:\Users\bjasw\Downloads\jarvis-main\jarvis-main\main.py", line 110, in <module>
+    from gui.hud_manager import HUDManager
+SyntaxError: source code string cannot contain null bytes
+
+2026-04-22 11:17:22,569 - ERROR - FATAL Startup Error: 'NoneType' object has no attribute 'app'
+Traceback (most recent call last):
+  File "C:\Users\bjasw\Downloads\jarvis-main\jarvis-main\main.py", line 204, in main
+    hud.app.aboutToQuit.connect(shutdown)
+    ^^^^^^^
+AttributeError: 'NoneType' object has no attribute 'app'
+
