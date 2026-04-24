@@ -11,7 +11,7 @@ from config import RECOGNITION_SETTINGS
 class JackAIAgent:
     def __init__(self, hud=None, mode="voice"):
         self.mode = mode
-        self.speech_handler = SpeechHandler() if mode == "voice" else None
+        self.speech_handler = None
         self.ai_handler = AIHandler(hud=hud)
         self.is_running = False
         self.is_active = True  # Tracks if AI brain is actually listening
@@ -38,6 +38,17 @@ class JackAIAgent:
 
         # Activate AI brain by default
         self.set_active(True)
+
+        # Initialize speech handler here (in background thread) if in voice mode
+        if self.mode == "voice" and not self.speech_handler:
+            try:
+                from speech_handler import SpeechHandler
+                self.speech_handler = SpeechHandler()
+            except Exception as e:
+                print(f"Failed to initialize speech handler: {e}")
+                self.mode = "text" # Fallback to text mode
+                if self.hud:
+                    self.hud.signals.activity_received.emit("System: Speech Engine Error - Falling back to Text Mode")
 
         # Complete Calibrate
         try:

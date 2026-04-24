@@ -6,6 +6,14 @@ import logging
 import time
 import traceback
 import io
+try:
+    import win32event
+    import win32api
+    import winerror
+except ImportError:
+    win32event = None
+    win32api = None
+    winerror = None
 
 # --- IO SAFETY: Prevent crashes when stdout/stderr are broken pipes ---
 # This happens when launched via VBS silent mode (no console attached)
@@ -238,20 +246,18 @@ def main():
 
 if __name__ == "__main__":
     # Single Instance Check using Windows Mutex
-    # Moved inside __main__ to avoid issues with multiprocessing child processes re-importing the script
-    try:
-        import win32event
-        import win32api
-        import winerror
-
-        # mutex_name = "JACK_Single_Instance_Mutex_V2"
-        # mutex = win32event.CreateMutex(None, False, mutex_name)
-        # last_error = win32api.GetLastError()
-        # if last_error == winerror.ERROR_ALREADY_EXISTS:
-        #     print("JACK is already running. Shifting focus to existing instance.")
-        #     win32api.CloseHandle(mutex)
-        #     sys.exit(1)
-    except (ImportError, Exception) as e:
-        print(f"Single-instance check unavailable: {e}")
+    if win32event and win32api and winerror:
+        try:
+            mutex_name = "JACK_Single_Instance_Mutex_V2"
+            mutex = win32event.CreateMutex(None, False, mutex_name)
+            last_error = win32api.GetLastError()
+            if last_error == winerror.ERROR_ALREADY_EXISTS:
+                print("JACK is already running. Shifting focus to existing instance.")
+                win32api.CloseHandle(mutex)
+                sys.exit(1)
+        except Exception as e:
+            print(f"Single-instance check failed: {e}")
+    else:
+        print("Single-instance check unavailable: win32 libraries missing.")
 
     sys.exit(main())

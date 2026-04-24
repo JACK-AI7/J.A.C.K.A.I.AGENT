@@ -597,9 +597,10 @@ class HUDWindow(QMainWindow):
                     start_new_session=True,
                 )
             print("HUD: Nexus Dashboard launched successfully.")
+            self.update_status("NEXUS LINK ESTABLISHED", "idle")
         except Exception as e:
             print(f"HUD: Failed to launch dashboard: {e}")
-        self.update_status("NEXUS LINK ESTABLISHED", "idle")
+            self.update_status("NEXUS LINK FAILED", "executing")
 
     def _animate_to(self, target_rect):
         """Smoothly animate the window to a target rectangle."""

@@ -21,33 +21,45 @@ class SpeechHandler:
         self.is_speaking = False
 
         # --- LOCAL AI SPEECH ENGINE (ZERO API LATENCY) ---
-        print("Initializing Local Neural Hearing (RealtimeSTT)...")
+        start_time = time.time()
+        print(f"[{time.time()-start_time:.2f}s] Initializing Local Neural Hearing (RealtimeSTT)...")
         # Use AudioToTextRecorder for super fast local transcription
         # It handles VAD, Buffering, and Transcription internally
-        self.recorder = AudioToTextRecorder(
-            model=WHISPER_SETTINGS["model_size"],
-            device=WHISPER_SETTINGS["device"],
-            compute_type=WHISPER_SETTINGS["compute_type"],
-            beam_size=WHISPER_SETTINGS["beam_size"],
-            spinner=False,
-            level=30 # Only log errors
-        )
-        print("Local Neural Hearing Online.")
+        try:
+            self.recorder = AudioToTextRecorder(
+                model=WHISPER_SETTINGS["model_size"],
+                device=WHISPER_SETTINGS["device"],
+                compute_type=WHISPER_SETTINGS["compute_type"],
+                beam_size=WHISPER_SETTINGS["beam_size"],
+                spinner=False,
+                level=30 # Only log errors
+            )
+            print(f"[{time.time()-start_time:.2f}s] Local Neural Hearing Online.")
+        except Exception as e:
+            print(f"STT Init Error: {e}")
+            self.recorder = None
 
-        print("Initializing Local Neural Voice (RealtimeTTS)...")
+        print(f"[{time.time()-start_time:.2f}s] Initializing Local Neural Voice (RealtimeTTS)...")
         # SystemEngine used as fallback
         # KokoroEngine used for high-end local voice
-        if VOICE_SETTINGS.get("engine") == "kokoro":
-            print(f"  - Engine: KOKORO (Voice: {VOICE_SETTINGS['voice']})")
-            self.engine = KokoroEngine(
-                voice=VOICE_SETTINGS["voice"]
-            )
-        else:
-            print("  - Engine: SYSTEM (Fast Fallback)")
+        try:
+            if VOICE_SETTINGS.get("engine") == "kokoro":
+                print(f"  - Engine: KOKORO (Voice: {VOICE_SETTINGS['voice']})")
+                # Explicitly only pass supported arguments to avoid 'lang' issues in newer versions
+                self.engine = KokoroEngine(
+                    voice=VOICE_SETTINGS["voice"]
+                )
+            else:
+                print("  - Engine: SYSTEM (Fast Fallback)")
+                self.engine = SystemEngine()
+                
+            self.stream = TextToAudioStream(self.engine)
+            print(f"[{time.time()-start_time:.2f}s] Local Neural Voice Online.")
+        except Exception as e:
+            print(f"TTS Init Error: {e}")
             self.engine = SystemEngine()
-            
-        self.stream = TextToAudioStream(self.engine)
-        print("Local Neural Voice Online.")
+            self.stream = TextToAudioStream(self.engine)
+            print("Fallback to SystemEngine active.")
 
     def listen_for_speech(self, timeout=15, phrase_time_limit=20):
         """Ultra-fast local speech detection with RealtimeSTT."""
@@ -55,6 +67,10 @@ class SpeechHandler:
         get_signals().emit_bridge("neural_pulse", 5)
         
         try:
+            if not self.recorder:
+                print("[JACK Hearing] Neural Sensors OFFLINE (STT Init Failed)")
+                return None
+
             # The recorder handles the silence detection and returns text instantly
             text = self.recorder.text()
             if text:
@@ -113,7 +129,7 @@ class SpeechHandler:
         """Kill all audio output."""
         try:
             self.is_speaking = False
-            # Pygame or OS kill for ElevenLabs (usually handled by stream termination)
-            self.offline_engine.stop()
+            if hasattr(self, 'engine'):
+                self.engine.stop()
         except:
             pass
