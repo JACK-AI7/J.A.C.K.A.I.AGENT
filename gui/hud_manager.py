@@ -21,6 +21,8 @@ from PySide6.QtCore import (
     QEasingCurve,
     QRect,
     QSize,
+    QPoint,
+    QPointF,
     Signal,
     QObject,
 )
@@ -172,7 +174,7 @@ class JACKCore(QWidget):
         center = self.rect().center()
         radius = min(self.width(), self.height()) // 2 - 20
 
-        # Colors based on status (MOLTBOT Palette)
+        # Colors based on status (JACK Palette)
         base_color = QColor(0, 255, 255)  # Cyan (Default)
         if self.status == "listening":
             base_color = QColor(0, 255, 127)  # SpringGreen
@@ -727,7 +729,7 @@ class HUDManager:
 
         # Tray Icon Setup
         self.tray_icon = QSystemTrayIcon(self._create_tray_icon(), self.app)
-        self.tray_icon.setToolTip("J.A.R.V.I.S. Core")
+        self.tray_icon.setToolTip("JACK TITAN: Nexus Active")
 
         # Tray Menu
         self.tray_menu = QMenu()

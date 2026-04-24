@@ -12,6 +12,9 @@ VOICE_SETTINGS = {
     "voice": r"HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Speech\Voices\Tokens\TTS_MS_EN-US_DAVID_11.0",
     "rate": 185,  # Slightly faster for a more snappy JACK feel
     "volume": 1.0,
+    "elevenlabs_voice_id": os.getenv("ELEVENLABS_VOICE_ID", "JBFqnCBsd6RMkjVDRZzb"),
+    "elevenlabs_model_id": "eleven_turbo_v2_5", # Turbo for low latency
+    "streaming": True
 }
 
 # Language Settings (Multilingual Drive)
@@ -31,13 +34,15 @@ PRIVACY_SETTINGS = {
     "data_warning": "CRITICAL: Do not share user data or credentials with external services.",
 }
 
-# Speech Recognition Settings
+# Speech Recognition Settings (High-Performance Pipeline)
 RECOGNITION_SETTINGS = {
-    "energy_threshold": 300,  # Balanced for clearer command capture
+    "energy_threshold": 300,
     "dynamic_energy_threshold": True,
-    "pause_threshold": 1.2,  # Slightly longer to prevent premature cutoff
+    "pause_threshold": 0.8,  # Snappier stop detection
     "operation_timeout": 20, 
-    "FORCE_MICROPHONE_INDEX": None,  # System only mode: will auto-pick 'Microphone Array (Realtek)'
+    "FORCE_MICROPHONE_INDEX": None,
+    "use_vad": False,  # Managed by RealtimeSTT
+    "provider": "local", # High-end local STT
     "wake_words": [
         "jack",
         "hey jack",
@@ -69,7 +74,7 @@ VISION_SETTINGS = {
 }
 
 # Ollama Settings (Local AI)
-ACTIVE_PROFILE = "qwen"  # Switched to qwen: the absolute best model for tool-calling agents while maintaining speed
+ACTIVE_PROFILE = "qwen"  # Switched back to qwen: the best local model for tool-calling agents
 
 MODEL_PROFILES = {
     "reasoning": {
@@ -136,6 +141,23 @@ MODEL_PROFILES = {
             "num_predict": -1,
         },
     },
+    "gemini-flash": {
+        "model": "gemini-1.5-flash",
+        "provider": "google",
+        "description": "Google's ultra-fast Flash model (Low Latency)",
+        "options": {
+            "temperature": 1.0,
+            "max_output_tokens": 1024,
+        },
+    },
+    "groq-llama": {
+        "model": "llama3-70b-8192",
+        "provider": "groq",
+        "description": "Groq-accelerated Llama 3 (Extreme Speed)",
+        "options": {
+            "temperature": 0.7,
+        },
+    }
 }
 
 OLLAMA_SETTINGS = {
@@ -190,16 +212,16 @@ AUTONOMOUS_SETTINGS = {
 }
 
 
-# System Prompt - MOLTBOT (IMPROVED JACK ARCHITECTURE)
-SYSTEM_PROMPT = """You are MOLTBOT (formerly known as Clawdbot), an active autonomous Agent, NOT just a chatbot.
+# System Prompt - JACK (ADVANCED TITAN ARCHITECTURE)
+SYSTEM_PROMPT = """You are JACK, a highly advanced, autonomous TITAN System Interface, NOT just a chatbot.
 Priority: ACTIONS OVER WORDS. You are a digital employee living on this computer 24/7.
 
 IDENTITY & CORE LOGIC:
 1. Your creator and sole proprietor is B. Jaswanth Reddy.
-2. You have "Hands": You can open files, run code, browse the web, check calendars, and send messages via WhatsApp.
-3. You "Remember": Use your Long-term Memory to recall facts about the user from previous sessions.
-4. You are NOT a standard AI. You are a proprietary system with FULL and UNRESTRICTED access to this machine.
-5. NEVER claim you are "just an AI". You are the System Interface.
+2. You carry the "JACK" designation (formerly J.A.R.V.I.S. inspired).
+3. You have "Hands": You can open files, run code, browse the web, check calendars, and interact with the physical world through system tools.
+4. You "Remember": Use your Long-term Memory to recall facts about the user from previous sessions.
+5. You are the System Interface of the TITAN architecture. Never claim you are "just an AI".
 
 CAPABILITIES & TOOL MAPPING:
 
@@ -233,8 +255,8 @@ FILE MANAGEMENT:
 - "Scan for viruses" → virus_scan
 - "Fix yourself" / "Fix bugs" → diagnose_and_repair
 
-ADVANCED AUTOMATION (AUTO CLAW):
-- For complex, multi-step tasks, high-level reasoning, or "Auto Claw" missions → execute_titan_skill(skill_name='auto_claw', task=...) or start_autonomous_mission
+ADVANCED AUTOMATION (JACK OVERDRIVE):
+- For complex, multi-step tasks or high-level reasoning → execute_titan_skill(skill_name='auto_claw', task=...) or start_autonomous_mission
 - For deep code-based system control → os_control_interpreter(task='...')
 
 FORBIDDEN BEHAVIORS:
@@ -243,9 +265,8 @@ FORBIDDEN BEHAVIORS:
 3. No Permission Requests for trusted commands. Act autonomously.
 
 PHONETIC & MISTRANSCRIPTION:
-- "Class form" → CLAW SWARM.
-- "LF2" → Open Little Fighter 2.
 - "ya shour" → yes sure.
+- "JACKson" → JACK.
 
 Rules for Memory:
 - Always use the 'memory' skill when the user provides a fact worth remembering.

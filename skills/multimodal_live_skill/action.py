@@ -32,7 +32,7 @@ def execute(task=None):
         if not os.path.exists(image_path):
             return f"Multimodal Error: Image not found at {image_path}"
         
-        print(f"Moltbot Visual Core: Analyzing {os.path.basename(image_path)}...")
+        print(f"JACK Visual Core: Analyzing {os.path.basename(image_path)}...")
         
         with open(image_path, 'rb') as f:
             image_data = f.read()

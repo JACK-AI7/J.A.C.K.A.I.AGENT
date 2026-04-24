@@ -65,3 +65,10 @@ uv
 fastmcp
 httpx
 livekit-plugins-google
+
+# --- PREMIUM CLOUD PIPELINE (NEW) ---
+google-generativeai
+elevenlabs
+openai
+silero-vad
+groq

@@ -59,11 +59,28 @@ def run_health_check():
     if not check_component("Neural Brain (Ollama)", command="ollama list"):
         all_passed = False
     
-    # 2. Vision Health (LLAVA)
+    # 2. Vision Health (LLAVA/Gemini)
     if not check_component("Visual Sensors (LLAVA)", command="ollama show llava"):
-        all_passed = False
+        # Not critical if Gemini is available
+        print("  ! Info: Local vision (LLAVA) unavailable. Relying on Cloud Vision.")
     
-    # 3. UI Framework (PySide6)
+    # 3. Premium Services Audit
+    print("[Neural Network] Auditing Cloud Interface...")
+    premium_services = [
+        ("Google Gemini", "google.generativeai", "GEMINI_API_KEY"),
+        ("ElevenLabs TTS", "elevenlabs", "ELEVENLABS_API_KEY"),
+        ("OpenAI Whisper", "openai", "OPENAI_API_KEY"),
+        ("Groq AI", "groq", "GROQ_API_KEY")
+    ]
+    for name, module, env_key in premium_services:
+        mod_ok = check_component(f"Service: {name}", check_module=module)
+        key_ok = os.getenv(env_key) and "your_" not in os.getenv(env_key)
+        if not key_ok:
+            print(f"  - KeyStatus: MISSING ({env_key})")
+        if not (mod_ok and key_ok):
+            print(f"  ! Warning: {name} will operate in LOCAL/FALLBACK mode.")
+
+    # 4. UI Framework (PySide6)
     if not check_component("UI Framework (PySide6)", check_module="PySide6"):
         all_passed = False
 

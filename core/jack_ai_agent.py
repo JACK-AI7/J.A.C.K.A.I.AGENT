@@ -124,7 +124,7 @@ class JackAIAgent:
             text = self.speech_handler.listen_for_speech()
         else:
             try:
-                text = input("\n[MOLTBOT] Awaiting Command Sir: ").strip()
+                text = input("\n[JACK] Awaiting Command Sir: ").strip()
             except EOFError:
                 self.stop()
                 return
