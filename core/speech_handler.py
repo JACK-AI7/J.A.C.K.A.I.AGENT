@@ -40,8 +40,7 @@ class SpeechHandler:
         if VOICE_SETTINGS.get("engine") == "kokoro":
             print(f"  - Engine: KOKORO (Voice: {VOICE_SETTINGS['voice']})")
             self.engine = KokoroEngine(
-                voice=VOICE_SETTINGS["voice"],
-                lang="en-us"
+                voice=VOICE_SETTINGS["voice"]
             )
         else:
             print("  - Engine: SYSTEM (Fast Fallback)")

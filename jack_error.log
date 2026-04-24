@@ -47316,3 +47316,256 @@ Traceback (most recent call last):
                         ^^^^^^^
 NameError: name 'QPointF' is not defined. Did you mean: 'QPainter'?
 
+2026-04-24 13:34:18,913 - ERROR - UNHANDLED EXCEPTION:
+Traceback (most recent call last):
+  File "C:\Users\bjasw\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.12_qbz5n2kfra8p0\LocalCache\local-packages\Python312\site-packages\RealtimeTTS\__init__.py", line 164, in _load_kokoro_engine
+    from .engines.kokoro_engine import KokoroEngine, KokoroVoice
+  File "C:\Users\bjasw\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.12_qbz5n2kfra8p0\LocalCache\local-packages\Python312\site-packages\RealtimeTTS\engines\kokoro_engine.py", line 21, in <module>
+    from kokoro import KPipeline
+ModuleNotFoundError: No module named 'kokoro'
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "c:\Users\bjasw\Downloads\jarvis-main\jarvis-main\main.py", line 109, in <module>
+    from core.jack_ai_agent import JackAIAgent
+  File "c:\Users\bjasw\Downloads\jarvis-main\jarvis-main\core\jack_ai_agent.py", line 6, in <module>
+    from speech_handler import SpeechHandler
+  File "c:\Users\bjasw\Downloads\jarvis-main\jarvis-main\core\speech_handler.py", line 6, in <module>
+    from RealtimeTTS import TextToAudioStream, SystemEngine, PiperEngine, KokoroEngine
+  File "C:\Users\bjasw\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.12_qbz5n2kfra8p0\LocalCache\local-packages\Python312\site-packages\RealtimeTTS\__init__.py", line 339, in __getattr__
+    return _lazy_imports[name]()
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\bjasw\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.12_qbz5n2kfra8p0\LocalCache\local-packages\Python312\site-packages\RealtimeTTS\__init__.py", line 166, in _load_kokoro_engine
+    raise ImportError(
+ImportError: Failed to load KokoroEngine. Make sure you have installed the kokoro dependencies by running:
+pip install realtimetts[kokoro]
+(or pip install realtimetts[kokoro,jp,zh] for japanese and chinese support)
+
+2026-04-24 13:34:32,792 - ERROR - UNHANDLED EXCEPTION:
+Traceback (most recent call last):
+  File "C:\Users\bjasw\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.12_qbz5n2kfra8p0\LocalCache\local-packages\Python312\site-packages\RealtimeTTS\__init__.py", line 164, in _load_kokoro_engine
+    from .engines.kokoro_engine import KokoroEngine, KokoroVoice
+  File "C:\Users\bjasw\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.12_qbz5n2kfra8p0\LocalCache\local-packages\Python312\site-packages\RealtimeTTS\engines\kokoro_engine.py", line 21, in <module>
+    from kokoro import KPipeline
+ModuleNotFoundError: No module named 'kokoro'
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\Users\bjasw\Downloads\jarvis-main\jarvis-main\main.py", line 109, in <module>
+    from core.jack_ai_agent import JackAIAgent
+  File "C:\Users\bjasw\Downloads\jarvis-main\jarvis-main\core\jack_ai_agent.py", line 6, in <module>
+    from speech_handler import SpeechHandler
+  File "C:\Users\bjasw\Downloads\jarvis-main\jarvis-main\core\speech_handler.py", line 6, in <module>
+    from RealtimeTTS import TextToAudioStream, SystemEngine, PiperEngine, KokoroEngine
+  File "C:\Users\bjasw\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.12_qbz5n2kfra8p0\LocalCache\local-packages\Python312\site-packages\RealtimeTTS\__init__.py", line 339, in __getattr__
+    return _lazy_imports[name]()
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\bjasw\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.12_qbz5n2kfra8p0\LocalCache\local-packages\Python312\site-packages\RealtimeTTS\__init__.py", line 166, in _load_kokoro_engine
+    raise ImportError(
+ImportError: Failed to load KokoroEngine. Make sure you have installed the kokoro dependencies by running:
+pip install realtimetts[kokoro]
+(or pip install realtimetts[kokoro,jp,zh] for japanese and chinese support)
+
+2026-04-24 13:39:12,124 - ERROR - UNHANDLED EXCEPTION:
+Traceback (most recent call last):
+  File "C:\Users\bjasw\Downloads\jarvis-main\jarvis-main\main.py", line 109, in <module>
+    from core.jack_ai_agent import JackAIAgent
+  File "C:\Users\bjasw\Downloads\jarvis-main\jarvis-main\core\jack_ai_agent.py", line 7, in <module>
+    from ai_handler import AIHandler
+  File "C:\Users\bjasw\Downloads\jarvis-main\jarvis-main\core\ai_handler.py", line 10, in <module>
+    from groq import Groq
+  File "C:\Users\bjasw\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.12_qbz5n2kfra8p0\LocalCache\local-packages\Python312\site-packages\groq\__init__.py", line 5, in <module>
+    from . import types
+  File "C:\Users\bjasw\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.12_qbz5n2kfra8p0\LocalCache\local-packages\Python312\site-packages\groq\types\__init__.py", line 5, in <module>
+    from .model import Model as Model
+  File "C:\Users\bjasw\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.12_qbz5n2kfra8p0\LocalCache\local-packages\Python312\site-packages\groq\types\model.py", line 5, in <module>
+    from .._models import BaseModel
+  File "C:\Users\bjasw\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.12_qbz5n2kfra8p0\LocalCache\local-packages\Python312\site-packages\groq\_models.py", line 37, in <module>
+    from ._utils import (
+  File "C:\Users\bjasw\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.12_qbz5n2kfra8p0\LocalCache\local-packages\Python312\site-packages\groq\_utils\__init__.py", line 40, in <module>
+    from ._typing import (
+  File "C:\Users\bjasw\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.12_qbz5n2kfra8p0\LocalCache\local-packages\Python312\site-packages\groq\_utils\_typing.py", line 8, in <module>
+    from typing_extensions import (
+ImportError: cannot import name 'TypeIs' from 'typing_extensions' (C:\Users\bjasw\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.12_qbz5n2kfra8p0\LocalCache\local-packages\Python312\site-packages\typing_extensions.py). Did you mean: 'Type'?
+
+2026-04-24 13:40:25,179 - ERROR - UNHANDLED EXCEPTION:
+Traceback (most recent call last):
+  File "C:\Users\bjasw\Downloads\jarvis-main\jarvis-main\main.py", line 109, in <module>
+    from core.jack_ai_agent import JackAIAgent
+  File "C:\Users\bjasw\Downloads\jarvis-main\jarvis-main\core\jack_ai_agent.py", line 7, in <module>
+    from ai_handler import AIHandler
+  File "C:\Users\bjasw\Downloads\jarvis-main\jarvis-main\core\ai_handler.py", line 21, in <module>
+    from tools import FUNCTIONS, FUNCTION_MAP
+  File "C:\Users\bjasw\Downloads\jarvis-main\jarvis-main\core\tools.py", line 38, in <module>
+    from agent_browser import browse_titan, BROWSER_USE_AVAILABLE
+  File "C:\Users\bjasw\Downloads\jarvis-main\jarvis-main\agents\agent_browser.py", line 17, in <module>
+    from langchain_ollama import ChatOllama
+  File "C:\Users\bjasw\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.12_qbz5n2kfra8p0\LocalCache\local-packages\Python312\site-packages\langchain_ollama\__init__.py", line 20, in <module>
+    from langchain_ollama.chat_models import ChatOllama
+  File "C:\Users\bjasw\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.12_qbz5n2kfra8p0\LocalCache\local-packages\Python312\site-packages\langchain_ollama\chat_models.py", line 53, in <module>
+    from langchain_core.callbacks import CallbackManagerForLLMRun
+  File "C:\Users\bjasw\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.12_qbz5n2kfra8p0\LocalCache\local-packages\Python312\site-packages\langchain_core\callbacks\__init__.py", line 22, in <module>
+    from langchain_core.callbacks.manager import (
+  File "C:\Users\bjasw\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.12_qbz5n2kfra8p0\LocalCache\local-packages\Python312\site-packages\langchain_core\callbacks\manager.py", line 29, in <module>
+    from langsmith.run_helpers import get_run_tree_context
+  File "C:\Users\bjasw\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.12_qbz5n2kfra8p0\LocalCache\local-packages\Python312\site-packages\langsmith\run_helpers.py", line 40, in <module>
+    from langsmith import client as ls_client
+  File "C:\Users\bjasw\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.12_qbz5n2kfra8p0\LocalCache\local-packages\Python312\site-packages\langsmith\client.py", line 52, in <module>
+    from langsmith import env as ls_env
+  File "C:\Users\bjasw\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.12_qbz5n2kfra8p0\LocalCache\local-packages\Python312\site-packages\langsmith\env\__init__.py", line 3, in <module>
+    from langsmith.env._runtime_env import (
+  File "C:\Users\bjasw\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.12_qbz5n2kfra8p0\LocalCache\local-packages\Python312\site-packages\langsmith\env\_runtime_env.py", line 10, in <module>
+    from langsmith.utils import get_docker_compose_command
+  File "C:\Users\bjasw\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.12_qbz5n2kfra8p0\LocalCache\local-packages\Python312\site-packages\langsmith\utils.py", line 31, in <module>
+    from langsmith import schemas as ls_schemas
+  File "C:\Users\bjasw\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.12_qbz5n2kfra8p0\LocalCache\local-packages\Python312\site-packages\langsmith\schemas.py", line 69, in <module>
+    class Example(ExampleBase):
+  File "C:\Users\bjasw\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.12_qbz5n2kfra8p0\LocalCache\local-packages\Python312\site-packages\pydantic\v1\main.py", line 286, in __new__
+    cls.__try_update_forward_refs__()
+  File "C:\Users\bjasw\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.12_qbz5n2kfra8p0\LocalCache\local-packages\Python312\site-packages\pydantic\v1\main.py", line 808, in __try_update_forward_refs__
+    update_model_forward_refs(cls, cls.__fields__.values(), cls.__config__.json_encoders, localns, (NameError,))
+  File "C:\Users\bjasw\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.12_qbz5n2kfra8p0\LocalCache\local-packages\Python312\site-packages\pydantic\v1\typing.py", line 554, in update_model_forward_refs
+    update_field_forward_refs(f, globalns=globalns, localns=localns)
+  File "C:\Users\bjasw\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.12_qbz5n2kfra8p0\LocalCache\local-packages\Python312\site-packages\pydantic\v1\typing.py", line 520, in update_field_forward_refs
+    field.type_ = evaluate_forwardref(field.type_, globalns, localns or None)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\bjasw\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.12_qbz5n2kfra8p0\LocalCache\local-packages\Python312\site-packages\pydantic\v1\typing.py", line 66, in evaluate_forwardref
+    return cast(Any, type_)._evaluate(globalns, localns, set())
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+TypeError: ForwardRef._evaluate() missing 1 required keyword-only argument: 'recursive_guard'
+
+2026-04-24 13:41:10,254 - ERROR - FATAL Startup Error: 'NoneType' object has no attribute 'app'
+Traceback (most recent call last):
+  File "C:\Users\bjasw\Downloads\jarvis-main\jarvis-main\main.py", line 217, in main
+    return hud.app.exec()
+           ^^^^^^^
+AttributeError: 'NoneType' object has no attribute 'app'
+
+2026-04-24 17:21:32,845 - ERROR - FATAL Startup Error: [WinError 127] The specified procedure could not be found
+Traceback (most recent call last):
+  File "c:\Users\bjasw\Downloads\jarvis-main\jarvis-main\main.py", line 169, in main
+    assistant = JackAIAgent(hud=hud, mode="text" if args.text else "voice")
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "c:\Users\bjasw\Downloads\jarvis-main\jarvis-main\core\jack_ai_agent.py", line 14, in __init__
+    self.speech_handler = SpeechHandler() if mode == "voice" else None
+                          ^^^^^^^^^^^^^^^
+  File "c:\Users\bjasw\Downloads\jarvis-main\jarvis-main\core\speech_handler.py", line 27, in __init__
+    self.recorder = AudioToTextRecorder(
+                    ^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\bjasw\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.12_qbz5n2kfra8p0\LocalCache\local-packages\Python312\site-packages\RealtimeSTT\audio_recorder.py", line 922, in __init__
+    self.silero_vad_model, _ = torch.hub.load(
+                               ^^^^^^^^^^^^^^^
+  File "C:\Users\bjasw\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.12_qbz5n2kfra8p0\LocalCache\local-packages\Python312\site-packages\torch\hub.py", line 647, in load
+    model = _load_local(repo_or_dir, model, *args, **kwargs)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\bjasw\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.12_qbz5n2kfra8p0\LocalCache\local-packages\Python312\site-packages\torch\hub.py", line 673, in _load_local
+    hub_module = _import_module(MODULE_HUBCONF, hubconf_path)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\bjasw\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.12_qbz5n2kfra8p0\LocalCache\local-packages\Python312\site-packages\torch\hub.py", line 115, in _import_module
+    spec.loader.exec_module(module)
+  File "<frozen importlib._bootstrap_external>", line 999, in exec_module
+  File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+  File "C:\Users\bjasw/.cache\torch\hub\snakers4_silero-vad_master\hubconf.py", line 6, in <module>
+    from silero_vad.utils_vad import (init_jit_model,
+  File "C:\Users\bjasw/.cache\torch\hub\snakers4_silero-vad_master\src\silero_vad\__init__.py", line 7, in <module>
+    from silero_vad.model import load_silero_vad
+  File "C:\Users\bjasw/.cache\torch\hub\snakers4_silero-vad_master\src\silero_vad\model.py", line 1, in <module>
+    from .utils_vad import init_jit_model, OnnxWrapper
+  File "C:\Users\bjasw/.cache\torch\hub\snakers4_silero-vad_master\src\silero_vad\utils_vad.py", line 2, in <module>
+    import torchaudio
+  File "C:\Users\bjasw\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.12_qbz5n2kfra8p0\LocalCache\local-packages\Python312\site-packages\torchaudio\__init__.py", line 7, in <module>
+    from . import _extension  # noqa  # usort: skip
+    ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\bjasw\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.12_qbz5n2kfra8p0\LocalCache\local-packages\Python312\site-packages\torchaudio\_extension\__init__.py", line 30, in <module>
+    _IS_TORCHAUDIO_EXT_AVAILABLE = _load_lib("_torchaudio")
+                                   ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\bjasw\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.12_qbz5n2kfra8p0\LocalCache\local-packages\Python312\site-packages\torchaudio\_extension\utils.py", line 56, in _load_lib
+    torch.ops.load_library(paths[0])
+  File "C:\Users\bjasw\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.12_qbz5n2kfra8p0\LocalCache\local-packages\Python312\site-packages\torch\_ops.py", line 1350, in load_library
+    ctypes.CDLL(path)
+  File "C:\Program Files\WindowsApps\PythonSoftwareFoundation.Python.3.12_3.12.2800.0_x64__qbz5n2kfra8p0\Lib\ctypes\__init__.py", line 379, in __init__
+    self._handle = _dlopen(self._name, mode)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^
+OSError: [WinError 127] The specified procedure could not be found
+
+2026-04-24 19:41:23,294 - ERROR - FATAL Startup Error: [WinError 127] The specified procedure could not be found
+Traceback (most recent call last):
+  File "C:\Users\bjasw\Downloads\jarvis-main\jarvis-main\main.py", line 169, in main
+    assistant = JackAIAgent(hud=hud, mode="text" if args.text else "voice")
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\bjasw\Downloads\jarvis-main\jarvis-main\core\jack_ai_agent.py", line 14, in __init__
+    self.speech_handler = SpeechHandler() if mode == "voice" else None
+                          ^^^^^^^^^^^^^^^
+  File "C:\Users\bjasw\Downloads\jarvis-main\jarvis-main\core\speech_handler.py", line 27, in __init__
+    self.recorder = AudioToTextRecorder(
+                    ^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\bjasw\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.12_qbz5n2kfra8p0\LocalCache\local-packages\Python312\site-packages\RealtimeSTT\audio_recorder.py", line 922, in __init__
+    self.silero_vad_model, _ = torch.hub.load(
+                               ^^^^^^^^^^^^^^^
+  File "C:\Users\bjasw\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.12_qbz5n2kfra8p0\LocalCache\local-packages\Python312\site-packages\torch\hub.py", line 647, in load
+    model = _load_local(repo_or_dir, model, *args, **kwargs)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\bjasw\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.12_qbz5n2kfra8p0\LocalCache\local-packages\Python312\site-packages\torch\hub.py", line 673, in _load_local
+    hub_module = _import_module(MODULE_HUBCONF, hubconf_path)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\bjasw\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.12_qbz5n2kfra8p0\LocalCache\local-packages\Python312\site-packages\torch\hub.py", line 115, in _import_module
+    spec.loader.exec_module(module)
+  File "<frozen importlib._bootstrap_external>", line 999, in exec_module
+  File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+  File "C:\Users\bjasw/.cache\torch\hub\snakers4_silero-vad_master\hubconf.py", line 6, in <module>
+    from silero_vad.utils_vad import (init_jit_model,
+  File "C:\Users\bjasw/.cache\torch\hub\snakers4_silero-vad_master\src\silero_vad\__init__.py", line 7, in <module>
+    from silero_vad.model import load_silero_vad
+  File "C:\Users\bjasw/.cache\torch\hub\snakers4_silero-vad_master\src\silero_vad\model.py", line 1, in <module>
+    from .utils_vad import init_jit_model, OnnxWrapper
+  File "C:\Users\bjasw/.cache\torch\hub\snakers4_silero-vad_master\src\silero_vad\utils_vad.py", line 2, in <module>
+    import torchaudio
+  File "C:\Users\bjasw\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.12_qbz5n2kfra8p0\LocalCache\local-packages\Python312\site-packages\torchaudio\__init__.py", line 7, in <module>
+    from . import _extension  # noqa  # usort: skip
+    ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\bjasw\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.12_qbz5n2kfra8p0\LocalCache\local-packages\Python312\site-packages\torchaudio\_extension\__init__.py", line 30, in <module>
+    _IS_TORCHAUDIO_EXT_AVAILABLE = _load_lib("_torchaudio")
+                                   ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\bjasw\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.12_qbz5n2kfra8p0\LocalCache\local-packages\Python312\site-packages\torchaudio\_extension\utils.py", line 56, in _load_lib
+    torch.ops.load_library(paths[0])
+  File "C:\Users\bjasw\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.12_qbz5n2kfra8p0\LocalCache\local-packages\Python312\site-packages\torch\_ops.py", line 1350, in load_library
+    ctypes.CDLL(path)
+  File "C:\Program Files\WindowsApps\PythonSoftwareFoundation.Python.3.12_3.12.2800.0_x64__qbz5n2kfra8p0\Lib\ctypes\__init__.py", line 379, in __init__
+    self._handle = _dlopen(self._name, mode)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^
+OSError: [WinError 127] The specified procedure could not be found
+
+2026-04-24 20:13:52,474 - ERROR - FATAL Startup Error: KokoroEngine.__init__() got an unexpected keyword argument 'lang'
+Traceback (most recent call last):
+  File "c:\Users\bjasw\Downloads\jarvis-main\jarvis-main\main.py", line 155, in main
+    assistant = JackAIAgent(hud=hud, mode="text" if args.text else "voice")
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "c:\Users\bjasw\Downloads\jarvis-main\jarvis-main\core\jack_ai_agent.py", line 14, in __init__
+    self.speech_handler = SpeechHandler() if mode == "voice" else None
+                          ^^^^^^^^^^^^^^^
+  File "c:\Users\bjasw\Downloads\jarvis-main\jarvis-main\core\speech_handler.py", line 42, in __init__
+    self.engine = KokoroEngine(
+                  ^^^^^^^^^^^^^
+  File "C:\Users\bjasw\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.12_qbz5n2kfra8p0\LocalCache\local-packages\Python312\site-packages\RealtimeTTS\engines\base_engine.py", line 28, in __call__
+    instance = super().__call__(*args, **kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+TypeError: KokoroEngine.__init__() got an unexpected keyword argument 'lang'
+
+2026-04-24 20:14:26,152 - ERROR - FATAL Startup Error: KokoroEngine.__init__() got an unexpected keyword argument 'lang'
+Traceback (most recent call last):
+  File "C:\Users\bjasw\Downloads\jarvis-main\jarvis-main\main.py", line 155, in main
+    assistant = JackAIAgent(hud=hud, mode="text" if args.text else "voice")
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\bjasw\Downloads\jarvis-main\jarvis-main\core\jack_ai_agent.py", line 14, in __init__
+    self.speech_handler = SpeechHandler() if mode == "voice" else None
+                          ^^^^^^^^^^^^^^^
+  File "C:\Users\bjasw\Downloads\jarvis-main\jarvis-main\core\speech_handler.py", line 42, in __init__
+    self.engine = KokoroEngine(
+                  ^^^^^^^^^^^^^
+  File "C:\Users\bjasw\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.12_qbz5n2kfra8p0\LocalCache\local-packages\Python312\site-packages\RealtimeTTS\engines\base_engine.py", line 28, in __call__
+    instance = super().__call__(*args, **kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+TypeError: KokoroEngine.__init__() got an unexpected keyword argument 'lang'
+

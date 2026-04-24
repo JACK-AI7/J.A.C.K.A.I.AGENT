@@ -32,6 +32,7 @@ class AIHandler:
         
         # Initialize Clients
         self._init_clients()
+        self.reasoning_mode = True  # Enable OpenJarvis style reflective thinking
 
     def _init_clients(self):
         """Lazy-init the required provider client with validation."""
@@ -250,7 +251,12 @@ class AIHandler:
 
     def _sanitize_persona_output(self, text):
         if not text: return "Action completed, Sir."
-        # Remove thought tags and AI leakages
+        # Keep reasoning tags if they are useful, but JACK usually hides them
+        if "<thought>" in text and "</thought>" in text:
+             thought = re.search(r"<thought>(.*?)</thought>", text, re.DOTALL)
+             if thought:
+                 print(f"TITAN Internal Reasoning: {thought.group(1).strip()[:200]}...")
+        
         text = re.sub(r"<(thought|reasoning)>.*?</\1>", "", text, flags=re.DOTALL)
         text = re.sub(r"\{'function':.*?\}", "", text)
         text = re.sub(r"\s+", " ", text).strip()

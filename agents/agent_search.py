@@ -30,8 +30,8 @@ class DeepSearchAgent:
         signals.thought_received.emit("Quering DuckDuckGo for candidate seeds...", "thought")
         snippets = get_web_data(query)
         
-        # Simple extraction of first URL from snippets
-        urls = re.findall(r'https?://[^\s<>"]+|www\.[^\s<>"]+', snippets)
+        # Simple extraction of top 3 URLs from snippets
+        urls = re.findall(r'https?://[^\s<>"]+|www\.[^\s<>"]+', snippets)[:3]
         
         if not urls:
             signals.thought_received.emit("No seed URLs found. Falling back to snippet analysis.", "decision")
@@ -41,34 +41,32 @@ class DeepSearchAgent:
             signals.thought_received.emit("Crawl4AI not detected. Performance degraded.", "log")
             return f"Deep Search: crawl4ai not installed. Snippet results:\n{snippets}"
             
-        target_url = urls[0]
         signals.node_added.emit("search_root", f"Search: {query}", "search", None)
-        signals.node_added.emit("target_url", f"Target: {target_url}", "url", "search_root")
-        signals.thought_received.emit(f"Engaging Crawl4AI on {target_url}", "decision")
-        signals.status_updated.emit("Deep Search", 40, "target_url")
+        signals.thought_received.emit(f"Engaging Multi-Hop Crawl on top {len(urls)} sources", "decision")
         
-        try:
-            async with AsyncWebCrawler() as crawler:
-                signals.status_updated.emit("Deep Search", 60, "target_url")
-                result = await crawler.arun(url=target_url)
+        all_content = []
+        async with AsyncWebCrawler() as crawler:
+            for i, target_url in enumerate(urls):
+                signals.node_added.emit(f"url_{i}", f"Source {i+1}: {target_url}", "url", "search_root")
+                signals.status_updated.emit("Deep Search", 30 + (i*20), f"url_{i}")
                 
-                # 2. Extract clean markdown
-                if result.success:
-                    content = result.markdown_v2.raw_markdown if hasattr(result, 'markdown_v2') else str(result)
-                    signals.thought_received.emit(f"Extraction successful: {len(content)} raw bytes captured.", "thought")
-                    signals.status_updated.emit("Deep Search", 90, "target_url")
-                    
-                    # Truncate for LLM context safety
-                    summary = content[:5000] if len(content) > 5000 else content
-                    signals.status_updated.emit("Deep Search", 100, "target_url")
-                    return f"SOURCE: {target_url}\n\nCONTENT:\n{summary}"
-                else:
-                    error = result.error_message if hasattr(result, 'error_message') else 'Unknown error'
-                    signals.thought_received.emit(f"Crawl failed: {error}", "decision")
-                    return f"Deep Search: Failed to crawl {target_url}. Error: {error}"
-        except Exception as e:
-            signals.thought_received.emit(f"Neural interrupt: {str(e)}", "log")
-            return f"Deep Search: Crawl error ({e}). Snippet results:\n{snippets}"
+                try:
+                    result = await crawler.arun(url=target_url)
+                    if result.success:
+                        content = result.markdown_v2.raw_markdown if hasattr(result, 'markdown_v2') else str(result)
+                        all_content.append(f"--- SOURCE {i+1}: {target_url} ---\n{content[:3000]}")
+                        signals.thought_received.emit(f"Source {i+1} capture successful.", "thought")
+                    else:
+                        signals.thought_received.emit(f"Source {i+1} failed.", "log")
+                except Exception:
+                    continue
+        
+        if not all_content:
+            return f"Deep Search: Extraction failed for all candidate URLs. Fallback:\n{snippets}"
+            
+        full_report = "\n\n".join(all_content)
+        signals.status_updated.emit("Deep Search", 100, "search_root")
+        return f"ULTIMATE RESEARCH GATHERED ({len(urls)} sources):\n\n{full_report}"
 
 
 # Singleton Search Agent

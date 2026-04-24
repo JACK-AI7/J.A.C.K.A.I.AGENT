@@ -62,6 +62,12 @@ except ImportError:
     def execute_titan_skill(skill_name, task=None):
         return f"Skill manager unavailable. Skill: {skill_name}"
 
+try:
+    from browser_operator import sync_browser_operator
+except ImportError:
+    def sync_browser_operator(action, **kwargs):
+        return f"Browser Operator unavailable. Action: {action}"
+
 # Initialize desktop agent
 desktop_agent = DesktopAgent()
 
@@ -431,6 +437,25 @@ def web_browser_control(action, target=None, value=None):
     elif action == "close":
         return web_navigator.close()
     return "Invalid web action."
+    
+
+# --- PRECISION BROWSER TOOLS (OpenJarvis Inspired) ---
+
+def inspect_dom():
+    """Extract a list of all interactive elements (buttons, inputs) on the current browser page."""
+    return sync_browser_operator("inspect")
+
+def precision_click(element_id):
+    """Click an element by its ID (as found in 'inspect_dom')."""
+    return sync_browser_operator("click", id=element_id)
+
+def precision_type(element_id, text):
+    """Type text into an element by its ID and press Enter."""
+    return sync_browser_operator("type", id=element_id, text=text)
+
+def navigate_browser(url):
+    """Navigate the precision browser to a specific URL."""
+    return sync_browser_operator("navigate", url=url)
 
 
 def run_admin_task(task_command):
@@ -1488,6 +1513,86 @@ FUNCTIONS = [
             "required": ["commit_message"],
         },
     },
+    {
+        "name": "morning_digest",
+        "description": "Generate a holistic morning briefing covering system status, top news, and pending tasks.",
+        "parameters": {
+            "type": "object",
+            "properties": {}
+        }
+    },
+    {
+        "name": "arxiv_research",
+        "description": "Search and summarize academic papers from Arxiv.",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "query": {"type": "string", "description": "The research query for papers."}
+            },
+            "required": ["query"]
+        }
+    },
+    {
+        "name": "inspect_dom",
+        "description": "Extract a list of all interactive elements (buttons, link, inputs) on the current browser page with their IDs.",
+        "parameters": {"type": "object", "properties": {}}
+    },
+    {
+        "name": "precision_click",
+        "description": "Click an element by its ID (found via inspect_dom).",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "element_id": {"type": "string", "description": "The ID of the element to click."}
+            },
+            "required": ["element_id"]
+        }
+    },
+    {
+        "name": "precision_type",
+        "description": "Type text into an element by its ID (found via inspect_dom).",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "element_id": {"type": "string", "description": "The ID of the target element."},
+                "text": {"type": "string", "description": "The text to type."}
+            },
+            "required": ["element_id", "text"]
+        }
+    },
+    {
+        "name": "navigate_browser",
+        "description": "Navigate the automated browser to a specific URL.",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "url": {"type": "string", "description": "The URL to visit."}
+            },
+            "required": ["url"]
+        }
+    },
+    {
+        "name": "auto_navigator",
+        "description": "Execute a high-level automated web mission (e.g., 'buy a mouse on Amazon').",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "task": {"type": "string", "description": "The mission objective."}
+            },
+            "required": ["task"]
+        }
+    },
+    {
+        "name": "voice_command_mission",
+        "description": "Trigger a high-level autonomous task based on a complex voice command.",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "task": {"type": "string", "description": "The command or mission."}
+            },
+            "required": ["task"]
+        }
+    },
 ]
 
 
@@ -1649,4 +1754,12 @@ FUNCTION_MAP = {
     "fetch_url": fetch_url,
     "system_power": system_power,
     "push_to_git": push_to_git,
+    "morning_digest": lambda **kw: execute_titan_skill("morning_digest"),
+    "arxiv_research": lambda query: execute_titan_skill("arxiv_research", query),
+    "inspect_dom": inspect_dom,
+    "precision_click": precision_click,
+    "precision_type": precision_type,
+    "navigate_browser": navigate_browser,
+    "auto_navigator": lambda task: execute_titan_skill("auto_navigator", task),
+    "voice_command_mission": lambda task: execute_titan_skill("voice_command_mission", task),
 }

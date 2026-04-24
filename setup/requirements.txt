@@ -72,3 +72,10 @@ elevenlabs
 openai
 silero-vad
 groq
+
+# --- ADVANCED AGENTIC TECH (OpenJarvis Inspired) ---
+dspy-ai
+arxiv
+beautifulsoup4
+lxml
+duckduckgo-search>=6.0.0
