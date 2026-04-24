@@ -4,3 +4,11 @@ __pycache__/
 *.pyc
 conversation_history.json
 jack_error.log
+*.log
+.DS_Store
+.vscode/
+.idea/
+*.tmp
+temp/
+model_cache/
+downloads/

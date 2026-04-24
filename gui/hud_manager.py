@@ -20,6 +20,7 @@ from PySide6.QtCore import (
     QPropertyAnimation,
     QEasingCurve,
     QRect,
+    QRectF,
     QSize,
     QPoint,
     QPointF,
@@ -38,8 +39,17 @@ from PySide6.QtGui import (
     QIcon,
     QAction,
     QPixmap,
+    QRegion,
 )
 import math
+
+# Explicit fallback for environment-specific symbol binding issues
+try:
+    from PySide6.QtCore import QPointF, QRectF, QSize, QPoint, QRect, Qt
+except ImportError:
+    from PySide6.QtCore import Qt, QPoint, QSize, QRect
+    QPointF = QPoint
+    QRectF = QRect
 
 
 class JACKSideRail(QWidget):
@@ -300,7 +310,6 @@ class HUDWindow(QMainWindow):
         self.max_log_entries = 5
 
         # Absolute round mask to kill rectangular artifacts
-        from PySide6.QtGui import QRegion
 
         self.mask_timer = QTimer(self)
         self.mask_timer.timeout.connect(self._apply_circular_mask)
@@ -603,7 +612,6 @@ class HUDWindow(QMainWindow):
 
     def _apply_circular_mask(self):
         """Force a circular mask to hide any rectangular window fragments."""
-        from PySide6.QtGui import QRegion
 
         # Mask only the center circular area
         rect = self.centralWidget().geometry()

@@ -22,9 +22,9 @@ edge-tts
 
 # --- LOCAL AI SPEECH (Offline Whisper) ---
 faster-whisper
-torch
-torchvision
-torchaudio
+torch==2.5.1
+torchvision==0.20.1
+torchaudio==2.5.1
 
 # --- COMPUTER VISION ---
 opencv-python

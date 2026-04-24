@@ -35,9 +35,18 @@ class SpeechHandler:
         print("Local Neural Hearing Online.")
 
         print("Initializing Local Neural Voice (RealtimeTTS)...")
-        # Use SystemEngine for maximum speed or PiperEngine for high-quality local voice
-        # SystemEngine used as primary for 'instant' feedback
-        self.engine = SystemEngine()
+        # SystemEngine used as fallback
+        # KokoroEngine used for high-end local voice
+        if VOICE_SETTINGS.get("engine") == "kokoro":
+            print(f"  - Engine: KOKORO (Voice: {VOICE_SETTINGS['voice']})")
+            self.engine = KokoroEngine(
+                voice=VOICE_SETTINGS["voice"],
+                lang="en-us"
+            )
+        else:
+            print("  - Engine: SYSTEM (Fast Fallback)")
+            self.engine = SystemEngine()
+            
         self.stream = TextToAudioStream(self.engine)
         print("Local Neural Voice Online.")
 

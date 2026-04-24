@@ -7,13 +7,13 @@ load_dotenv()
 WOLFRAM_ALPHA_APP_ID = os.getenv("WOLFRAM_ALPHA_APP_ID")
 # Note: OpenAI/Perplexity keys removed — JACK uses local Ollama exclusively
 
-# Voice Settings
+# Voice Settings (Prioritize High-End Local Engines)
 VOICE_SETTINGS = {
-    "voice": r"HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Speech\Voices\Tokens\TTS_MS_EN-US_DAVID_11.0",
-    "rate": 185,  # Slightly faster for a more snappy JACK feel
+    "engine": "kokoro",  # Switched to KOKORO: High-quality local neural TTS (OSS)
+    "voice": "af_heart", # Premium feminine local voice (or 'am_michael' for masculine)
+    "rate": 1.0,         # Normal speed for neural engines
     "volume": 1.0,
-    "elevenlabs_voice_id": os.getenv("ELEVENLABS_VOICE_ID", "JBFqnCBsd6RMkjVDRZzb"),
-    "elevenlabs_model_id": "eleven_turbo_v2_5", # Turbo for low latency
+    "elevenlabs_voice_id": None, # [DISABLED] Using high-end local Kokoro instead
     "streaming": True
 }
 
@@ -153,7 +153,7 @@ MODEL_PROFILES = {
     "groq-llama": {
         "model": "llama3-70b-8192",
         "provider": "groq",
-        "description": "Groq-accelerated Llama 3 (Extreme Speed)",
+        "description": "[LEGACY] Groq-accelerated Llama (Requires API Key)",
         "options": {
             "temperature": 0.7,
         },

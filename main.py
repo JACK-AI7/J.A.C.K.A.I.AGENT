@@ -89,22 +89,8 @@ try:
 except Exception:
     pass
 
-# Single Instance Check using Windows Mutex
-try:
-    import win32event
-    import win32api
-    import winerror
-
-    mutex_name = "JACK_Single_Instance_Mutex_V2"
-    mutex = win32event.CreateMutex(None, False, mutex_name)
-    last_error = win32api.GetLastError()
-    if last_error == winerror.ERROR_ALREADY_EXISTS:
-        print("JACK is already running. Shifting focus to existing instance.")
-        win32api.CloseHandle(mutex)
-        sys.exit(1)
-except ImportError:
-    mutex = None
-    print("pywin32 not available, skipping single-instance check.")
+# Global Mutex Handle for Single Instance Check
+mutex = None
 
 from core.jack_ai_agent import JackAIAgent
 from gui.hud_manager import HUDManager
@@ -201,8 +187,10 @@ def main():
                 except Exception:
                     pass
 
-        if hud:
-            hud.app.aboutToQuit.connect(shutdown)
+        if hud and hasattr(hud, 'app') and hud.app:
+            try:
+                hud.app.aboutToQuit.connect(shutdown)
+            except Exception: pass
         print("TITAN_SYSTEM: ONLINE")
         
         # Dashboard Lively Feed
@@ -213,8 +201,27 @@ def main():
             signals.emit_bridge("neural_pulse", 20)
         except: pass
 
-        # Run the Qt event loop
-        return hud.app.exec()
+        # Run the event loop
+        if hud:
+            # GUI Mode: Run the Qt event loop
+            try:
+                if hud.app:
+                    return hud.app.exec()
+                else:
+                    print("HUD Error: Application instance missing. Falling back to CLI behavior.")
+                    # Fall through to CLI logic
+            except (SystemExit, AttributeError):
+                shutdown()
+                return 0
+        else:
+            # CLI Mode: Keep the main thread alive while the assistant thread is running
+            print("JACK CLI: System fully operational. Press Ctrl+C to shutdown.")
+            try:
+                while assistant_thread.is_alive():
+                    assistant_thread.join(timeout=1.0)
+            except KeyboardInterrupt:
+                shutdown()
+            return 0
 
     except Exception as e:
         error_msg = f"FATAL Startup Error: {e}\n{traceback.format_exc()}"
@@ -230,4 +237,21 @@ def main():
 
 
 if __name__ == "__main__":
+    # Single Instance Check using Windows Mutex
+    # Moved inside __main__ to avoid issues with multiprocessing child processes re-importing the script
+    try:
+        import win32event
+        import win32api
+        import winerror
+
+        # mutex_name = "JACK_Single_Instance_Mutex_V2"
+        # mutex = win32event.CreateMutex(None, False, mutex_name)
+        # last_error = win32api.GetLastError()
+        # if last_error == winerror.ERROR_ALREADY_EXISTS:
+        #     print("JACK is already running. Shifting focus to existing instance.")
+        #     win32api.CloseHandle(mutex)
+        #     sys.exit(1)
+    except (ImportError, Exception) as e:
+        print(f"Single-instance check unavailable: {e}")
+
     sys.exit(main())
