@@ -53,7 +53,10 @@ class WebNavigator:
             
         print(f"Navigating to {url}...")
         try:
-            self.page.goto(url, wait_until="networkidle", timeout=30000)
+            self.page.goto(url, wait_until="domcontentloaded", timeout=60000)
+            # Wait a moment for dynamic content
+            import time
+            time.sleep(2)
             return f"Navigated to {url}"
         except Exception as e:
             return f"Failed to navigate to {url}: {str(e)}"

@@ -1090,7 +1090,7 @@ FUNCTIONS = [
     },
     {
         "name": "immortal_web_agent",
-        "description": "Powerful web automation using a persistent browser session. Use for research, social media, or web-based workflows.",
+        "description": "The TITAN Web Agent. High-fidelity browser automation with DOM reasoning. Use for YouTube interaction (Like/Subscribe), complex research, or any multi-step web interaction.",
         "parameters": {
             "type": "object",
             "properties": {
@@ -1384,7 +1384,7 @@ FUNCTIONS = [
     },
     {
         "name": "open_any_url",
-        "description": "Open any URL or website in the default browser.",
+        "description": "Open any URL or website in the default system browser. Use for viewing content. For automation or DOM interaction, use 'immortal_web_agent'.",
         "parameters": {
             "type": "object",
             "properties": {

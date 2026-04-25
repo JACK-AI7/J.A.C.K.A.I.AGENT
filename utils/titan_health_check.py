@@ -99,7 +99,8 @@ def run_health_check():
         "github_hunter", "httpx", "memory_ops", "multimodal_live_skill",
         "research_titan", "screenshot_ops", "system_doctor", "system_ops",
         "titan_expander", "tool_swarm", "web_ops", "whatsapp_skill",
-        "windows_master", "youtube_master"
+        "windows_master", "youtube_master", "auto_browser_dom",
+        "auto_navigator", "auto_claw"
     ]
     
     print(f"[Skill Library] Commencing verification of {len(skills)} modules...")
