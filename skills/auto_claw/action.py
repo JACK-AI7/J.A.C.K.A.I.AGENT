@@ -27,14 +27,17 @@ def execute(task=None):
     signals.thought_received.emit(f"Auto Claw: Deploying autonomous system agent for '{task}'...", "decision")
 
     try:
-        # Pre-configure interpreter for local offline use
-        interpreter.offline = True
-        interpreter.auto_run = True
+        from config import INTERPRETER_SETTINGS, MODEL_PROFILES
         
-        # Load local configuration from config.py indirectly if possible, but here we set defaults
-        # To avoid circular imports, we assume OLLAMA is at localhost:11434
-        interpreter.llm.model = "ollama/qwen2.5:7b" # Optimized for tool calling
-        interpreter.llm.api_base = "http://localhost:11434"
+        # Deploy the Worker based on task type
+        model = INTERPRETER_SETTINGS["model"]
+        if any(word in task.lower() for word in ["code", "script", "program", "build"]):
+            model = f"ollama/{MODEL_PROFILES['coder']['model']}"
+            
+        interpreter.llm.model = model
+        interpreter.llm.api_base = INTERPRETER_SETTINGS["api_base"]
+        interpreter.offline = INTERPRETER_SETTINGS["offline"]
+        interpreter.auto_run = INTERPRETER_SETTINGS["auto_run"]
         
         interpreter.system_message = (
             "You are the J.A.R.V.I.S. AUTO CLAW. "

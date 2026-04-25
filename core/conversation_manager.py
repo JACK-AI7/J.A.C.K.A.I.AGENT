@@ -3,6 +3,7 @@ import json
 import os
 from typing import List, Dict, Any, Optional
 from config import CONTEXT_SETTINGS, AUTONOMOUS_SETTINGS
+from memory_vault import vault
 
 
 class ConversationManager:
@@ -61,6 +62,20 @@ class ConversationManager:
             context_messages.append(
                 {"role": "assistant", "content": assistant_response}
             )
+
+        # --- LONGER-TERM RAG (Neural Archive) ---
+        # Fetch relevant facts from the vector DB to ground the response
+        try:
+            last_query = recent_interactions[-1]["user_query"]
+            relevant_facts = vault.retrieve_relevant_facts(last_query)
+            if relevant_facts:
+                fact_block = "\n".join([f"- {f}" for f in relevant_facts])
+                context_messages.insert(0, {
+                    "role": "system", 
+                    "content": f"NEURAL ARCHIVE DATA (Relevant Facts):\n{fact_block}\nUse this historical context if relevant to the current mission."
+                })
+        except Exception as e:
+            print(f"Memory Vault Retrieval Error: {e}")
 
         return context_messages
 

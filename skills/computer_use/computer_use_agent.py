@@ -8,9 +8,10 @@ from desktop_agent import desktop_agent
 from mss import mss
 import io
 import re
+from config import MODEL_PROFILES
 
 class ComputerUseAgent:
-    def __init__(self, model="qwen2-vl:2b"):
+    def __init__(self, model=MODEL_PROFILES["eyes"]["model"]):
         self.model = model
         self.ollama_url = "http://localhost:11434/api/generate"
         self.screen_width, self.screen_height = self._get_screen_res()
@@ -43,16 +44,20 @@ class ComputerUseAgent:
         """Main loop for executing a task using local Ollama vision model."""
         print(f"TITAN Local-Compute: Initiating local brain ({self.model}) for: {prompt}")
         
-        system_prompt = f"""You are a computer use agent. You can see the screen and must provide actions to fulfill the user's request.
-Screen Resolution: {self.screen_width}x{self.screen_height}.
-Available Actions:
-- click(x, y): Click at coordinates
-- type(text): Type text at current focus
-- move(x, y): Move mouse to coordinates
-- scroll(direction): 'up' or 'down'
-- close(): Close active window
+        system_prompt = f"""You are the 'TITAN Eyes' Agent. You are monitoring the screen to assist the Manager.
+Current Resolution: {self.screen_width}x{self.screen_height}.
 
-Output only the action in the format: ACTION: click(100, 200)
+PRECISION CONTROLS:
+- click(x, y): Absolute pixel coordinates.
+- type(text): Input text into highlighted field.
+- move(x, y): Hover over element.
+- scroll(direction, amount): 'up'/'down', amount 1-10.
+- wait(seconds): Pause for UI loading.
+
+STRATEGY:
+Observe the visual state, identify interactive elements, and provide the NEXT logical action to fulfill the mission.
+
+Output Format: ACTION: click(500, 250)
 """
 
         for i in range(10):  # Max 10 steps

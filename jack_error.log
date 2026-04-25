@@ -47569,3 +47569,238 @@ Traceback (most recent call last):
                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 TypeError: KokoroEngine.__init__() got an unexpected keyword argument 'lang'
 
+2026-04-24 21:21:13,538 - ERROR - UNHANDLED EXCEPTION:
+Traceback (most recent call last):
+  File "c:\Users\bjasw\Downloads\jarvis-main\jarvis-main\main.py", line 95, in <module>
+    from core.jack_ai_agent import JackAIAgent
+  File "c:\Users\bjasw\Downloads\jarvis-main\jarvis-main\core\jack_ai_agent.py", line 6, in <module>
+    from speech_handler import SpeechHandler
+  File "c:\Users\bjasw\Downloads\jarvis-main\jarvis-main\core\speech_handler.py", line 5, in <module>
+    from RealtimeSTT import AudioToTextRecorder
+ModuleNotFoundError: No module named 'RealtimeSTT'
+
+2026-04-24 21:33:31,996 - ERROR - Error receiving data from connection: [WinError 109] The pipe has been ended
+Traceback (most recent call last):
+  File "C:\Users\bjasw\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.12_qbz5n2kfra8p0\LocalCache\local-packages\Python312\site-packages\RealtimeSTT\audio_recorder.py", line 127, in poll_connection
+    if self.conn.poll(0.01):  # Increased from 0.01 to 0.5 seconds
+       ^^^^^^^^^^^^^^^^^^^^
+  File "C:\Program Files\WindowsApps\PythonSoftwareFoundation.Python.3.12_3.12.2800.0_x64__qbz5n2kfra8p0\Lib\multiprocessing\connection.py", line 257, in poll
+    return self._poll(timeout)
+           ^^^^^^^^^^^^^^^^^^^
+  File "C:\Program Files\WindowsApps\PythonSoftwareFoundation.Python.3.12_3.12.2800.0_x64__qbz5n2kfra8p0\Lib\multiprocessing\connection.py", line 344, in _poll
+    _winapi.PeekNamedPipe(self._handle)[0] != 0):
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+BrokenPipeError: [WinError 109] The pipe has been ended
+2026-04-24 21:33:32,020 - ERROR - Error receiving data from connection: [WinError 109] The pipe has been ended
+Traceback (most recent call last):
+  File "C:\Users\bjasw\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.12_qbz5n2kfra8p0\LocalCache\local-packages\Python312\site-packages\RealtimeSTT\audio_recorder.py", line 127, in poll_connection
+    if self.conn.poll(0.01):  # Increased from 0.01 to 0.5 seconds
+       ^^^^^^^^^^^^^^^^^^^^
+  File "C:\Program Files\WindowsApps\PythonSoftwareFoundation.Python.3.12_3.12.2800.0_x64__qbz5n2kfra8p0\Lib\multiprocessing\connection.py", line 257, in poll
+    return self._poll(timeout)
+           ^^^^^^^^^^^^^^^^^^^
+  File "C:\Program Files\WindowsApps\PythonSoftwareFoundation.Python.3.12_3.12.2800.0_x64__qbz5n2kfra8p0\Lib\multiprocessing\connection.py", line 344, in _poll
+    _winapi.PeekNamedPipe(self._handle)[0] != 0):
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+BrokenPipeError: [WinError 109] The pipe has been ended
+2026-04-24 21:33:32,041 - ERROR - Error receiving data from connection: [WinError 109] The pipe has been ended
+Traceback (most recent call last):
+  File "C:\Users\bjasw\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.12_qbz5n2kfra8p0\LocalCache\local-packages\Python312\site-packages\RealtimeSTT\audio_recorder.py", line 127, in poll_connection
+    if self.conn.poll(0.01):  # Increased from 0.01 to 0.5 seconds
+       ^^^^^^^^^^^^^^^^^^^^
+  File "C:\Program Files\WindowsApps\PythonSoftwareFoundation.Python.3.12_3.12.2800.0_x64__qbz5n2kfra8p0\Lib\multiprocessing\connection.py", line 257, in poll
+    return self._poll(timeout)
+           ^^^^^^^^^^^^^^^^^^^
+  File "C:\Program Files\WindowsApps\PythonSoftwareFoundation.Python.3.12_3.12.2800.0_x64__qbz5n2kfra8p0\Lib\multiprocessing\connection.py", line 344, in _poll
+    _winapi.PeekNamedPipe(self._handle)[0] != 0):
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+BrokenPipeError: [WinError 109] The pipe has been ended
+2026-04-24 21:33:32,063 - ERROR - Error receiving data from connection: [WinError 109] The pipe has been ended
+Traceback (most recent call last):
+  File "C:\Users\bjasw\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.12_qbz5n2kfra8p0\LocalCache\local-packages\Python312\site-packages\RealtimeSTT\audio_recorder.py", line 127, in poll_connection
+    if self.conn.poll(0.01):  # Increased from 0.01 to 0.5 seconds
+       ^^^^^^^^^^^^^^^^^^^^
+  File "C:\Program Files\WindowsApps\PythonSoftwareFoundation.Python.3.12_3.12.2800.0_x64__qbz5n2kfra8p0\Lib\multiprocessing\connection.py", line 257, in poll
+    return self._poll(timeout)
+           ^^^^^^^^^^^^^^^^^^^
+  File "C:\Program Files\WindowsApps\PythonSoftwareFoundation.Python.3.12_3.12.2800.0_x64__qbz5n2kfra8p0\Lib\multiprocessing\connection.py", line 344, in _poll
+    _winapi.PeekNamedPipe(self._handle)[0] != 0):
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+BrokenPipeError: [WinError 109] The pipe has been ended
+2026-04-24 21:33:32,084 - ERROR - Error receiving data from connection: [WinError 109] The pipe has been ended
+Traceback (most recent call last):
+  File "C:\Users\bjasw\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.12_qbz5n2kfra8p0\LocalCache\local-packages\Python312\site-packages\RealtimeSTT\audio_recorder.py", line 127, in poll_connection
+    if self.conn.poll(0.01):  # Increased from 0.01 to 0.5 seconds
+       ^^^^^^^^^^^^^^^^^^^^
+  File "C:\Program Files\WindowsApps\PythonSoftwareFoundation.Python.3.12_3.12.2800.0_x64__qbz5n2kfra8p0\Lib\multiprocessing\connection.py", line 257, in poll
+    return self._poll(timeout)
+           ^^^^^^^^^^^^^^^^^^^
+  File "C:\Program Files\WindowsApps\PythonSoftwareFoundation.Python.3.12_3.12.2800.0_x64__qbz5n2kfra8p0\Lib\multiprocessing\connection.py", line 344, in _poll
+    _winapi.PeekNamedPipe(self._handle)[0] != 0):
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+BrokenPipeError: [WinError 109] The pipe has been ended
+2026-04-24 21:33:32,105 - ERROR - Error receiving data from connection: [WinError 109] The pipe has been ended
+Traceback (most recent call last):
+  File "C:\Users\bjasw\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.12_qbz5n2kfra8p0\LocalCache\local-packages\Python312\site-packages\RealtimeSTT\audio_recorder.py", line 127, in poll_connection
+    if self.conn.poll(0.01):  # Increased from 0.01 to 0.5 seconds
+       ^^^^^^^^^^^^^^^^^^^^
+  File "C:\Program Files\WindowsApps\PythonSoftwareFoundation.Python.3.12_3.12.2800.0_x64__qbz5n2kfra8p0\Lib\multiprocessing\connection.py", line 257, in poll
+    return self._poll(timeout)
+           ^^^^^^^^^^^^^^^^^^^
+  File "C:\Program Files\WindowsApps\PythonSoftwareFoundation.Python.3.12_3.12.2800.0_x64__qbz5n2kfra8p0\Lib\multiprocessing\connection.py", line 344, in _poll
+    _winapi.PeekNamedPipe(self._handle)[0] != 0):
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+BrokenPipeError: [WinError 109] The pipe has been ended
+2026-04-24 21:33:32,127 - ERROR - Error receiving data from connection: [WinError 109] The pipe has been ended
+Traceback (most recent call last):
+  File "C:\Users\bjasw\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.12_qbz5n2kfra8p0\LocalCache\local-packages\Python312\site-packages\RealtimeSTT\audio_recorder.py", line 127, in poll_connection
+    if self.conn.poll(0.01):  # Increased from 0.01 to 0.5 seconds
+       ^^^^^^^^^^^^^^^^^^^^
+  File "C:\Program Files\WindowsApps\PythonSoftwareFoundation.Python.3.12_3.12.2800.0_x64__qbz5n2kfra8p0\Lib\multiprocessing\connection.py", line 257, in poll
+    return self._poll(timeout)
+           ^^^^^^^^^^^^^^^^^^^
+  File "C:\Program Files\WindowsApps\PythonSoftwareFoundation.Python.3.12_3.12.2800.0_x64__qbz5n2kfra8p0\Lib\multiprocessing\connection.py", line 344, in _poll
+    _winapi.PeekNamedPipe(self._handle)[0] != 0):
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+BrokenPipeError: [WinError 109] The pipe has been ended
+2026-04-24 21:33:32,148 - ERROR - Error receiving data from connection: [WinError 109] The pipe has been ended
+Traceback (most recent call last):
+  File "C:\Users\bjasw\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.12_qbz5n2kfra8p0\LocalCache\local-packages\Python312\site-packages\RealtimeSTT\audio_recorder.py", line 127, in poll_connection
+    if self.conn.poll(0.01):  # Increased from 0.01 to 0.5 seconds
+       ^^^^^^^^^^^^^^^^^^^^
+  File "C:\Program Files\WindowsApps\PythonSoftwareFoundation.Python.3.12_3.12.2800.0_x64__qbz5n2kfra8p0\Lib\multiprocessing\connection.py", line 257, in poll
+    return self._poll(timeout)
+           ^^^^^^^^^^^^^^^^^^^
+  File "C:\Program Files\WindowsApps\PythonSoftwareFoundation.Python.3.12_3.12.2800.0_x64__qbz5n2kfra8p0\Lib\multiprocessing\connection.py", line 344, in _poll
+    _winapi.PeekNamedPipe(self._handle)[0] != 0):
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+BrokenPipeError: [WinError 109] The pipe has been ended
+2026-04-24 21:33:32,169 - ERROR - Error receiving data from connection: [WinError 109] The pipe has been ended
+Traceback (most recent call last):
+  File "C:\Users\bjasw\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.12_qbz5n2kfra8p0\LocalCache\local-packages\Python312\site-packages\RealtimeSTT\audio_recorder.py", line 127, in poll_connection
+    if self.conn.poll(0.01):  # Increased from 0.01 to 0.5 seconds
+       ^^^^^^^^^^^^^^^^^^^^
+  File "C:\Program Files\WindowsApps\PythonSoftwareFoundation.Python.3.12_3.12.2800.0_x64__qbz5n2kfra8p0\Lib\multiprocessing\connection.py", line 257, in poll
+    return self._poll(timeout)
+           ^^^^^^^^^^^^^^^^^^^
+  File "C:\Program Files\WindowsApps\PythonSoftwareFoundation.Python.3.12_3.12.2800.0_x64__qbz5n2kfra8p0\Lib\multiprocessing\connection.py", line 344, in _poll
+    _winapi.PeekNamedPipe(self._handle)[0] != 0):
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+BrokenPipeError: [WinError 109] The pipe has been ended
+2026-04-24 22:54:22,383 - WARNING - Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+2026-04-24 23:04:16,046 - ERROR - Error receiving data from connection: 
+Traceback (most recent call last):
+  File "C:\Program Files\WindowsApps\PythonSoftwareFoundation.Python.3.12_3.12.2800.0_x64__qbz5n2kfra8p0\Lib\multiprocessing\connection.py", line 317, in _recv_bytes
+    ov, err = _winapi.ReadFile(self._handle, bsize,
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+BrokenPipeError: [WinError 109] The pipe has been ended
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\bjasw\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.12_qbz5n2kfra8p0\LocalCache\local-packages\Python312\site-packages\RealtimeSTT\audio_recorder.py", line 128, in poll_connection
+    data = self.conn.recv()
+           ^^^^^^^^^^^^^^^^
+  File "C:\Program Files\WindowsApps\PythonSoftwareFoundation.Python.3.12_3.12.2800.0_x64__qbz5n2kfra8p0\Lib\multiprocessing\connection.py", line 250, in recv
+    buf = self._recv_bytes()
+          ^^^^^^^^^^^^^^^^^^
+  File "C:\Program Files\WindowsApps\PythonSoftwareFoundation.Python.3.12_3.12.2800.0_x64__qbz5n2kfra8p0\Lib\multiprocessing\connection.py", line 337, in _recv_bytes
+    raise EOFError
+EOFError
+2026-04-24 23:04:16,069 - ERROR - Error receiving data from connection: [WinError 109] The pipe has been ended
+Traceback (most recent call last):
+  File "C:\Users\bjasw\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.12_qbz5n2kfra8p0\LocalCache\local-packages\Python312\site-packages\RealtimeSTT\audio_recorder.py", line 127, in poll_connection
+    if self.conn.poll(0.01):  # Increased from 0.01 to 0.5 seconds
+       ^^^^^^^^^^^^^^^^^^^^
+  File "C:\Program Files\WindowsApps\PythonSoftwareFoundation.Python.3.12_3.12.2800.0_x64__qbz5n2kfra8p0\Lib\multiprocessing\connection.py", line 257, in poll
+    return self._poll(timeout)
+           ^^^^^^^^^^^^^^^^^^^
+  File "C:\Program Files\WindowsApps\PythonSoftwareFoundation.Python.3.12_3.12.2800.0_x64__qbz5n2kfra8p0\Lib\multiprocessing\connection.py", line 344, in _poll
+    _winapi.PeekNamedPipe(self._handle)[0] != 0):
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+BrokenPipeError: [WinError 109] The pipe has been ended
+2026-04-24 23:04:16,090 - ERROR - Error receiving data from connection: [WinError 109] The pipe has been ended
+Traceback (most recent call last):
+  File "C:\Users\bjasw\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.12_qbz5n2kfra8p0\LocalCache\local-packages\Python312\site-packages\RealtimeSTT\audio_recorder.py", line 127, in poll_connection
+    if self.conn.poll(0.01):  # Increased from 0.01 to 0.5 seconds
+       ^^^^^^^^^^^^^^^^^^^^
+  File "C:\Program Files\WindowsApps\PythonSoftwareFoundation.Python.3.12_3.12.2800.0_x64__qbz5n2kfra8p0\Lib\multiprocessing\connection.py", line 257, in poll
+    return self._poll(timeout)
+           ^^^^^^^^^^^^^^^^^^^
+  File "C:\Program Files\WindowsApps\PythonSoftwareFoundation.Python.3.12_3.12.2800.0_x64__qbz5n2kfra8p0\Lib\multiprocessing\connection.py", line 344, in _poll
+    _winapi.PeekNamedPipe(self._handle)[0] != 0):
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+BrokenPipeError: [WinError 109] The pipe has been ended
+2026-04-24 23:04:16,111 - ERROR - Error receiving data from connection: [WinError 109] The pipe has been ended
+Traceback (most recent call last):
+  File "C:\Users\bjasw\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.12_qbz5n2kfra8p0\LocalCache\local-packages\Python312\site-packages\RealtimeSTT\audio_recorder.py", line 127, in poll_connection
+    if self.conn.poll(0.01):  # Increased from 0.01 to 0.5 seconds
+       ^^^^^^^^^^^^^^^^^^^^
+  File "C:\Program Files\WindowsApps\PythonSoftwareFoundation.Python.3.12_3.12.2800.0_x64__qbz5n2kfra8p0\Lib\multiprocessing\connection.py", line 257, in poll
+    return self._poll(timeout)
+           ^^^^^^^^^^^^^^^^^^^
+  File "C:\Program Files\WindowsApps\PythonSoftwareFoundation.Python.3.12_3.12.2800.0_x64__qbz5n2kfra8p0\Lib\multiprocessing\connection.py", line 344, in _poll
+    _winapi.PeekNamedPipe(self._handle)[0] != 0):
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+BrokenPipeError: [WinError 109] The pipe has been ended
+2026-04-24 23:04:16,133 - ERROR - Error receiving data from connection: [WinError 109] The pipe has been ended
+Traceback (most recent call last):
+  File "C:\Users\bjasw\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.12_qbz5n2kfra8p0\LocalCache\local-packages\Python312\site-packages\RealtimeSTT\audio_recorder.py", line 127, in poll_connection
+    if self.conn.poll(0.01):  # Increased from 0.01 to 0.5 seconds
+       ^^^^^^^^^^^^^^^^^^^^
+  File "C:\Program Files\WindowsApps\PythonSoftwareFoundation.Python.3.12_3.12.2800.0_x64__qbz5n2kfra8p0\Lib\multiprocessing\connection.py", line 257, in poll
+    return self._poll(timeout)
+           ^^^^^^^^^^^^^^^^^^^
+  File "C:\Program Files\WindowsApps\PythonSoftwareFoundation.Python.3.12_3.12.2800.0_x64__qbz5n2kfra8p0\Lib\multiprocessing\connection.py", line 344, in _poll
+    _winapi.PeekNamedPipe(self._handle)[0] != 0):
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+BrokenPipeError: [WinError 109] The pipe has been ended
+2026-04-24 23:04:16,155 - ERROR - Error receiving data from connection: [WinError 109] The pipe has been ended
+Traceback (most recent call last):
+  File "C:\Users\bjasw\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.12_qbz5n2kfra8p0\LocalCache\local-packages\Python312\site-packages\RealtimeSTT\audio_recorder.py", line 127, in poll_connection
+    if self.conn.poll(0.01):  # Increased from 0.01 to 0.5 seconds
+       ^^^^^^^^^^^^^^^^^^^^
+  File "C:\Program Files\WindowsApps\PythonSoftwareFoundation.Python.3.12_3.12.2800.0_x64__qbz5n2kfra8p0\Lib\multiprocessing\connection.py", line 257, in poll
+    return self._poll(timeout)
+           ^^^^^^^^^^^^^^^^^^^
+  File "C:\Program Files\WindowsApps\PythonSoftwareFoundation.Python.3.12_3.12.2800.0_x64__qbz5n2kfra8p0\Lib\multiprocessing\connection.py", line 344, in _poll
+    _winapi.PeekNamedPipe(self._handle)[0] != 0):
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+BrokenPipeError: [WinError 109] The pipe has been ended
+2026-04-24 23:04:16,176 - ERROR - Error receiving data from connection: [WinError 109] The pipe has been ended
+Traceback (most recent call last):
+  File "C:\Users\bjasw\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.12_qbz5n2kfra8p0\LocalCache\local-packages\Python312\site-packages\RealtimeSTT\audio_recorder.py", line 127, in poll_connection
+    if self.conn.poll(0.01):  # Increased from 0.01 to 0.5 seconds
+       ^^^^^^^^^^^^^^^^^^^^
+  File "C:\Program Files\WindowsApps\PythonSoftwareFoundation.Python.3.12_3.12.2800.0_x64__qbz5n2kfra8p0\Lib\multiprocessing\connection.py", line 257, in poll
+    return self._poll(timeout)
+           ^^^^^^^^^^^^^^^^^^^
+  File "C:\Program Files\WindowsApps\PythonSoftwareFoundation.Python.3.12_3.12.2800.0_x64__qbz5n2kfra8p0\Lib\multiprocessing\connection.py", line 344, in _poll
+    _winapi.PeekNamedPipe(self._handle)[0] != 0):
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+BrokenPipeError: [WinError 109] The pipe has been ended
+2026-04-24 23:04:16,198 - ERROR - Error receiving data from connection: [WinError 109] The pipe has been ended
+Traceback (most recent call last):
+  File "C:\Users\bjasw\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.12_qbz5n2kfra8p0\LocalCache\local-packages\Python312\site-packages\RealtimeSTT\audio_recorder.py", line 127, in poll_connection
+    if self.conn.poll(0.01):  # Increased from 0.01 to 0.5 seconds
+       ^^^^^^^^^^^^^^^^^^^^
+  File "C:\Program Files\WindowsApps\PythonSoftwareFoundation.Python.3.12_3.12.2800.0_x64__qbz5n2kfra8p0\Lib\multiprocessing\connection.py", line 257, in poll
+    return self._poll(timeout)
+           ^^^^^^^^^^^^^^^^^^^
+  File "C:\Program Files\WindowsApps\PythonSoftwareFoundation.Python.3.12_3.12.2800.0_x64__qbz5n2kfra8p0\Lib\multiprocessing\connection.py", line 344, in _poll
+    _winapi.PeekNamedPipe(self._handle)[0] != 0):
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+BrokenPipeError: [WinError 109] The pipe has been ended
+2026-04-25 20:09:24,641 - ERROR - UNHANDLED EXCEPTION:
+Traceback (most recent call last):
+  File "C:\Users\bjasw\Downloads\jarvis-main\jarvis-main\main.py", line 103, in <module>
+    from core.jack_ai_agent import JackAIAgent
+  File "C:\Users\bjasw\Downloads\jarvis-main\jarvis-main\core\jack_ai_agent.py", line 6, in <module>
+    from speech_handler import SpeechHandler
+  File "C:\Users\bjasw\Downloads\jarvis-main\jarvis-main\core\speech_handler.py", line 7, in <module>
+    from config import VOICE_SETTINGS, RECOGNITION_SETTINGS, WHISPER_SETTINGS, LANGUAGE_SETTINGS
+  File "C:\Users\bjasw\Downloads\jarvis-main\jarvis-main\core\config.py", line 157, in <module>
+    "model": f"ollama/{MODEL_PROFILES['fast']['model']}",  # Use fast model for automation code gen
+                       ~~~~~~~~~~~~~~^^^^^^^^
+KeyError: 'fast'
+

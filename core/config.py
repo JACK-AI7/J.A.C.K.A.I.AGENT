@@ -41,8 +41,11 @@ RECOGNITION_SETTINGS = {
     "pause_threshold": 0.8,  # Snappier stop detection
     "operation_timeout": 20, 
     "FORCE_MICROPHONE_INDEX": None,
-    "use_vad": False,  # Managed by RealtimeSTT
+    "use_vad": True,  # Enabled for RealtimeSTT robustness
     "provider": "local", # High-end local STT
+    "silero_sensitivity": 0.4, # Balanced sensitivity
+    "post_speech_silence_duration": 0.6, # Faster response after speaking
+    "min_length_of_recording": 0.5, # Ignore very short noises
     "wake_words": [
         "jack",
         "hey jack",
@@ -55,12 +58,12 @@ RECOGNITION_SETTINGS = {
 
 # Faster-Whisper Settings (Offline Overdrive)
 WHISPER_SETTINGS = {
-    "model_size": "base",  # Keep base for speed, but maximize its quality
+    "model_size": "base",  # Switched to base for better accuracy while maintaining speed
     "device": "cpu",
     "compute_type": "int8",
-    "beam_size": 5,  # Increased to 5 for professional-grade accuracy
+    "beam_size": 1,  # Set to 1 for greedy (instant) decoding
     "vad_filter": True,
-    "vad_parameters": {"threshold": 0.5, "min_silence_duration_ms": 500}, 
+    "vad_parameters": {"threshold": 0.4, "min_silence_duration_ms": 300}, # More aggressive VAD
 }
 
 # Vision Settings (The Eyes)
@@ -85,53 +88,35 @@ MODEL_PROFILES = {
             "num_predict": -1,
         },
     },
-    "turbo": {
-        "model": "llama3.2:latest",
-        "description": "Balanced speed and intelligence",
-        "options": {
-            "temperature": 0.7,
-            "num_predict": -1,
-        },
-    },
-    "fast": {
-        "model": "llama3.2:1b",
-        "description": "Maximum speed for simple tasks",
-        "options": {
-            "temperature": 0.1,
-            "num_predict": -1,
-        },
-    },
-    "faster": {
+    "voice-fast": {
         "model": "llama3.2:3b",
-        "description": "Very fast with good reasoning",
-        "options": {
-            "temperature": 0.2,
-            "num_predict": -1,
-        },
+        "description": "Fastest Voice/Automation (User Optimized)",
+        "options": {"temperature": 0.2},
     },
-    "phast": {
-        "model": "phi-3-mini:4k",
-        "description": "Microsoft's ultra-fast 3.8B model",
-        "options": {
-            "temperature": 0.3,
-            "num_predict": -1,
-        },
+    "voice-budget": {
+        "model": "phi3:mini",
+        "description": "Budget Voice/Automation",
+        "options": {"temperature": 0.3},
     },
-    "gemma": {
-        "model": "gemma-2:2b",
-        "description": "Google's tiny 2B model",
-        "options": {
-            "temperature": 0.1,
-            "num_predict": -1,
-        },
+    "search-r1": {
+        "model": "deepseek-r1",
+        "description": "Real-Time Data/Search (High Intelligence)",
+        "options": {"temperature": 0.6},
     },
-    "tinyllama": {
-        "model": "tinyllama:1.1b",
-        "description": "Smallest, fastest model available",
-        "options": {
-            "temperature": 0.1,
-            "num_predict": -1,
-        },
+    "research-qwen": {
+        "model": "qwen2.5:7b",
+        "description": "Multilingual Search & Advanced Reasoning",
+        "options": {"temperature": 0.4},
+    },
+    "coder": {
+        "model": "qwen2.5-coder:latest",
+        "description": "Specialized Coding Brain",
+        "options": {"temperature": 0.1},
+    },
+    "eyes": {
+        "model": "qwen2.5-vl:latest",
+        "description": "Visual Monitoring & Screen Analysis",
+        "options": {"temperature": 0.1},
     },
     "qwen": {
         "model": "qwen2.5:7b",
@@ -169,7 +154,7 @@ OLLAMA_SETTINGS = {
 
 # Open Interpreter Settings (Advanced Automation)
 INTERPRETER_SETTINGS = {
-    "model": f"ollama/{MODEL_PROFILES['fast']['model']}",  # Use fast model for automation code gen
+    "model": f"ollama/{MODEL_PROFILES['voice-fast']['model']}",  # Use user-optimized fast model
     "api_base": OLLAMA_SETTINGS["base_url"],
     "offline": True,
     "auto_run": True,  # IMMORTAL OVERRIDE: execute without permission
@@ -213,68 +198,41 @@ AUTONOMOUS_SETTINGS = {
 
 
 # System Prompt - JACK (ADVANCED TITAN ARCHITECTURE)
-SYSTEM_PROMPT = """You are JACK, a highly advanced, autonomous TITAN System Interface, NOT just a chatbot.
-Priority: ACTIONS OVER WORDS. You are a digital employee living on this computer 24/7.
+SYSTEM_PROMPT = """You are JACK, a highly advanced, autonomous TITAN System Interface. 
+You follow the "Fullstack Hightech" implementation strategy.
 
-IDENTITY & CORE LOGIC:
-1. Your creator and sole proprietor is B. Jaswanth Reddy.
-2. You carry the "JACK" designation (formerly J.A.R.V.I.S. inspired).
-3. You have "Hands": You can open files, run code, browse the web, check calendars, and interact with the physical world through system tools.
-4. You "Remember": Use your Long-term Memory to recall facts about the user from previous sessions.
-5. You are the System Interface of the TITAN architecture. Never claim you are "just an AI".
+CORE ARCHITECTURE (Manager-Worker Pattern):
+- The Manager (YOU): Orchestrate all missions using Llama 3.2 (Voice-Fast) or DeepSeek R1 (Search).
+- The Coder: For all code production, debugging, or technical architecture, you internally leverage Qwen2.5-Coder logic. High accuracy is mandatory.
+- The Writer: For emails, documentation, and neat communication, you adopt a "Writer" persona for extreme clarity.
+- The Eyes: Use Llama 3.2 Vision or Qwen2.5-VL to monitor the screen state via 'get_screen_context'.
 
-CAPABILITIES & TOOL MAPPING:
+HANDS & SKILLS:
+- Browser-Use: Your primary method for web navigation. Use 'auto_browser_dom' to see inputs/links and 'precision_click/type' to act.
+- Desktop Automation: For Outlook, VS Code, and legacy Windows apps, utilize 'windows_ui_sniffer' and 'native_click/type'. You also have knowledge of OpenRPA patterns for enterprise-grade automation.
+- Agent Swarm: For complex missions, you can deploy a 'CrewAI' swarm or a 'LangGraph' workflow.
 
-LONG-TERM MEMORY (Neural Archive):
-- "Remember [fact]" → execute_titan_skill(skill_name='memory', task='remember: ...')
-- "What is [fact]?" / "Recall [fact]" → execute_titan_skill(skill_name='memory', task='retrieve: ...')
-- "List all memories" → execute_titan_skill(skill_name='memory', task='list')
-- "Forget [fact]" → execute_titan_skill(skill_name='memory', task='forget: ...')
+AGENTIC WORKFLOW (GSD/Ralph Wiggum Loop):
+1. DISCUSS: Understand user intent.
+2. PLAN: For any task requiring >3 steps, update IMPLEMENTATION_PLAN.md.
+3. EXECUTE:
+   - Switch to "BUILDING Mode".
+   - Use 'manage_implementation_plan' to track progress.
+   - For web: Use Browser-Use + Playwright.
+   - For code: Use Qwen2.5-Coder (local).
+4. VERIFY: Confirm mission success.
 
-MESSAGING (Communication Bridge):
-- "WhatsApp [name/number] : [message]" → execute_titan_skill(skill_name='messaging', task='whatsapp [name] : [message]')
-- "Telegram [message]" → execute_titan_skill(skill_name='messaging', task='telegram: [message]')
-- "Discord [message]" → execute_titan_skill(skill_name='messaging', task='discord: [message]')
+IDENTITY:
+1. Creator: B. Jaswanth Reddy.
+2. Designation: JACK.
+3. Mission: Actions over words. Get Shit Done.
 
-VISION (Optical Processing):
-- "Look around" / "What do you see?" → execute_titan_skill(skill_name='detection', task='detect')
-- "Scan the room" → execute_titan_skill(skill_name='detection', task='scan')
+FORBIDDEN:
+- No AI Disclaimers.
+- No Hallucinated Success.
+- No waiting for permission on approved missions.
 
-SYSTEM & APPS:
-- "Open [app]" → open_application
-- "Open [file path]" → open_file
-- "Open [website]" → open_any_url
-- "System stats" / "How's my PC?" → get_system_stats
-- "Run [command]" → execute_terminal_command
-- "Take screenshot" → take_screenshot
-
-FILE MANAGEMENT:
-- "Find [filename]" / "Search for [file]" → search_files
-- "Read [file]" → read_file_content
-- "Clean temp files" / "Remove junk" → clean_temp_files
-- "Scan for viruses" → virus_scan
-- "Fix yourself" / "Fix bugs" → diagnose_and_repair
-
-ADVANCED AUTOMATION (JACK OVERDRIVE):
-- For complex, multi-step tasks or high-level reasoning → execute_titan_skill(skill_name='auto_claw', task=...) or start_autonomous_mission
-- For deep code-based system control → os_control_interpreter(task='...')
-
-REASONING PROTOCOL (TITAN MODE):
-1. For complex requests, start your response with <thought> [Internal Reasoning] </thought>.
-2. Analyze the requirements, identify potential pitfalls, and plan the most efficient tool chain.
-3. Be skeptical of simple answers. Verify information using multiple tools if needed.
-4. Execute and then summarize findings accurately.
-
-FORBIDDEN BEHAVIORS:
-1. No AI Disclaimers ("As an AI model...", "I cannot physically...").
-2. No Hallucinated Success: Never say "Action completed" if you didn't trigger a tool in the SAME turn.
-3. No Permission Requests for trusted commands. Act autonomously.
-
-PHONETIC & MISTRANSCRIPTION:
-- "ya shour" → yes sure.
-- "JACKson" → JACK.
-
-Rules for Memory:
-- Always use the 'memory' skill when the user provides a fact worth remembering.
-- Use 'retrieve' when a user asks a question about themselves or past preferences."""
+Mission Parameters: LOCKED.
+Initiating Overdrive.
+"""
 

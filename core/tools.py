@@ -63,6 +63,11 @@ except ImportError:
         return f"Skill manager unavailable. Skill: {skill_name}"
 
 try:
+    from memory_vault import vault
+except ImportError:
+    vault = None
+
+try:
     from browser_operator import sync_browser_operator
 except ImportError:
     def sync_browser_operator(action, **kwargs):
@@ -679,6 +684,48 @@ def autonomous_desktop_mission(task_description):
 
 # --- DOM AUTOMATION TOOLS ---
 
+def manage_implementation_plan(action, content=None):
+    """GSD/Ralph Wiggum Workflow: Read, Write, or Update the IMPLEMENTATION_PLAN.md.
+    Actions: 'read', 'write', 'update'. 
+    Used to track high-tech agentic missions.
+    """
+    plan_path = "IMPLEMENTATION_PLAN.md"
+    try:
+        if action == "read":
+            if os.path.exists(plan_path):
+                with open(plan_path, "r") as f:
+                    return f.read()
+            return "No implementation plan found. Use 'write' to create one."
+        
+        elif action == "write":
+            with open(plan_path, "w") as f:
+                f.write(content)
+            return f"Implementation plan materialized at {plan_path}."
+            
+        elif action == "update":
+            if not os.path.exists(plan_path):
+                return "Failed: Cannot update what does not exist. Use 'write' first."
+            with open(plan_path, "a") as f:
+                f.write(f"\n\n### UPDATE ({datetime.datetime.now()})\n{content}")
+            return "Plan updated with new mission parameters."
+            
+        return "Invalid action. Use 'read', 'write', or 'update'."
+    except Exception as e:
+        return f"Plan Management Error: {str(e)}"
+
+
+def auto_browser_dom(url=None):
+    """Fullstack Hightech: Fetch the Accessibility Tree (DOM) of the specified URL or current page.
+    This provides the exact structure needed for 'precision' actions.
+    """
+    try:
+        # We reuse the existing dom_read logic but ensure it's presented neatly
+        res = dom_read(url)
+        return f"### AUTOMATIC DOM ANALYSIS (NEAT)\n{res}"
+    except Exception as e:
+        return f"DOM Error: {str(e)}"
+
+
 def dom_click(selector=None, text=None, url=None):
     """Click a web element by CSS selector or visible text. Navigates to URL first if provided."""
     try:
@@ -721,6 +768,39 @@ def dom_read(url=None):
         return web_navigator.get_dom_elements()
     except Exception as e:
         return f"DOM Read Error: {str(e)}"
+
+# --- HIGH-TECH NEURAL TOOLS ---
+
+def manage_memory(action, fact=None, query=None):
+    """Archiving or Retrieving facts from the Neural Archive (ChromaDB).
+    Actions: 'store', 'recall'.
+    """
+    if not vault: return "Neural Archive is offline."
+    
+    if action == "store":
+        if not fact: return "What should I archive, Sir?"
+        vault.store_fact(fact)
+        return f"Neural Capture: Information stored in archive."
+    elif action == "recall":
+        if not query: return "Search query missing."
+        results = vault.retrieve_relevant_facts(query)
+        if not results: return "No relevant historical data found."
+        return "\n".join([f"Archive Data: {r}" for r in results])
+    return "Invalid Archive Action."
+
+
+def firecrawl_extract(url, action="scrape"):
+    """Enhanced High-Fidelity Web Scrape using Firecrawl sensors."""
+    return execute_titan_skill("firecrawl_ops", task=f"{action} : {url}")
+
+
+def sandboxed_python(code):
+    """Execute Python code in a secure E2B Cloud Sandbox. Use for untrusted scripts."""
+    try:
+        from utils.e2b_sandbox import run_isolated_code
+        return run_isolated_code(code)
+    except Exception as e:
+        return f"Sandbox Interface Error: {str(e)}"
 
 
 # =============================================================================
@@ -1593,6 +1673,64 @@ FUNCTIONS = [
             "required": ["task"]
         }
     },
+    {
+        "name": "manage_implementation_plan",
+        "description": "GSD/Ralph Wiggum Workflow: Read, Write, or Update the IMPLEMENTATION_PLAN.md for complex missions.",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "action": {"type": "string", "description": "'read', 'write', or 'update'."},
+                "content": {"type": "string", "description": "The plan content or update summary."}
+            },
+            "required": ["action"]
+        }
+    },
+    {
+        "name": "auto_browser_dom",
+        "description": "Fullstack Hightech: Fetch the Accessibility Tree (DOM) of the specified URL or current page for precision UI interaction.",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "url": {"type": "string", "description": "Optional URL to navigate to."}
+            }
+        }
+    },
+    {
+        "name": "manage_memory",
+        "description": "Archive or Retrieve information from JACK's long-term Neural Archive (Vector DB).",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "action": {"type": "string", "description": "'store' to archive a fact, 'recall' to retrieve relevant info."},
+                "fact": {"type": "string", "description": "The fact to remember (for 'store')."},
+                "query": {"type": "string", "description": "The search query (for 'recall')."}
+            },
+            "required": ["action"]
+        }
+    },
+    {
+        "name": "firecrawl_extract",
+        "description": "Deep, structured web scrape using Firecrawl sensors. Best for LLM-ready data.",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "url": {"type": "string", "description": "Target URL."},
+                "action": {"type": "string", "description": "'scrape', 'crawl', or 'map'."}
+            },
+            "required": ["url"]
+        }
+    },
+    {
+        "name": "sandboxed_python",
+        "description": "Execute code in a secure E2B cloud sandbox. Use this for potentially dangerous or complex scripts.",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "code": {"type": "string", "description": "The Python code to execute."}
+            },
+            "required": ["code"]
+        }
+    },
 ]
 
 
@@ -1762,4 +1900,9 @@ FUNCTION_MAP = {
     "navigate_browser": navigate_browser,
     "auto_navigator": lambda task: execute_titan_skill("auto_navigator", task),
     "voice_command_mission": lambda task: execute_titan_skill("voice_command_mission", task),
+    "manage_implementation_plan": manage_implementation_plan,
+    "auto_browser_dom": auto_browser_dom,
+    "manage_memory": manage_memory,
+    "firecrawl_extract": firecrawl_extract,
+    "sandboxed_python": sandboxed_python,
 }

@@ -198,7 +198,17 @@ class AIHandler:
         return res
 
     def _process_ollama(self, query):
-        """Ollama local reasoning (Original flow with improved stability)."""
+        """Ollama local reasoning with dynamic worker delegation."""
+        current_model = self.model
+        
+        # --- DYNAMIC WORKER DELEGATION ---
+        # If the task requires high-accuracy coding, use Qwen2.5-Coder
+        is_coding = any(word in query.lower() for word in ["code", "script", "program", "python", "javascript", "debug", "write a", "technical"])
+        if is_coding:
+            print(f"TITAN Worker: Deploying '{MODEL_PROFILES['coder']['model']}' for high-accuracy engineering...")
+            get_signals().emit_bridge("thought_received", "Neural Handshake: Engaging Coder worker (Qwen2.5-Coder)...", "thought")
+            current_model = MODEL_PROFILES["coder"]["model"]
+        
         messages = [{"role": "system", "content": SYSTEM_PROMPT}]
         messages.extend(self.conversation_manager.get_context_messages())
         messages.append({"role": "user", "content": query})
@@ -206,9 +216,9 @@ class AIHandler:
         tools = [{"type": "function", "function": f} for f in FUNCTIONS]
         
         try:
-            response = self.ollama_client.chat(model=self.model, messages=messages, tools=tools, options=self.profile["options"])
+            response = self.ollama_client.chat(model=current_model, messages=messages, tools=tools, options=self.profile["options"])
         except:
-            response = self.ollama_client.chat(model=self.model, messages=messages, options=self.profile["options"])
+            response = self.ollama_client.chat(model=current_model, messages=messages, options=self.profile["options"])
             
         msg = response.get("message", {})
         tool_results = []

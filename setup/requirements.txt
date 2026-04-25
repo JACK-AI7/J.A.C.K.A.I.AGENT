@@ -79,3 +79,9 @@ arxiv
 beautifulsoup4
 lxml
 duckduckgo-search>=6.0.0
+chromadb
+firecrawl-py
+e2b
+pyautogen
+langgraph
+pipecat-ai

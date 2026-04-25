@@ -1,11 +1,20 @@
 import os
 import time
-from core.speech_handler import SpeechHandler
-from core.ai_handler import AIHandler
 from dotenv import load_dotenv
 
 # Load keys
 load_dotenv()
+
+# Add core to sys.path
+import sys
+script_dir = os.path.dirname(os.path.abspath(__file__))
+for folder in ["core", "agents", "gui", "utils", "setup"]:
+    folder_path = os.path.join(script_dir, folder)
+    if folder_path not in sys.path:
+        sys.path.insert(0, folder_path)
+
+from core.speech_handler import SpeechHandler
+from core.ai_handler import AIHandler
 
 def test_pipeline():
     print("=== JACK PREMIUM PIPELINE TEST ===")
