@@ -10,7 +10,7 @@ WOLFRAM_ALPHA_APP_ID = os.getenv("WOLFRAM_ALPHA_APP_ID")
 # Voice Settings (Prioritize High-End Local Engines)
 VOICE_SETTINGS = {
     "engine": "kokoro",  # Switched to KOKORO: High-quality local neural TTS (OSS)
-    "voice": "af_heart", # Premium feminine local voice (or 'am_michael' for masculine)
+    "voice": "am_michael", # Premium masculine local voice
     "rate": 1.0,         # Normal speed for neural engines
     "volume": 1.0,
     "elevenlabs_voice_id": None, # [DISABLED] Using high-end local Kokoro instead
@@ -77,7 +77,7 @@ VISION_SETTINGS = {
 }
 
 # Ollama Settings (Local AI)
-ACTIVE_PROFILE = "qwen"  # Switched back to qwen: the best local model for tool-calling agents
+ACTIVE_PROFILE = "reasoning"  # Switched to reasoning (Llama 3) as per user request for high-end free model
 
 MODEL_PROFILES = {
     "reasoning": {
@@ -94,32 +94,32 @@ MODEL_PROFILES = {
         "options": {"temperature": 0.2},
     },
     "voice-budget": {
-        "model": "phi3:mini",
+        "model": "llama3.2:1b",
         "description": "Budget Voice/Automation",
         "options": {"temperature": 0.3},
     },
     "search-r1": {
-        "model": "deepseek-r1",
+        "model": "deepseek-r1:1.5b",
         "description": "Real-Time Data/Search (High Intelligence)",
         "options": {"temperature": 0.6},
     },
     "research-qwen": {
-        "model": "qwen2.5:7b",
+        "model": "mistral:latest",
         "description": "Multilingual Search & Advanced Reasoning",
         "options": {"temperature": 0.4},
     },
     "coder": {
-        "model": "qwen2.5-coder:latest",
+        "model": "llama3:latest",
         "description": "Specialized Coding Brain",
         "options": {"temperature": 0.1},
     },
     "eyes": {
-        "model": "qwen2.5-vl:latest",
+        "model": "llama3.2-vision:latest",
         "description": "Visual Monitoring & Screen Analysis",
         "options": {"temperature": 0.1},
     },
     "qwen": {
-        "model": "qwen2.5:7b",
+        "model": "llama3:latest",
         "description": "Alibaba's Qwen 2.5 — best free tool-calling model",
         "options": {
             "temperature": 0.4,
