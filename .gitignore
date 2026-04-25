@@ -12,3 +12,4 @@ jack_error.log
 temp/
 model_cache/
 downloads/
+vault/memory/chroma.sqlite3

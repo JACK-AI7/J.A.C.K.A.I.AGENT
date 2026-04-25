@@ -60,7 +60,7 @@ class AIHandler:
 
         if self.provider == "ollama":
             self._ensure_ollama_running()
-            self.ollama_client = ollama.Client(host=OLLAMA_SETTINGS["base_url"], timeout=30.0)
+            self.ollama_client = ollama.Client(host=OLLAMA_SETTINGS["base_url"], timeout=120.0)
 
     def _map_to_google_tool(self, f):
         """Convert standard tool spec to Google Generative AI format."""
@@ -71,14 +71,19 @@ class AIHandler:
         }
 
     def _ensure_ollama_running(self):
-        try:
-            urllib.request.urlopen(OLLAMA_SETTINGS["base_url"], timeout=2)
-        except Exception:
+        """Checks if Ollama is running, starts it if not, and waits for readiness."""
+        for attempt in range(5):
             try:
-                subprocess.Popen("ollama serve", shell=True, 
-                                 creationflags=subprocess.CREATE_NO_WINDOW | subprocess.DETACHED_PROCESS)
-                time.sleep(3)
-            except: pass
+                urllib.request.urlopen(OLLAMA_SETTINGS["base_url"], timeout=2)
+                return True
+            except Exception:
+                if attempt == 0:
+                    try:
+                        subprocess.Popen("ollama serve", shell=True, 
+                                         creationflags=subprocess.CREATE_NO_WINDOW | subprocess.DETACHED_PROCESS)
+                    except: pass
+                time.sleep(2)
+        return False
 
     def process_query(self, query):
         """The main brain entry point. Routes to Gemini, Groq, or Ollama."""
