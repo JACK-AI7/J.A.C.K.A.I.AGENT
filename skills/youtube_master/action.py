@@ -15,17 +15,15 @@ def execute(task=None):
     print(f"YouTube Master: Initiating High-Fidelity mission - '{task}'")
     
     # We use our Titan Browser to reason about the YouTube UI
-    # We add a strong instruction to ensure it finds the buttons.
-    enhanced_task = f"""
-    Go to youtube.com if not already there.
-    {task}
-    Specifically:
-    1. Click the first video thumbnail.
-    2. Wait 3 seconds for it to start.
-    3. Find the 'Like' button (thumb up icon) and click it.
-    4. Find the 'Subscribe' button and if it doesn't say 'Subscribed', click it.
-    5. Be careful not to click the 'Unsubscribe' button if already subscribed.
-    """
+    # We ensure we're on YouTube and then let the model follow the specific instructions.
+    if "youtube.com" not in task.lower():
+        enhanced_task = f"Go to youtube.com. {task}"
+    else:
+        enhanced_task = task
+
+    # If it's a generic "interact" request, add the standard sub/like advice
+    if any(word in task.lower() for name in ["like", "sub", "comment"]):
+        enhanced_task += "\n\nNote: If you need to like, subscribe, or comment, find the respective buttons. For 'Like', look for the thumb up icon. For 'Subscribe', ensure you don't unsubscribe if already joined."
     
     try:
         # Wrap the async call

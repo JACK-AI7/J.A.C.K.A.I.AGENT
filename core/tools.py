@@ -237,6 +237,19 @@ def open_any_url(url):
     webbrowser.open(url)
     return f"Neural Command SUCCESS: The portal for {url} has been materialized by the system dispatch."
 
+def open_youtube():
+    """Open YouTube in the default browser."""
+    return open_any_url("https://www.youtube.com")
+
+def refresh_video():
+    """Reload the current browser page (useful for refreshing videos)."""
+    try:
+        from web_navigator import web_navigator
+        web_navigator.driver.refresh()
+        return "System Pulse: Refreshing the current visual feed, Sir."
+    except Exception as e:
+        return f"Refresh failed: {e}"
+
 
 def simple_calculator(expression):
     """Perform basic math."""
@@ -2075,6 +2088,16 @@ FUNCTIONS = [
         "description": "Run the full TITAN Morning Digest — system health check + global news + weather report. No parameters needed.",
         "parameters": {"type": "object", "properties": {}}
     },
+    {
+        "name": "open_youtube",
+        "description": "Open the YouTube homepage in the default browser.",
+        "parameters": {"type": "object", "properties": {}},
+    },
+    {
+        "name": "refresh_video",
+        "description": "Refresh or reload the current web page. Use when the user says 'refresh the video' or 'reload page'.",
+        "parameters": {"type": "object", "properties": {}},
+    },
 ]
 
 
@@ -2261,4 +2284,6 @@ FUNCTION_MAP = {
     "send_whatsapp_message": send_whatsapp_message,
     "analyze_image": analyze_image,
     "morning_digest": morning_digest,
+    "open_youtube": open_youtube,
+    "refresh_video": refresh_video,
 }
