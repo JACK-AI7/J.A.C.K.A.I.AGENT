@@ -39,21 +39,36 @@ class AIHandler:
         """Standard generation method for Production Core (Executor compatibility)."""
         from config import FALLBACK_PROFILE
         
+        # Build messages with system prompt for strict JSON enforcement
+        messages = [
+            {"role": "system", "content": SYSTEM_PROMPT},
+            {"role": "user", "content": prompt}
+        ]
+        
         try:
-            # 1. Main Mission: High-performance client
-            response = self.ollama_client.generate(model=self.model, prompt=prompt)
-            return response.get("response", "").strip()
+            # 1. Main Mission: High-performance client with strict JSON formatting
+            response = self.ollama_client.chat(
+                model=self.model, 
+                messages=messages, 
+                format='json',
+                options=self.profile.get("options", {})
+            )
+            return response.get("message", {}).get("content", "").strip()
         except Exception as e:
             # 2. Fallback Protocol: Reliability override
             try:
                 fallback_model = MODEL_PROFILES[FALLBACK_PROFILE]["model"]
                 print(f"TITAN LOG: High-performance core offline. Deploying Fallback ({fallback_model})...")
-                response = self.ollama_client.generate(model=fallback_model, prompt=prompt)
-                return response.get("response", "").strip()
+                response = self.ollama_client.chat(
+                    model=fallback_model, 
+                    messages=messages,
+                    format='json'
+                )
+                return response.get("message", {}).get("content", "").strip()
             except:
                 # 3. Emergency Bypass: Subprocess
                 response = subprocess.run(
-                    ["ollama", "run", self.model],
+                    ["ollama", "run", self.model, "--format", "json"],
                     input=prompt,
                     text=True,
                     capture_output=True
@@ -233,15 +248,6 @@ class AIHandler:
                     return json.loads(match.group())
                 except: pass
         return None
-                    
-            except Exception as e:
-                print(f"Loop Error at Step {step+1}: {e}")
-                get_signals().emit_bridge("thought_received", f"Neural Warning: {str(e)}", "thought")
-                # Try to tell the model what went wrong
-                messages.append({"role": "user", "content": f"System Error: {str(e)}. Please correct your JSON format and continue."})
-                time.sleep(1)
-
-        return "Mission Termination: Maximum depth reached without finalization."
 
     def _parse_inline_tool_calls(self, text):
         """Extract tool calls from raw text using regex (JSON, code blocks, identifiers, etc.)."""

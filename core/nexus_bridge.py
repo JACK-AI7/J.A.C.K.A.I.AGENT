@@ -53,14 +53,21 @@ class NexusSignals(QObject):
         super().__init__()
         self._bridge_port = 55050
         self._is_server = False
+        self._forwarders = [] # List of callables to forward telemetry
 
     def emit_bridge(self, signal_name, *args):
         """Emit locally AND send across the IPC bridge if acting as client."""
         # Always emit locally for internal components
         try:
             getattr(self, signal_name).emit(*args)
-        except Exception as e:
-            pass  # Silent — don't print to avoid pipe crashes
+        except Exception:
+            pass
+        
+        # Call external forwarders (e.g. Mobile Relay)
+        for forwarder in self._forwarders:
+            try:
+                forwarder(signal_name, *args)
+            except: pass
         
         # If we are the Agent (Client), send to the Dashboard (Server)
         if not self._is_server:
@@ -114,3 +121,9 @@ nexus_signals = NexusSignals()
 
 def get_signals():
     return nexus_signals
+
+def register_forwarder(callback):
+    """Register a function to receive all bridge signals (e.g. for remote sync)."""
+    signals = get_signals()
+    if callback not in signals._forwarders:
+        signals._forwarders.append(callback)

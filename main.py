@@ -102,6 +102,7 @@ mutex = None
 
 from core.jack_ai_agent import JackAIAgent
 from gui.hud_manager import HUDManager
+from core.relay_client import RelayClient
 
 
 # --- IMMORTAL RESTART CONSTANTS ---
@@ -206,6 +207,41 @@ def main():
             target=run_assistant, args=(assistant, restart_counter), daemon=True
         )
         assistant_thread.start()
+
+        # --- START NEURAL RELAY (Mobile Bridge) ---
+        def _start_relay():
+            try:
+                import subprocess
+                import socket
+                
+                # Get Local IP for user reference
+                try:
+                    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+                    s.connect(("8.8.8.8", 80))
+                    local_ip = s.getsockname()[0]
+                    s.close()
+                    print(f"\n[NETWORK] MOBILE_LINK_IP: {local_ip}:8001")
+                    if hud:
+                        hud.signals.activity_received.emit(f"Mobile Link: {local_ip}:8001")
+                except:
+                    print("\n[NETWORK] Local IP detection failed. Check your router settings.")
+
+                relay_script = os.path.join(script_dir, "api", "relay_server.py")
+                # Run in separate process to avoid blocking
+                subprocess.Popen([sys.executable, relay_script], 
+                               cwd=script_dir,
+                               creationflags=subprocess.CREATE_NO_WINDOW | subprocess.DETACHED_PROCESS)
+                print("TITAN RELAY: Online (Port 8001)")
+                
+                # Wait for relay to boot, then connect bridge
+                time.sleep(2)
+                bridge = RelayClient(assistant)
+                bridge.start()
+                
+            except Exception as e:
+                print(f"TITAN RELAY Error: {e}")
+        
+        threading.Thread(target=_start_relay, daemon=True).start()
 
         if not args.text:
             # Show HUD and run its event loop (main thread)

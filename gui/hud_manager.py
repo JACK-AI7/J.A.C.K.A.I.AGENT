@@ -457,6 +457,20 @@ class HUDWindow(QMainWindow):
         y = screen_geo.y() + screen_geo.height() - self.height() - 20
         self.move(x, y)
 
+        # Show Local IP for Mobile Connectivity
+        def _show_ip():
+            try:
+                import socket
+                s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+                s.connect(("8.8.8.8", 80))
+                ip = s.getsockname()[0]
+                s.close()
+                self.add_activity(f"Mobile Link: {ip}:8001")
+            except:
+                self.add_activity("Mobile Link: Checking Network...")
+        
+        QTimer.singleShot(5000, _show_ip)
+
         # Dashboard Auto-Orchestration
         QTimer.singleShot(2000, self.launch_nexus_dashboard)
 
