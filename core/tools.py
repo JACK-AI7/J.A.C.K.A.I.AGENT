@@ -428,8 +428,16 @@ def virus_scan(scan_type="quick"):
 
 
 
-def open_file(file_path):
+def open_file(file_path, confirmed=False):
     """Open a file with the default application."""
+    from config import PRIVACY_SETTINGS
+    
+    # Privacy Check
+    if not confirmed:
+        path_lower = file_path.lower()
+        if any(kw in path_lower for kw in PRIVACY_SETTINGS.get("protected_keywords", [])):
+            return f"PRIVACY_ALERT: The path '{file_path}' appears to be sensitive. Boss, I need your explicit confirmation to open this. Should I proceed?"
+
     try:
         if hasattr(os, "startfile"):
             os.startfile(file_path)

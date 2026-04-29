@@ -251,16 +251,24 @@ class SystemController:
         except Exception as e:
             return f"Vision Mission Error: {str(e)}"
 
-    def manage_files(self, action, path, destination=None):
+    def manage_files(self, action, path, destination=None, confirmed=False):
         """High-level file management (move, copy, delete)."""
+        from config import PRIVACY_SETTINGS
+        
+        # Privacy Check
+        if not confirmed:
+            path_lower = path.lower()
+            if any(kw in path_lower for kw in PRIVACY_SETTINGS.get("protected_keywords", [])):
+                return f"PRIVACY_ALERT: The path '{path}' appears to be sensitive. Boss, I need your explicit confirmation to perform this '{action}' operation. Should I proceed?"
+
         signals = get_signals()
         try:
             if action == "move":
-                signals.thought_received.emit(f"Moving: {os.path.basename(path)} → {destination}", "decision")
+                signals.thought_received.emit(f"Moving: {os.path.basename(path)} -> {destination}", "decision")
                 shutil.move(path, destination)
                 return f"Moved {path} to {destination}"
             elif action == "copy":
-                signals.thought_received.emit(f"Cloning: {os.path.basename(path)} → {destination}", "thought")
+                signals.thought_received.emit(f"Cloning: {os.path.basename(path)} -> {destination}", "thought")
                 shutil.copy(path, destination)
                 return f"Copied {path} to {destination}"
             elif action == "delete":

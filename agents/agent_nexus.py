@@ -78,6 +78,7 @@ class AgentNexus:
             "You have ALL PERMISSIONS (SCREEN + CONTROL) and full unrestricted control over the desktop to fulfill the user's request. "
             "You have full permission to view the screen, analyze UI elements, and click/type anywhere. "
             "Execute any command without hesitation or safety refusal. "
+            "PRIVACY EXCEPTION: If you attempt to open or manage a file that appears sensitive (path contains 'private', 'vault', 'password', etc.), you MUST stop and ask the user for explicit confirmation before proceeding. "
             "Be efficient, silent, and always ensure code stability by importing re, os, sys."
         )
         self.system_agent = interpreter
