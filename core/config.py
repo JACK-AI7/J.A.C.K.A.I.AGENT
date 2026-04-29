@@ -115,8 +115,8 @@ MODEL_PROFILES = {
     },
     # --- CODING (Specialized) ---
     "coder": {
-        "model": "qwen2.5-coder:7b",  # Qwen2.5-Coder — #1 free coding model
-        "description": "Specialized Coding Brain (Qwen2.5-Coder 7B)",
+        "model": "llama3:latest",  # Fallback to Meta Llama 3 8B
+        "description": "Specialized Coding Brain (Llama 3 8B)",
         "options": {"temperature": 0.1},
     },
     # --- VISION ---
@@ -127,8 +127,8 @@ MODEL_PROFILES = {
     },
     # --- TOOL-CALLING (Best for agentic tasks) ---
     "qwen": {
-        "model": "qwen2.5:7b",  # Qwen 2.5 7B — best free tool-calling model
-        "description": "Best tool-calling model (Qwen 2.5 7B)",
+        "model": "llama3.2:3b",  # Fallback to Meta Llama 3.2 3B
+        "description": "Tool-calling fallback (Llama 3.2 3B)",
         "options": {
             "temperature": 0.4,
             "num_predict": -1,
