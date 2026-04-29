@@ -68,9 +68,11 @@ except ImportError:
     vault = None
 
 try:
-    from browser_operator import sync_browser_operator
+    from browser_operator import sync_browser_operator, execute_operator_task
 except ImportError:
     def sync_browser_operator(action, **kwargs):
+        return f"Browser Operator unavailable. Action: {action}"
+    async def execute_operator_task(action, **kwargs):
         return f"Browser Operator unavailable. Action: {action}"
 
 # Initialize desktop agent
@@ -484,21 +486,50 @@ def web_browser_control(action, target=None, value=None):
 
 # --- PRECISION BROWSER TOOLS (OpenJarvis Inspired) ---
 
-def inspect_dom():
-    """Extract a list of all interactive elements (buttons, inputs) on the current browser page."""
-    return sync_browser_operator("inspect")
+async def precision_click(element_id):
+    """Click a web element by its precise ID or index from the accessibility tree."""
+    return await execute_operator_task("click", id=element_id)
 
-def precision_click(element_id):
-    """Click an element by its ID (as found in 'inspect_dom')."""
-    return sync_browser_operator("click", id=element_id)
+async def precision_type(element_id, text):
+    """Type text into a web element by its precise ID."""
+    return await execute_operator_task("type", id=element_id, text=text)
 
-def precision_type(element_id, text):
-    """Type text into an element by its ID and press Enter."""
-    return sync_browser_operator("type", id=element_id, text=text)
+async def inspect_dom(url=None):
+    """Fetch the accessibility tree (DOM) for visual navigation."""
+    if url:
+        await execute_operator_task("navigate", url=url)
+    return await execute_operator_task("inspect")
 
-def navigate_browser(url):
+async def visual_browser_inspect(url=None, task=None):
+    """Fetch the accessibility tree AND a visual description of the page for high-fidelity navigation."""
+    from utils.vlm_handler import vlm_handler
+    
+    if url:
+        await execute_operator_task("navigate", url=url)
+    
+    dom_report = await execute_operator_task("inspect")
+    screenshot_msg = await execute_operator_task("screenshot")
+    
+    if "captured at" in screenshot_msg:
+        path = screenshot_msg.split("at ")[-1].strip()
+        prompt = f"Analyze this browser screen. Task: {task if task else 'Understand the page layout'}. Identify key buttons, inputs, and their purposes. Focus on interactive elements."
+        visual_desc = vlm_handler.analyze_image(path, prompt)
+        return f"{dom_report}\n\n### VISUAL DESCRIPTION ###\n{visual_desc}"
+    
+    return dom_report
+
+async def precision_search(query):
+    """Perform a high-precision search using the browser and visual verification."""
+    await execute_operator_task("navigate", url=f"https://www.google.com/search?q={query}")
+    return await visual_browser_inspect(task=f"Find the most relevant result for '{query}'")
+
+async def get_browser_screenshot():
+    """Capture a screenshot of the current page for visual analysis."""
+    return await execute_operator_task("screenshot")
+
+async def navigate_browser(url):
     """Navigate the precision browser to a specific URL."""
-    return sync_browser_operator("navigate", url=url)
+    return await execute_operator_task("navigate", url=url)
 
 
 def run_admin_task(task_command):
@@ -2302,9 +2333,12 @@ FUNCTION_MAP = {
     "system_power": system_power,
     "push_to_git": push_to_git,
     "arxiv_research": lambda query: execute_titan_skill("arxiv_research", query),
+    "visual_browser_inspect": visual_browser_inspect,
+    "precision_search": precision_search,
     "inspect_dom": inspect_dom,
     "precision_click": precision_click,
     "precision_type": precision_type,
+    "get_browser_screenshot": get_browser_screenshot,
     "navigate_browser": navigate_browser,
     "auto_navigator": lambda task: execute_titan_skill("auto_navigator", task),
     "voice_command_mission": lambda task: execute_titan_skill("voice_command_mission", task),

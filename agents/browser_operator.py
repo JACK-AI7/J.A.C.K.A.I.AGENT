@@ -2,6 +2,7 @@ import asyncio
 import json
 import os
 import sys
+import time
 from playwright.async_api import async_playwright
 
 # Root path alignment for imports
@@ -42,31 +43,43 @@ class BrowserOperator:
         """
         await self.start()
         
-        # JavaScript to find all interactive elements and return their details
+        # Enhanced JavaScript to find all interactive elements with better role detection
         script = """
         () => {
-            const elements = document.querySelectorAll('button, a, input, select, textarea, [role="button"], [role="link"]');
+            const elements = document.querySelectorAll('button, a, input, select, textarea, [role="button"], [role="link"], [role="checkbox"], [role="menuitem"], [onclick], .btn, .button');
             return Array.from(elements).map((el, index) => {
                 const rect = el.getBoundingClientRect();
+                const style = window.getComputedStyle(el);
+                const isVisible = rect.width > 0 && rect.height > 0 && style.display !== 'none' && style.visibility !== 'hidden' && style.opacity !== '0';
+                
                 return {
                     id: index,
-                    tag: el.tagName,
-                    role: el.getAttribute('role'),
-                    text: el.innerText || el.getAttribute('aria-label') || el.getAttribute('placeholder') || el.value || '',
-                    visible: rect.width > 0 && rect.height > 0 && window.getComputedStyle(el).display !== 'none',
-                    location: { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 }
+                    tag: el.tagName.toLowerCase(),
+                    role: el.getAttribute('role') || '',
+                    text: (el.innerText || el.getAttribute('aria-label') || el.getAttribute('placeholder') || el.value || '').trim().substring(0, 100),
+                    visible: isVisible,
+                    location: { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 },
+                    rect: { x: rect.left, y: rect.top, width: rect.width, height: rect.height }
                 };
-            }).filter(el => el.visible && el.text.trim().length > 0);
+            }).filter(el => el.visible && (el.text.length > 0 || el.tag === 'input'));
         }
         """
         raw_elements = await self.page.evaluate(script)
         self.interactive_elements = {str(el['id']): el for el in raw_elements}
         
-        report = "--- ACCESSIBILITY DOM TREE ---\n"
+        report = "### TITAN PRECISION DOM MAP ###\n"
         for eid, el in self.interactive_elements.items():
-            report += f"[{eid}] {el['tag']}: \"{el['text'][:50]}\"\n"
+            report += f"[{eid}] <{el['tag']}> \"{el['text']}\" (Role: {el['role']})\n"
         
-        return report if raw_elements else "No interactive elements found."
+        return report if raw_elements else "No interactive elements detected on this layer."
+
+    async def get_screenshot(self):
+        """Captures a base64 screenshot for visual reasoning."""
+        await self.start()
+        screenshot_path = os.path.join("logs", f"browser_shot_{int(time.time())}.png")
+        if not os.path.exists("logs"): os.makedirs("logs")
+        await self.page.screenshot(path=screenshot_path)
+        return f"Screenshot captured at {screenshot_path}"
 
     async def click_id(self, element_id):
         await self.start()
@@ -101,7 +114,7 @@ class BrowserOperator:
 browser_operator = BrowserOperator()
 
 async def execute_operator_task(action, **kwargs):
-    """Bridge for sync tool calls."""
+    """Bridge for async tool calls."""
     try:
         if action == "navigate":
             return await browser_operator.navigate(kwargs.get("url"))
@@ -111,6 +124,8 @@ async def execute_operator_task(action, **kwargs):
             return await browser_operator.click_id(kwargs.get("id"))
         elif action == "type":
             return await browser_operator.type_id(kwargs.get("id"), kwargs.get("text"))
+        elif action == "screenshot":
+            return await browser_operator.get_screenshot()
         elif action == "close":
             await browser_operator.close()
             return "Browser closed."
@@ -118,9 +133,17 @@ async def execute_operator_task(action, **kwargs):
         return f"Browser Operator Error: {str(e)}"
 
 def sync_browser_operator(action, **kwargs):
-    """Sync wrapper."""
-    loop = asyncio.new_event_loop()
-    asyncio.set_event_loop(loop)
+    """Legacy Sync wrapper - DO NOT USE FOR NEW TOOLS."""
+    try:
+        loop = asyncio.get_event_loop()
+    except RuntimeError:
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        
+    if loop.is_running():
+        # If we're in an async context, this might fail or need run_coroutine_threadsafe
+        # But we want to move AWAY from sync wrappers.
+        return f"Error: Cannot use sync_browser_operator in running loop. Use async await execute_operator_task."
     return loop.run_until_complete(execute_operator_task(action, **kwargs))
 
 if __name__ == "__main__":
