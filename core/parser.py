@@ -8,30 +8,52 @@ def parse_llm_output(text: str):
     if not text:
         return {"type": "final", "status": "failed", "message": "Empty response from AI"}
 
+    data = None
+    
     # 1. Try Direct Parse
     try:
-        return json.loads(text.strip())
+        data = json.loads(text.strip())
     except:
-        pass
+        # 2. Robust Extraction Logic
+        matches = list(re.finditer(r'\{|\}', text))
+        for i in range(len(matches)):
+            if matches[i].group() == '{':
+                for j in range(len(matches) - 1, i, -1):
+                    if matches[j].group() == '}':
+                        candidate = text[matches[i].start():matches[j].end()]
+                        try:
+                            candidate_data = json.loads(candidate)
+                            if isinstance(candidate_data, dict):
+                                data = candidate_data
+                                break
+                        except:
+                            continue
+                if data: break
 
-    # 2. Robust Extraction Logic
-    # Find all { and } positions
-    matches = list(re.finditer(r'\{|\}', text))
-    
-    # Try pairs of braces from outside in to find a valid JSON object with a "type" field
-    for i in range(len(matches)):
-        if matches[i].group() == '{':
-            for j in range(len(matches) - 1, i, -1):
-                if matches[j].group() == '}':
-                    candidate = text[matches[i].start():matches[j].end()]
-                    try:
-                        data = json.loads(candidate)
-                        if isinstance(data, dict) and "type" in data:
-                            return data
-                    except:
-                        continue
+    # 3. Process parsed data
+    if isinstance(data, dict):
+        if "type" not in data:
+            # Default to "final" if it looks like a message
+            if any(k in data for k in ["message", "response", "answer", "result"]):
+                data["type"] = "final"
+                if "status" not in data: data["status"] = "success"
+            elif "name" in data and ("args" in data or "task" in data):
+                data["type"] = "tool"
+            else:
+                # Last resort: treat as final if it has ANY content
+                data["type"] = "final"
+                if "status" not in data: data["status"] = "success"
+        return data
 
-    # 3. Logging failure for debugging
+    # 4. Fallback: If it's just plain text, treat as final message
+    if len(text.split()) < 50 and "{" not in text:
+        return {
+            "type": "final",
+            "status": "success",
+            "message": text.strip()
+        }
+
+    # 5. Logging failure for debugging
     try:
         if not os.path.exists("logs"):
             os.makedirs("logs")

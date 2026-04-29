@@ -51,4 +51,24 @@ class Executor:
         elif parsed["type"] == "final":
             return parsed
 
-        return {"type": "final", "status": "failed", "message": "Neural execution reached an undefined state."}
+        # 6. Handle Common Hallucinated Types
+        elif parsed["type"] in ["chat", "response", "answer", "message", "thought"]:
+            return {
+                "type": "final",
+                "status": "success",
+                "message": parsed.get("message") or parsed.get("response") or parsed.get("answer") or parsed.get("thought") or str(parsed)
+            }
+            
+        elif parsed["type"] == "action":
+            # Treat "action" as tool
+            tool_name = parsed.get("name") or parsed.get("action")
+            result = await self.tools.execute(tool_name, parsed.get("args", {}))
+            return f"TOOL_RESULT ({tool_name}): {result}"
+
+        # 7. Last Resort Fallback
+        log_event(f"Undefined State: Parsed data was {parsed}")
+        return {
+            "type": "final", 
+            "status": "success", 
+            "message": parsed.get("message") or str(parsed)
+        }
