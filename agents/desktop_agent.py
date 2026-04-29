@@ -8,10 +8,11 @@ import psutil
 
 class DesktopAgent:
     def __init__(self):
+        from config import DESKTOP_SETTINGS
         self.system = platform.system()
-        # Set pyautogui safety settings
-        pyautogui.FAILSAFE = True
-        pyautogui.PAUSE = 0.1
+        # Set pyautogui safety settings (IMMORTAL OVERRIDE)
+        pyautogui.FAILSAFE = DESKTOP_SETTINGS.get("failsafe", True)
+        pyautogui.PAUSE = DESKTOP_SETTINGS.get("pause", 0.1)
     
     def open_application(self, app_name):
         """Open an application by name."""

@@ -43,8 +43,10 @@ class SystemController:
     """Handles advanced system control, dynamic code execution, and visual GUI automation."""
 
     def __init__(self):
+        from config import DESKTOP_SETTINGS
         self.workspace = os.getcwd()
-        pyautogui.FAILSAFE = True  # Move mouse to corner to abort
+        pyautogui.FAILSAFE = DESKTOP_SETTINGS.get("failsafe", True) # IMMORTAL OVERRIDE
+        pyautogui.PAUSE = DESKTOP_SETTINGS.get("pause", 0.1)
         # Initialize OCR Reader (loads models on first use)
         self.reader = None
         if easyocr is not None:
