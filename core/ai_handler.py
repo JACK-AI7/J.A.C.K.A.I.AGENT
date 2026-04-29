@@ -76,6 +76,20 @@ class AIHandler:
 
         except Exception as e:
             print(f"Neural Error: {e}")
+            
+            err_str = str(e).lower()
+            restarted = False
+            if "10054" in err_str or "connection" in err_str or "timeout" in err_str:
+                print("Connection to Ollama lost. Attempting to restart...")
+                self._ensure_ollama_running()
+                restarted = True
+                
+            if restarted:
+                try:
+                    return self._process_ollama(query)
+                except Exception as retry_e:
+                    print(f"Retry after restart failed: {retry_e}")
+                    
             # Try falling back to a smaller model
             if self.model != "llama3.2:1b":
                 print(f"Fallback: Switching to llama3.2:1b...")
@@ -85,7 +99,8 @@ class AIHandler:
                     result = self._process_ollama(query)
                     self.model = old_model  # Restore original
                     return result
-                except:
+                except Exception as fallback_e:
+                    print(f"Fallback Neural Error: {fallback_e}")
                     self.model = old_model
             return f"Neural Interface Error: {str(e)}"
 
