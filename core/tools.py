@@ -2338,4 +2338,13 @@ FUNCTION_MAP = {
     "search_chat": lambda name: execute_titan_skill("whatsapp_skill", f"search for {name}"),
     "read_messages": lambda count: execute_titan_skill("whatsapp_skill", f"read {count} messages"),
     "send_message": lambda name, message: execute_titan_skill("whatsapp_skill", f"whatsapp {name} : {message}"),
+    
+    # --- GUARDIAN & SYSTEM TOOLS ---
+    "open_app": lambda name: __import__("tools.app_control", fromlist=["open_app"]).open_app(name),
+    "open_email_client": lambda: __import__("tools.app_control", fromlist=["open_email_client"]).open_email_client(),
+    "open_gmail": lambda: __import__("tools.email_tools", fromlist=["open_gmail"]).open_gmail(),
+    "compose_email": lambda to, subject, body: __import__("tools.email_tools", fromlist=["compose_email"]).compose_email(to, subject, body),
+    "scan_path": lambda path: __import__("tools.security_tools", fromlist=["scan_path"]).scan_path(path),
+    "find_large_files": lambda path: __import__("tools.security_tools", fromlist=["find_large_files"]).find_large_files(path),
+    "safe_delete": lambda file_path: __import__("core.confirmation", fromlist=["safe_delete"]).safe_delete(file_path),
 }

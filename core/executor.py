@@ -18,10 +18,15 @@ class Executor:
 
         # 3. Handle Tool Execution
         if parsed["type"] == "tool":
+            tool_name = parsed["name"]
             result = await self.tools.execute(
-                parsed["name"],
+                tool_name,
                 parsed.get("args", {})
             )
+            
+            # --- BEHAVIOR LEARNING ---
+            from guardian.behavior_engine import behavior_engine
+            behavior_engine.log_action(tool_name)
 
             self.state.log({
                 "type": "tool_execution",

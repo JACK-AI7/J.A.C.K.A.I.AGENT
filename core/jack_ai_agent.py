@@ -29,6 +29,12 @@ class JackAIAgent:
         self.executor = Executor(self.ai_handler, self.router, self.state)
         self.loop = AgentLoop(self.executor)
         
+        # --- GUARDIAN MODE INITIALIZATION ---
+        from guardian.guardian_service import GuardianService
+        from guardian.scheduler import start_guardian_background
+        self.guardian = GuardianService()
+        start_guardian_background(self.guardian)
+        
         self.is_running = False
         self.is_active = True  # Tracks if AI brain is actually listening
         self.current_language = "en"
