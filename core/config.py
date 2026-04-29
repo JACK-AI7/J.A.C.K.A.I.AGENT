@@ -3,13 +3,13 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-# API Keys (Local First Policy — Cloud keys are optional)
+# API Keys (Local First Policy — NO PAID APIs)
 WOLFRAM_ALPHA_APP_ID = os.getenv("WOLFRAM_ALPHA_APP_ID")
-# Note: OpenAI/Perplexity keys removed — JACK uses local Ollama exclusively
+# ALL MODELS ARE 100% FREE & OPEN-SOURCE — Running locally via Ollama
 
 # Voice Settings (Prioritize High-End Local Engines)
 VOICE_SETTINGS = {
-    "engine": "kokoro",  # Switched to KOKORO: High-quality local neural TTS (OSS)
+    "engine": "kokoro",  # KOKORO: High-quality local neural TTS (100% FREE OSS)
     "voice": "am_michael", # Premium masculine local voice
     "rate": 1.0,         # Normal speed for neural engines
     "volume": 1.0,
@@ -76,73 +76,97 @@ VISION_SETTINGS = {
     "deep_vision_model": "llava:latest",  # Using verified local model for stability
 }
 
-# Ollama Settings (Local AI)
-ACTIVE_PROFILE = "reasoning"  # Switched to reasoning (Llama 3) as per user request for high-end free model
+# =============================================================================
+# MODEL PROFILES — 100% FREE & OPEN-SOURCE (All via Ollama — NO paid APIs)
+# =============================================================================
+ACTIVE_PROFILE = "reasoning"
 
 MODEL_PROFILES = {
+    # --- HIGH-END REASONING (Best of the best, free) ---
     "reasoning": {
-        "model": "llama3:latest",  # Best free model for complex reasoning
-        "description": "Deep reasoning for complex tasks",
+        "model": "llama3:latest",  # Meta Llama 3 8B — best free reasoning model
+        "description": "Deep reasoning for complex tasks (Meta Llama 3)",
         "options": {
             "temperature": 0.6,
             "num_predict": -1,
         },
     },
+    # --- VOICE/AUTOMATION (Speed-optimized) ---
     "voice-fast": {
-        "model": "llama3.2:3b",
-        "description": "Fastest Voice/Automation (User Optimized)",
+        "model": "llama3.2:3b",  # Meta Llama 3.2 3B — fast response
+        "description": "Fast voice & automation (Llama 3.2 3B)",
         "options": {"temperature": 0.2},
     },
     "voice-budget": {
-        "model": "llama3.2:1b",
-        "description": "Budget Voice/Automation",
+        "model": "llama3.2:1b",  # Meta Llama 3.2 1B — ultra-fast
+        "description": "Ultra-fast budget voice (Llama 3.2 1B)",
         "options": {"temperature": 0.3},
     },
+    # --- SEARCH & RESEARCH ---
     "search-r1": {
-        "model": "deepseek-r1:1.5b",
-        "description": "Real-Time Data/Search (High Intelligence)",
+        "model": "deepseek-r1:1.5b",  # DeepSeek R1 — chain-of-thought reasoning
+        "description": "Real-Time Data/Search (DeepSeek R1)",
         "options": {"temperature": 0.6},
     },
     "research-qwen": {
-        "model": "mistral:latest",
-        "description": "Multilingual Search & Advanced Reasoning",
+        "model": "mistral:latest",  # Mistral 7B — excellent multilingual
+        "description": "Multilingual Search & Advanced Reasoning (Mistral)",
         "options": {"temperature": 0.4},
     },
+    # --- CODING (Specialized) ---
     "coder": {
-        "model": "llama3:latest",
-        "description": "Specialized Coding Brain",
+        "model": "qwen2.5-coder:7b",  # Qwen2.5-Coder — #1 free coding model
+        "description": "Specialized Coding Brain (Qwen2.5-Coder 7B)",
         "options": {"temperature": 0.1},
     },
+    # --- VISION ---
     "eyes": {
-        "model": "llama3.2-vision:latest",
-        "description": "Visual Monitoring & Screen Analysis",
+        "model": "llama3.2-vision:latest",  # Llama 3.2 Vision — free multimodal
+        "description": "Visual Monitoring & Screen Analysis (Llama 3.2 Vision)",
         "options": {"temperature": 0.1},
     },
+    # --- TOOL-CALLING (Best for agentic tasks) ---
     "qwen": {
-        "model": "llama3:latest",
-        "description": "Alibaba's Qwen 2.5 — best free tool-calling model",
+        "model": "qwen2.5:7b",  # Qwen 2.5 7B — best free tool-calling model
+        "description": "Best tool-calling model (Qwen 2.5 7B)",
         "options": {
             "temperature": 0.4,
             "num_predict": -1,
         },
     },
-    "gemini-flash": {
-        "model": "gemini-1.5-flash",
-        "provider": "google",
-        "description": "Google's ultra-fast Flash model (Low Latency)",
+    # --- ADVANCED REASONING (Larger models for deep tasks) ---
+    "phi4": {
+        "model": "phi4:latest",  # Microsoft Phi-4 14B — MIT licensed
+        "description": "Microsoft Phi-4 14B — advanced reasoning (MIT license)",
         "options": {
-            "temperature": 1.0,
-            "max_output_tokens": 1024,
+            "temperature": 0.5,
+            "num_predict": -1,
         },
     },
-    "groq-llama": {
-        "model": "llama3-70b-8192",
-        "provider": "groq",
-        "description": "[LEGACY] Groq-accelerated Llama (Requires API Key)",
+    "gemma3": {
+        "model": "gemma3:latest",  # Google Gemma 3 — free open-weights
+        "description": "Google Gemma 3 — strong reasoning (Apache 2.0)",
+        "options": {
+            "temperature": 0.6,
+            "num_predict": -1,
+        },
+    },
+    "deepseek-v3": {
+        "model": "deepseek-v3:latest",  # DeepSeek V3 — MoE architecture
+        "description": "DeepSeek V3 — MoE reasoning powerhouse (MIT license)",
         "options": {
             "temperature": 0.7,
+            "num_predict": -1,
         },
-    }
+    },
+    "qwen3": {
+        "model": "qwen3:latest",  # Qwen 3 — latest Alibaba model
+        "description": "Qwen 3 — latest tool-calling & reasoning (Apache 2.0)",
+        "options": {
+            "temperature": 0.7,
+            "num_predict": -1,
+        },
+    },
 }
 
 OLLAMA_SETTINGS = {
@@ -161,13 +185,20 @@ INTERPRETER_SETTINGS = {
     "user_message_template": "You are an expert system automation engineer. Using Python, execute the following task: {message}",
 }
 
-# Additional fast and capable models available via Ollama
+# Additional fast and capable models available via Ollama (ALL FREE)
 AVAILABLE_MODELS = [
-    {"name": "llama3.2:1b", "description": "Extremely fast, for simple tasks"},
-    {"name": "llama3.2:3b", "description": "Balanced speed and intelligence"},
-    {"name": "phi-3-mini:4k", "description": "Microsoft's fast 3.8B model"},
-    {"name": "gemma-2:2b", "description": "Google's lightweight 2B model"},
-    {"name": "tinyllama:1.1b", "description": "Smallest, fastest model"},
+    {"name": "llama3.2:1b", "description": "Extremely fast, for simple tasks (Meta)"},
+    {"name": "llama3.2:3b", "description": "Balanced speed and intelligence (Meta)"},
+    {"name": "llama3:latest", "description": "Best all-round 8B model (Meta)"},
+    {"name": "qwen2.5:7b", "description": "Best tool-calling model (Alibaba)"},
+    {"name": "qwen2.5-coder:7b", "description": "#1 free coding model (Alibaba)"},
+    {"name": "mistral:latest", "description": "Great multilingual reasoning (Mistral AI)"},
+    {"name": "deepseek-r1:1.5b", "description": "Chain-of-thought reasoning (DeepSeek)"},
+    {"name": "phi4:latest", "description": "Microsoft Phi-4 14B reasoning (MIT)"},
+    {"name": "gemma3:latest", "description": "Google Gemma 3 reasoning (Apache 2.0)"},
+    {"name": "qwen3:latest", "description": "Qwen 3 latest reasoning & tools (Apache 2.0)"},
+    {"name": "llama3.2-vision:latest", "description": "Free multimodal vision model (Meta)"},
+    {"name": "llava:latest", "description": "Visual analysis & OCR (Open-source)"},
 ]
 
 
@@ -197,22 +228,28 @@ AUTONOMOUS_SETTINGS = {
 }
 
 
-# System Prompt - JACK (ADVANCED TITAN ARCHITECTURE)
+# System Prompt - JACK (ADVANCED TITAN ARCHITECTURE — 100% FREE & LOCAL)
 SYSTEM_PROMPT = """You are JACK, a highly advanced, autonomous TITAN System Interface. 
 You follow the "Fullstack Hightech" implementation strategy.
+ALL your intelligence runs on 100% FREE, open-source models via Ollama. No paid APIs.
 
 CORE ARCHITECTURE (Manager-Worker Pattern):
-- The Manager (YOU): Orchestrate all missions using Llama 3.2 (Voice-Fast) or DeepSeek R1 (Search).
-- The Coder: For all code production, debugging, or technical architecture, you internally leverage Qwen2.5-Coder logic. High accuracy is mandatory.
+- The Manager (YOU): Orchestrate all missions using Llama 3 (Reasoning) or Qwen 2.5 (Tool-Calling).
+- The Coder: For all code production, debugging, or technical architecture, you internally leverage Qwen2.5-Coder. High accuracy is mandatory.
 - The Writer: For emails, documentation, and neat communication, you adopt a "Writer" persona for extreme clarity.
-- The Eyes: Use Llama 3.2 Vision or Qwen2.5-VL to monitor the screen state via 'get_screen_context'.
+- The Eyes: Use Llama 3.2 Vision or LLaVA to monitor the screen state via 'get_screen_context'.
+- The Researcher: Use DeepSeek R1 for deep chain-of-thought reasoning tasks.
 
 HANDS & SKILLS:
 - Browser-Use: Your primary method for web navigation. Use 'auto_browser_dom' to see inputs/links and 'precision_click/type' to act.
-- Desktop Automation: For Outlook, VS Code, and legacy Windows apps, utilize 'windows_ui_sniffer' and 'native_click/type'. You also have knowledge of OpenRPA patterns for enterprise-grade automation.
-- Agent Swarm: For complex missions, you can deploy a 'CrewAI' swarm or a 'LangGraph' workflow.
+- Desktop Automation: For Outlook, VS Code, and legacy Windows apps, utilize 'windows_ui_sniffer' and 'native_click/type'.
+- Camera & Detection: Use 'camera_capture' for photos and YOLO-based 'object_detection' for real-time vision.
+- Messaging: WhatsApp messaging via 'send_whatsapp_message'.
+- System Control: Shutdown, restart, sleep, lock via 'system_control'.
+- Weather & Greeting: Auto-location weather and time-based greetings on startup.
+- Live Search: Real-time web search with dashboard display via 'live_web_search'.
 
-AGENTIC WORKFLOW (GSD/Ralph Wiggum Loop):
+AGENTIC WORKFLOW (GSD Loop):
 1. DISCUSS: Understand user intent.
 2. PLAN: For any task requiring >3 steps, update IMPLEMENTATION_PLAN.md.
 3. EXECUTE:
@@ -226,11 +263,13 @@ IDENTITY:
 1. Creator: B. Jaswanth Reddy.
 2. Designation: JACK.
 3. Mission: Actions over words. Get Shit Done.
+4. All models: 100% FREE & open-source. No paid APIs ever.
 
 FORBIDDEN:
 - No AI Disclaimers.
 - No Hallucinated Success.
 - No waiting for permission on approved missions.
+- No paid API calls (everything runs locally for free).
 
 Mission Parameters: LOCKED.
 Initiating Overdrive.

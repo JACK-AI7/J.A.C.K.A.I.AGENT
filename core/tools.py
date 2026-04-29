@@ -987,11 +987,13 @@ def read_file_content(file_path, max_lines=50):
             return f"File too large ({size/1024/1024:.1f}MB). Use execute_terminal_command to inspect."
         
         with open(file_path, 'r', encoding='utf-8', errors='replace') as f:
-            lines = f.readlines()[:max_lines]
+            all_lines = f.readlines()
         
+        total_count = len(all_lines)
+        lines = all_lines[:max_lines]
         content = "".join(lines)
         if len(lines) >= max_lines:
-            content += f"\n... (showing first {max_lines} of {len(open(file_path).readlines())} lines)"
+            content += f"\n... (showing first {max_lines} of {total_count} lines)"
         
         return f"Content of {os.path.basename(file_path)}:\n{content}"
     except Exception as e:
@@ -1057,6 +1059,264 @@ def download_file(url, save_path=None):
         return f"Downloaded to {save_path} ({size_str})"
     except Exception as e:
         return f"Download Error: {str(e)}"
+
+# =============================================================================
+# SKILL-INTEGRATED TOOLS — Camera, Detection, WhatsApp, Image Analysis
+# =============================================================================
+
+def camera_capture():
+    """Capture a photo from the device camera."""
+    try:
+        from skills.camera_skill.action import execute as cam_exec
+        return cam_exec()
+    except ImportError:
+        return "Camera skill not available. Install opencv-python."
+    except Exception as e:
+        return f"Camera Error: {str(e)}"
+
+
+def object_detection():
+    """Run YOLO object detection on live camera feed."""
+    try:
+        from skills.detection_skill.action import execute as detect_exec
+        return detect_exec()
+    except ImportError:
+        return "Detection skill not available. Install ultralytics and torch."
+    except Exception as e:
+        return f"Detection Error: {str(e)}"
+
+
+def send_whatsapp_message(recipient, message):
+    """Send a WhatsApp message to a contact.
+    Format: recipient can be a name from contacts.json or a phone number.
+    """
+    try:
+        from skills.whatsapp_skill.action import MessagingService
+        service = MessagingService()
+        return service.send_whatsapp(recipient, message)
+    except ImportError:
+        return "WhatsApp skill not available. Install selenium and webdriver-manager."
+    except Exception as e:
+        return f"WhatsApp Error: {str(e)}"
+
+
+def analyze_image(image_path, query=None):
+    """Analyze an image using local LLaVA vision model (100% free).
+    Pass the path to an image file and an optional query about it.
+    """
+    try:
+        task = f"image_path: {image_path}"
+        if query:
+            task += f" | query: {query}"
+        from skills.multimodal_live_skill.action import execute as mm_exec
+        return mm_exec(task)
+    except ImportError:
+        return "Multimodal skill not available. Ensure ollama has llava model."
+    except Exception as e:
+        return f"Image Analysis Error: {str(e)}"
+
+
+def morning_digest():
+    """Run the full TITAN Morning Digest — system health + news + weather."""
+    try:
+        from skills.morning_digest.action import execute as digest_exec
+        digest = digest_exec()
+        # Append weather
+        try:
+            weather = get_weather_for_location()
+            digest += f"\n\n3. WEATHER REPORT:\n{weather}\n"
+        except: pass
+        return digest
+    except Exception as e:
+        return f"Morning Digest Error: {str(e)}"
+
+
+# =============================================================================
+# FRIDAY-INTEGRATED TOOLS — Live Search, Visualization, System Control
+# =============================================================================
+
+def live_web_search(query, num_results=5):
+    """Live web search with real-time results display on dashboard.
+    Searches the web, displays results in the dashboard, and opens relevant links.
+    """
+    try:
+        get_signals().emit_bridge("pipeline_stage", "SEARCHING", f"Live Search: {query[:40]}...")
+        get_signals().emit_bridge("neural_pulse", 12)
+        
+        from duckduckgo_search import DDGS
+        results = []
+        with DDGS() as ddgs:
+            for r in ddgs.text(query, max_results=num_results):
+                results.append(r)
+        
+        if not results:
+            return "No search results found for your query."
+        
+        # Format results
+        report = f"### LIVE SEARCH: {query}\n\n"
+        for i, r in enumerate(results, 1):
+            report += f"**[{i}]** {r['title']}\n"
+            report += f"{r['body'][:200]}\n"
+            report += f"Link: {r['href']}\n\n"
+        
+        # Push to dashboard
+        get_signals().emit_bridge("chat_received", "JACK", f"Search complete: {len(results)} results for '{query}'")
+        get_signals().emit_bridge("pipeline_stage", "IDLE", "Search complete")
+        
+        return report
+    except Exception as e:
+        return f"Live Search Error: {str(e)}"
+
+
+def visualize_data(data_type, query=None):
+    """Open visualization dashboards and data monitors.
+    Types: 'world_monitor', 'system', 'network', 'stocks', 'maps'.
+    """
+    import webbrowser
+    
+    viz_urls = {
+        'world_monitor': 'https://worldmonitor.app/',
+        'system': None,  # Uses local system stats
+        'network': 'https://www.speedtest.net/',
+        'stocks': f'https://www.google.com/finance/quote/{query or "AAPL"}:NASDAQ',
+        'maps': f'https://www.google.com/maps/search/{query or "my+location"}',
+        'weather': f'https://wttr.in/{query or ""}',
+        'news': 'https://news.google.com/',
+    }
+    
+    url = viz_urls.get(data_type.lower())
+    if url:
+        webbrowser.open(url)
+        return f"Visualization '{data_type}' opened in your browser, Sir."
+    elif data_type.lower() == 'system':
+        return get_system_stats()
+    else:
+        return f"Unknown visualization type: '{data_type}'. Available: {', '.join(viz_urls.keys())}"
+
+
+# =============================================================================
+# WEATHER & GREETING SYSTEM — Auto-location weather + time-based greetings
+# =============================================================================
+
+def get_weather_for_location():
+    """Get current weather for the user's location using IP geolocation."""
+    try:
+        # Step 1: Get location from IP
+        import json
+        loc_resp = requests.get('https://ipinfo.io/json', timeout=5)
+        loc_data = loc_resp.json()
+        city = loc_data.get('city', 'Unknown')
+        region = loc_data.get('region', '')
+        country = loc_data.get('country', '')
+        loc_str = loc_data.get('loc', '0,0')  # lat,lon
+        lat, lon = loc_str.split(',')
+        
+        # Step 2: Get weather from Open-Meteo (completely free, no key needed)
+        weather_url = (
+            f"https://api.open-meteo.com/v1/forecast?"
+            f"latitude={lat}&longitude={lon}"
+            f"&current=temperature_2m,relative_humidity_2m,weather_code,wind_speed_10m"
+            f"&timezone=auto"
+        )
+        weather_resp = requests.get(weather_url, timeout=5)
+        weather_data = weather_resp.json()
+        current = weather_data.get('current', {})
+        
+        temp = current.get('temperature_2m', 'N/A')
+        humidity = current.get('relative_humidity_2m', 'N/A')
+        wind = current.get('wind_speed_10m', 'N/A')
+        weather_code = current.get('weather_code', 0)
+        
+        # Decode weather code to human-readable condition
+        WMO_CODES = {
+            0: 'Clear Sky', 1: 'Mainly Clear', 2: 'Partly Cloudy', 3: 'Overcast',
+            45: 'Foggy', 48: 'Rime Fog', 51: 'Light Drizzle', 53: 'Moderate Drizzle',
+            55: 'Dense Drizzle', 56: 'Freezing Drizzle', 57: 'Dense Freezing Drizzle',
+            61: 'Slight Rain', 63: 'Moderate Rain', 65: 'Heavy Rain',
+            66: 'Freezing Rain', 67: 'Heavy Freezing Rain',
+            71: 'Slight Snow', 73: 'Moderate Snow', 75: 'Heavy Snow',
+            77: 'Snow Grains', 80: 'Slight Showers', 81: 'Moderate Showers',
+            82: 'Violent Showers', 85: 'Slight Snow Showers', 86: 'Heavy Snow Showers',
+            95: 'Thunderstorm', 96: 'Thunderstorm with Hail', 99: 'Severe Thunderstorm'
+        }
+        condition = WMO_CODES.get(weather_code, f'Code {weather_code}')
+        
+        weather_report = (
+            f"Weather in {city}, {region}, {country}: "
+            f"{condition}, {temp}°C, "
+            f"Humidity: {humidity}%, Wind: {wind} km/h"
+        )
+        
+        # Also push to dashboard
+        try:
+            get_signals().emit_bridge("weather_pulsed", json.dumps({
+                'temp': temp, 'condition': condition, 
+                'humidity': humidity, 'wind': wind,
+                'city': city
+            }))
+        except: pass
+        
+        return weather_report
+    except Exception as e:
+        return f"Weather unavailable: {str(e)}"
+
+
+def get_startup_greeting():
+    """Generate a time-appropriate greeting with weather info."""
+    import datetime
+    now = datetime.datetime.now()
+    hour = now.hour
+    
+    if 5 <= hour < 12:
+        greeting = "Good morning, Sir"
+        time_note = "Rise and shine"
+    elif 12 <= hour < 17:
+        greeting = "Good afternoon, Sir"
+        time_note = "Hope your day is productive"
+    elif 17 <= hour < 21:
+        greeting = "Good evening, Sir"
+        time_note = "Welcome back"
+    else:
+        greeting = "Good night, Sir"
+        time_note = "Burning the midnight oil"
+    
+    # Get weather
+    weather = get_weather_for_location()
+    
+    # Build greeting
+    time_str = now.strftime('%I:%M %p on %A, %B %d')
+    full_greeting = (
+        f"{greeting}! {time_note}. "
+        f"It's currently {time_str}. "
+        f"{weather}. "
+        f"All systems are online and ready for your command."
+    )
+    
+    return full_greeting
+
+
+def system_control(action):
+    """Control the system: shutdown, restart, sleep, lock, or log off."""
+    import os
+    action = action.lower().strip()
+    
+    if action in ('shutdown', 'shut down', 'power off'):
+        os.system("shutdown /s /t 5")
+        return "Shutting down the system in 5 seconds. Goodbye, Sir."
+    elif action in ('restart', 'reboot'):
+        os.system("shutdown /r /t 5")
+        return "Restarting the system in 5 seconds. See you on the other side, Sir."
+    elif action in ('sleep', 'hibernate'):
+        os.system("rundll32.exe powrprof.dll,SetSuspendState 0,1,0")
+        return "Entering sleep mode now, Sir."
+    elif action in ('lock', 'lock screen'):
+        os.system("rundll32.exe user32.dll,LockWorkStation")
+        return "Screen locked, Sir."
+    elif action in ('log off', 'logoff', 'sign out'):
+        os.system("shutdown /l")
+        return "Logging off, Sir."
+    else:
+        return f"Unknown system action: '{action}'. Available: shutdown, restart, sleep, lock, log off."
 
 
 FUNCTIONS = [
@@ -1731,6 +1991,90 @@ FUNCTIONS = [
             "required": ["code"]
         }
     },
+    {
+        "name": "get_weather_for_location",
+        "description": "Get the current weather conditions for the user's location. Auto-detects location via IP. No parameters needed.",
+        "parameters": {"type": "object", "properties": {}}
+    },
+    {
+        "name": "get_startup_greeting",
+        "description": "Generate a time-appropriate greeting (Good Morning/Afternoon/Evening) with weather info. Used on startup.",
+        "parameters": {"type": "object", "properties": {}}
+    },
+    {
+        "name": "system_control",
+        "description": "Control the system: shutdown, restart, sleep, lock, or log off. Use when the user says 'shut down', 'restart', 'sleep', etc.",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "action": {"type": "string", "description": "The action: 'shutdown', 'restart', 'sleep', 'lock', or 'log off'."}
+            },
+            "required": ["action"]
+        }
+    },
+    {
+        "name": "live_web_search",
+        "description": "Live web search with real-time results. Use for searching anything on the internet with instant results displayed on dashboard.",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "query": {"type": "string", "description": "The search query."},
+                "num_results": {"type": "integer", "description": "Number of results (default 5)."}
+            },
+            "required": ["query"]
+        }
+    },
+    {
+        "name": "visualize_data",
+        "description": "Open visualization dashboards. Types: 'world_monitor', 'system', 'network', 'stocks', 'maps', 'weather', 'news'.",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "data_type": {"type": "string", "description": "Type of visualization to open."},
+                "query": {"type": "string", "description": "Optional query/symbol for the visualization."}
+            },
+            "required": ["data_type"]
+        }
+    },
+    {
+        "name": "camera_capture",
+        "description": "Capture a photo from the device camera. No parameters needed.",
+        "parameters": {"type": "object", "properties": {}}
+    },
+    {
+        "name": "object_detection",
+        "description": "Run YOLO AI object detection on the live camera feed. Identifies people, objects, vehicles etc. No parameters needed.",
+        "parameters": {"type": "object", "properties": {}}
+    },
+    {
+        "name": "send_whatsapp_message",
+        "description": "Send a WhatsApp message to a contact. Use when the user says 'send whatsapp' or 'message someone on whatsapp'.",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "recipient": {"type": "string", "description": "Contact name or phone number."},
+                "message": {"type": "string", "description": "The message to send."}
+            },
+            "required": ["recipient", "message"]
+        }
+    },
+    {
+        "name": "analyze_image",
+        "description": "Analyze an image using local LLaVA vision model (100% free). Describe, OCR, or answer questions about an image.",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "image_path": {"type": "string", "description": "Path to the image file."},
+                "query": {"type": "string", "description": "Question about the image (optional)."}
+            },
+            "required": ["image_path"]
+        }
+    },
+    {
+        "name": "morning_digest",
+        "description": "Run the full TITAN Morning Digest — system health check + global news + weather report. No parameters needed.",
+        "parameters": {"type": "object", "properties": {}}
+    },
 ]
 
 
@@ -1892,7 +2236,6 @@ FUNCTION_MAP = {
     "fetch_url": fetch_url,
     "system_power": system_power,
     "push_to_git": push_to_git,
-    "morning_digest": lambda **kw: execute_titan_skill("morning_digest"),
     "arxiv_research": lambda query: execute_titan_skill("arxiv_research", query),
     "inspect_dom": inspect_dom,
     "precision_click": precision_click,
@@ -1905,4 +2248,17 @@ FUNCTION_MAP = {
     "manage_memory": manage_memory,
     "firecrawl_extract": firecrawl_extract,
     "sandboxed_python": sandboxed_python,
+    # --- WEATHER, GREETING & SYSTEM CONTROL ---
+    "get_weather_for_location": get_weather_for_location,
+    "get_startup_greeting": get_startup_greeting,
+    "system_control": system_control,
+    # --- FRIDAY-INTEGRATED: LIVE SEARCH & VISUALIZATION ---
+    "live_web_search": live_web_search,
+    "visualize_data": visualize_data,
+    # --- SKILLS ---
+    "camera_capture": camera_capture,
+    "object_detection": object_detection,
+    "send_whatsapp_message": send_whatsapp_message,
+    "analyze_image": analyze_image,
+    "morning_digest": morning_digest,
 }

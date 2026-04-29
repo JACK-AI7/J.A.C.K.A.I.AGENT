@@ -6,8 +6,6 @@ import re
 import os
 import subprocess
 import urllib.request
-import google.generativeai as genai
-from groq import Groq
 
 try:
     from nexus_bridge import get_signals
@@ -23,52 +21,28 @@ from conversation_manager import ConversationManager
 
 
 class AIHandler:
+    """100% FREE & OPEN-SOURCE AI Handler — runs exclusively on local Ollama models."""
+    
     def __init__(self, hud=None):
         self.hud = hud
-        self.profile = MODEL_PROFILES.get(ACTIVE_PROFILE, MODEL_PROFILES["qwen"])
-        self.provider = self.profile.get("provider", "ollama")
+        self.profile = MODEL_PROFILES.get(ACTIVE_PROFILE, MODEL_PROFILES["reasoning"])
+        self.provider = "ollama"  # ALWAYS local — no paid APIs
         self.model = self.profile["model"]
         self.conversation_manager = ConversationManager()
         
-        # Initialize Clients
+        # Initialize Ollama client
         self._init_clients()
-        self.reasoning_mode = True  # Enable OpenJarvis style reflective thinking
+        self.reasoning_mode = True  # Enable reflective thinking
 
     def _init_clients(self):
-        """Lazy-init the required provider client with validation."""
-        if self.provider == "google":
-            api_key = os.getenv("GEMINI_API_KEY")
-            if api_key and "your_" not in api_key:
-                genai.configure(api_key=api_key)
-                # Define tools for Gemini
-                gemini_tools = [self._map_to_google_tool(f) for f in FUNCTIONS]
-                self.google_model = genai.GenerativeModel(
-                    self.model,
-                    tools=[dict(function_declarations=gemini_tools)]
-                )
-            else:
-                print("Gemini API Key missing/invalid. Falling back to Ollama.")
-                self.provider = "ollama"
+        """Initialize local Ollama client. No paid API keys needed."""
+        self._ensure_ollama_running()
+        self.ollama_client = ollama.Client(host=OLLAMA_SETTINGS["base_url"], timeout=120.0)
         
-        if self.provider == "groq":
-            api_key = os.getenv("GROQ_API_KEY")
-            if api_key and "your_" not in api_key:
-                self.groq_client = Groq(api_key=api_key)
-            else:
-                print("Groq API Key missing/invalid. Falling back to Ollama.")
-                self.provider = "ollama"
-
-        if self.provider == "ollama":
-            self._ensure_ollama_running()
-            self.ollama_client = ollama.Client(host=OLLAMA_SETTINGS["base_url"], timeout=120.0)
-
-    def _map_to_google_tool(self, f):
-        """Convert standard tool spec to Google Generative AI format."""
-        return {
-            "name": f["name"],
-            "description": f["description"],
-            "parameters": f["parameters"]
-        }
+        # Emit model status
+        try:
+            get_signals().emit_bridge("model_active", "OLLAMA", f"{self.model.upper()} (100% FREE)")
+        except: pass
 
     def _ensure_ollama_running(self):
         """Checks if Ollama is running, starts it if not, and waits for readiness."""
@@ -86,7 +60,7 @@ class AIHandler:
         return False
 
     def process_query(self, query):
-        """The main brain entry point. Routes to Gemini, Groq, or Ollama."""
+        """The main brain entry point. Routes to local Ollama models ONLY."""
         query = self._normalize_input(query)
         
         # System Command Bypass
@@ -94,125 +68,46 @@ class AIHandler:
         if bypass: return bypass
 
         try:
-            print(f"Thinking ({self.provider.upper()}: {self.model})...")
-            get_signals().emit_bridge("thought_received", f"Neural Synthesis: Engaging {self.model} via {self.provider}...", "thought")
+            print(f"Thinking (OLLAMA: {self.model})...")
+            get_signals().emit_bridge("thought_received", f"Neural Synthesis: Engaging {self.model} (FREE/LOCAL)...", "thought")
             get_signals().emit_bridge("neural_pulse", 10)
 
-            if self.provider == "google":
-                return self._process_google(query)
-            elif self.provider == "groq":
-                return self._process_groq(query)
-            else:
-                return self._process_ollama(query)
+            return self._process_ollama(query)
 
         except Exception as e:
-            print(f"Neural Error in {self.provider}: {e}")
-            if self.provider != "ollama":
-                print("Automatic Fallback to local Ollama...")
-                self.provider = "ollama"
-                self._init_clients()
-                return self.process_query(query)
+            print(f"Neural Error: {e}")
+            # Try falling back to a smaller model
+            if self.model != "llama3.2:1b":
+                print(f"Fallback: Switching to llama3.2:1b...")
+                old_model = self.model
+                self.model = "llama3.2:1b"
+                try:
+                    result = self._process_ollama(query)
+                    self.model = old_model  # Restore original
+                    return result
+                except:
+                    self.model = old_model
             return f"Neural Interface Error: {str(e)}"
-
-    def _process_google(self, query):
-        """Handle reasoning via Google Gemini API."""
-        chat = self.google_model.start_chat(history=self._get_google_history())
-        response = chat.send_message(query)
-        
-        final_text = ""
-        tool_results = []
-
-        # Gemini might return content or tool calls
-        for part in response.parts:
-            if part.text:
-                final_text += part.text
-            if part.function_call:
-                fn_name = part.function_call.name
-                fn_args = dict(part.function_call.args)
-                
-                print(f"GEMINI CALLING: {fn_name}({fn_args})")
-                get_signals().emit_bridge("pipeline_stage", "ACTING", f"Tool: {fn_name}")
-                
-                result = self._execute_function(fn_name, fn_args)
-                tool_results.append({"function": fn_name, "args": fn_args, "result": result})
-                
-                # Push tool result back to Gemini for final synthesis
-                response = chat.send_message(
-                    genai.types.Content(
-                        parts=[genai.types.Part.from_function_response(
-                            name=fn_name,
-                            response={'result': str(result)}
-                        )]
-                    )
-                )
-                if response.text:
-                    final_text = response.text
-
-        res = self._sanitize_persona_output(final_text)
-        self.conversation_manager.add_interaction(query, res, tool_results)
-        return res
-
-    def _process_groq(self, query):
-        """Ultra-fast reasoning via Groq API."""
-        messages = [{"role": "system", "content": SYSTEM_PROMPT}]
-        messages.extend(self.conversation_manager.get_context_messages())
-        messages.append({"role": "user", "content": query})
-
-        tools = [{"type": "function", "function": f} for f in FUNCTIONS]
-        
-        response = self.groq_client.chat.completions.create(
-            model=self.model,
-            messages=messages,
-            tools=tools,
-            tool_choice="auto",
-            temperature=self.profile["options"].get("temperature", 0.7)
-        )
-
-        msg = response.choices[0].message
-        tool_results = []
-        
-        if msg.tool_calls:
-            for tc in msg.tool_calls:
-                fn_name = tc.function.name
-                fn_args = json.loads(tc.function.arguments)
-                
-                get_signals().emit_bridge("pipeline_stage", "ACTING", f"Tool: {fn_name}")
-                result = self._execute_function(fn_name, fn_args)
-                tool_results.append({"function": fn_name, "args": fn_args, "result": result})
-            
-            # Simple synthesis for Groq
-            content = "Action synchronized, Sir."
-            # Only summarize if it's an information tool
-            if any(name.startswith("get") or "search" in name for name in [tc.function.name for tc in msg.tool_calls]):
-                # Add tool results to context and call again for summary
-                messages.append(msg)
-                for i, tc in enumerate(msg.tool_calls):
-                    messages.append({
-                        "tool_call_id": tc.id,
-                        "role": "tool",
-                        "name": tool_results[i]["function"],
-                        "content": str(tool_results[i]["result"])
-                    })
-                final_res = self.groq_client.chat.completions.create(model=self.model, messages=messages)
-                content = final_res.choices[0].message.content
-        else:
-            content = msg.content or "Processing complete."
-
-        res = self._sanitize_persona_output(content)
-        self.conversation_manager.add_interaction(query, res, tool_results)
-        return res
 
     def _process_ollama(self, query):
         """Ollama local reasoning with dynamic worker delegation."""
         current_model = self.model
         
         # --- DYNAMIC WORKER DELEGATION ---
-        # If the task requires high-accuracy coding, use Qwen2.5-Coder
-        is_coding = any(word in query.lower() for word in ["code", "script", "program", "python", "javascript", "debug", "write a", "technical"])
-        if is_coding:
-            print(f"TITAN Worker: Deploying '{MODEL_PROFILES['coder']['model']}' for high-accuracy engineering...")
-            get_signals().emit_bridge("thought_received", "Neural Handshake: Engaging Coder worker (Qwen2.5-Coder)...", "thought")
-            current_model = MODEL_PROFILES["coder"]["model"]
+        query_lower = query.lower()
+        
+        # Code tasks → Qwen2.5-Coder
+        is_coding = any(word in query_lower for word in ["code", "script", "program", "python", "javascript", "debug", "write a", "technical", "fix the", "implement"])
+        if is_coding and "coder" in MODEL_PROFILES:
+            coder_model = MODEL_PROFILES["coder"]["model"]
+            print(f"TITAN Worker: Deploying '{coder_model}' for high-accuracy engineering...")
+            get_signals().emit_bridge("thought_received", f"Neural Handshake: Engaging Coder worker ({coder_model})...", "thought")
+            current_model = coder_model
+        
+        # Deep reasoning → Use reasoning model explicitly
+        is_reasoning = any(word in query_lower for word in ["explain", "analyze", "think about", "why", "compare", "evaluate", "reason"])
+        if is_reasoning and "reasoning" in MODEL_PROFILES:
+            current_model = MODEL_PROFILES["reasoning"]["model"]
         
         messages = [{"role": "system", "content": SYSTEM_PROMPT}]
         messages.extend(self.conversation_manager.get_context_messages())
@@ -257,13 +152,6 @@ class AIHandler:
                 return f"Execution Error: {str(e)}"
         return f"Neural Error: Tool '{name}' is not in my database."
 
-    def _get_google_history(self):
-        history = []
-        for msg in self.conversation_manager.get_context_messages():
-            role = "user" if msg["role"] == "user" else "model"
-            history.append({"role": role, "parts": [msg["content"]]})
-        return history
-
     def _sanitize_persona_output(self, text):
         if not text: return "Action completed, Sir."
         # Keep reasoning tags if they are useful, but JACK usually hides them
@@ -294,3 +182,17 @@ class AIHandler:
                 self.hud.launch_nexus_dashboard()
                 return "Connecting visualization grid. Nexus Dashboard Online."
         return None
+
+    def clear_conversation_history(self):
+        """Clear conversation history."""
+        self.conversation_manager.clear_history()
+        return "Neural memory purged, Sir. Starting fresh."
+
+    def switch_model(self, profile_name):
+        """Switch to a different model profile."""
+        if profile_name in MODEL_PROFILES:
+            self.profile = MODEL_PROFILES[profile_name]
+            self.model = self.profile["model"]
+            get_signals().emit_bridge("model_active", "OLLAMA", f"{self.model.upper()} (FREE)")
+            return f"Switched to {profile_name}: {self.model}"
+        return f"Unknown profile: {profile_name}. Available: {', '.join(MODEL_PROFILES.keys())}"

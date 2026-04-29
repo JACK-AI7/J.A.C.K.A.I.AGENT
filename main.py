@@ -105,8 +105,8 @@ from gui.hud_manager import HUDManager
 
 
 # --- IMMORTAL RESTART CONSTANTS ---
-MAX_ASSISTANT_RESTARTS = 10
-RESTART_COOLDOWN_SECONDS = 5
+MAX_ASSISTANT_RESTARTS = 999  # TRUE IMMORTALITY — practically infinite
+RESTART_COOLDOWN_SECONDS = 3  # Fast recovery
 
 
 def run_assistant(agent, restart_counter):
@@ -117,6 +117,40 @@ def run_assistant(agent, restart_counter):
             pythoncom.CoInitialize()
             
             print(f"Assistant Thread: Starting (attempt {restart_counter[0] + 1})...")
+            
+            # --- STARTUP GREETING: Speak time-based hello + weather on boot ---
+            if restart_counter[0] == 0:  # Only on first boot
+                try:
+                    import threading
+                    def _startup_greeting():
+                        import time
+                        time.sleep(5)  # Wait for speech engine to initialize
+                        try:
+                            from tools import get_startup_greeting
+                            greeting = get_startup_greeting()
+                            print(f"STARTUP GREETING: {greeting}")
+                            
+                            # Push to dashboard
+                            try:
+                                from nexus_bridge import get_signals
+                                get_signals().emit_bridge("chat_received", "JACK", greeting)
+                                get_signals().emit_bridge("pipeline_stage", "SPEAKING", "Startup Greeting")
+                            except: pass
+                            
+                            # Speak the greeting
+                            if agent.speech_handler and agent.mode == "voice":
+                                agent.speech_handler.speak(greeting)
+                            
+                            # Also update HUD
+                            if agent.hud:
+                                agent.hud.signals.response_received.emit(greeting)
+                        except Exception as e:
+                            print(f"Startup greeting error: {e}")
+                    
+                    threading.Thread(target=_startup_greeting, daemon=True).start()
+                except Exception as e:
+                    print(f"Greeting thread error: {e}")
+            
             agent.start()
             
             # If start() returns normally (e.g., user said "stop"), exit cleanly

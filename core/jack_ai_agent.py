@@ -164,6 +164,35 @@ class JackAIAgent:
             self.is_running = False
             return
 
+        # --- SYSTEM CONTROL BYPASS: shutdown, restart, sleep, lock ---
+        text_lower = text.lower().strip()
+        system_cmds = {
+            'shut down': 'shutdown', 'shutdown': 'shutdown', 'power off': 'shutdown',
+            'restart': 'restart', 'reboot': 'restart',
+            'sleep': 'sleep', 'hibernate': 'sleep',
+            'lock': 'lock', 'lock screen': 'lock',
+            'log off': 'log off', 'sign out': 'log off'
+        }
+        for cmd_phrase, cmd_action in system_cmds.items():
+            if cmd_phrase in text_lower:
+                try:
+                    from tools import system_control
+                    result = system_control(cmd_action)
+                    self._handle_response(result)
+                except Exception as e:
+                    self._handle_response(f"System control error: {e}")
+                return
+        
+        # --- WEATHER BYPASS ---
+        if any(w in text_lower for w in ['weather', 'temperature', 'forecast', 'how hot', 'how cold']):
+            try:
+                from tools import get_weather_for_location
+                weather = get_weather_for_location()
+                self._handle_response(weather)
+            except Exception as e:
+                self._handle_response(f"Weather check failed: {e}")
+            return
+
         # Check for conversation management commands
         if text.lower() == "clear history":
             response = self.ai_handler.clear_conversation_history()
@@ -252,7 +281,8 @@ class JackAIAgent:
                 self.hud.signals.restore_requested.emit()
                 self.hud.signals.status_changed.emit("Standing by", "idle")
                 self.hud.signals.activity_received.emit("System: Wake word detected")
-            self.speech_handler.speak("Yes, Sir?")
+            if self.speech_handler:
+                self.speech_handler.speak("Yes, Sir?")
             
         else:
             # Empty transcription and no wake word

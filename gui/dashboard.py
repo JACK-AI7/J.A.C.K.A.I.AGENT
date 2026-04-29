@@ -555,23 +555,66 @@ class TelemetryGraph(QFrame):
 class WeatherWidget(QFrame):
     def __init__(self):
         super().__init__()
-        self.setFixedSize(280, 60)
-        self.setStyleSheet("background: rgba(5, 20, 35, 100); border: 1px solid rgba(0, 191, 255, 30); border-radius: 8px;")
+        self.setFixedSize(280, 80)
+        self.setStyleSheet("""
+            background: qlineargradient(x1:0,y1:0,x2:1,y2:1, stop:0 rgba(0,20,60,200), stop:1 rgba(0,40,80,180));
+            border: 1px solid rgba(0, 191, 255, 40); border-radius: 10px;
+        """)
         layout = QVBoxLayout(self)
-        layout.setContentsMargins(8, 4, 8, 4)
-        self.temp_label = QLabel("ATMOSPHERE: 22°C")
-        self.temp_label.setStyleSheet("color: #00bfff; font-family: 'Segoe UI Light'; font-size: 12px;")
-        self.condition_label = QLabel("STATUS: OPTIMAL")
-        self.condition_label.setStyleSheet("color: rgba(0, 255, 127, 180); font-family: 'Consolas'; font-size: 9px;")
+        layout.setContentsMargins(10, 6, 10, 6)
+        layout.setSpacing(2)
+        
+        self.city_label = QLabel("\u2316 LOCATION: DETECTING...")
+        self.city_label.setStyleSheet("color: rgba(0, 191, 255, 200); font-family: 'Consolas'; font-size: 8px; font-weight: bold;")
+        layout.addWidget(self.city_label)
+        
+        self.temp_label = QLabel("ATMOSPHERE: --\u00b0C")
+        self.temp_label.setStyleSheet("color: #00bfff; font-family: 'Segoe UI Light'; font-size: 14px; font-weight: bold;")
+        self.condition_label = QLabel("STATUS: SCANNING...")
+        self.condition_label.setStyleSheet("color: rgba(0, 255, 127, 200); font-family: 'Consolas'; font-size: 9px;")
         layout.addWidget(self.temp_label)
         layout.addWidget(self.condition_label)
+        
+        # Auto-fetch weather on init
+        QTimer.singleShot(3000, self._auto_fetch_weather)
+
+    def _auto_fetch_weather(self):
+        """Auto-fetch weather in background thread."""
+        def _fetch():
+            try:
+                import requests, json
+                loc = requests.get('https://ipinfo.io/json', timeout=5).json()
+                city = loc.get('city', 'Unknown')
+                lat, lon = loc.get('loc', '0,0').split(',')
+                w = requests.get(
+                    f"https://api.open-meteo.com/v1/forecast?latitude={lat}&longitude={lon}"
+                    f"&current=temperature_2m,weather_code,wind_speed_10m&timezone=auto", timeout=5
+                ).json()
+                cur = w.get('current', {})
+                WMO = {0:'Clear',1:'Clear',2:'Cloudy',3:'Overcast',45:'Fog',51:'Drizzle',
+                       61:'Rain',63:'Rain',65:'Heavy Rain',71:'Snow',80:'Showers',95:'Storm'}
+                code = cur.get('weather_code', 0)
+                cond = WMO.get(code, f'Code {code}')
+                data = json.dumps({'temp': cur.get('temperature_2m','--'), 'condition': cond,
+                                   'wind': cur.get('wind_speed_10m','--'), 'city': city})
+                get_signals().emit_bridge("weather_pulsed", data)
+            except: pass
+        threading.Thread(target=_fetch, daemon=True).start()
 
     def update_weather(self, data):
+        import json
         if isinstance(data, str):
-            self.condition_label.setText(f"STATUS: {data.upper()}")
+            try:
+                parsed = json.loads(data)
+                self.city_label.setText(f"\u2316 {parsed.get('city', 'UNKNOWN').upper()}")
+                self.temp_label.setText(f"{parsed.get('temp', '--')}\u00b0C  \u2022  {parsed.get('condition', 'N/A')}")
+                self.condition_label.setText(f"WIND: {parsed.get('wind', '--')} km/h  |  HUM: {parsed.get('humidity', '--')}%")
+            except (json.JSONDecodeError, TypeError):
+                self.condition_label.setText(f"STATUS: {data.upper()[:40]}")
         elif isinstance(data, dict):
-            self.temp_label.setText(f"ATMOSPHERE: {data.get('temp', 22)}°C")
-            self.condition_label.setText(f"STATUS: {data.get('condition', 'OPTIMAL').upper()}")
+            self.city_label.setText(f"\u2316 {data.get('city', 'UNKNOWN').upper()}")
+            self.temp_label.setText(f"{data.get('temp', '--')}\u00b0C  \u2022  {data.get('condition', 'N/A')}")
+            self.condition_label.setText(f"WIND: {data.get('wind', '--')} km/h")
 
 
 class ReasoningGraph(QGraphicsView):
@@ -636,19 +679,89 @@ class ReasoningGraph(QGraphicsView):
 # =============================================================================
 
 class NexusDashboard(QMainWindow):
-    """The High-Fidelity JACK AGENT DASHBOARD with real-time process visualization."""
+    """The High-Fidelity JACK AGENT DASHBOARD with premium glassmorphism UI."""
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("JACK AGENT DASHBOARD — NEURAL COMMAND CENTER")
-        self.setMinimumSize(1360, 860)
-        self.setStyleSheet("background-color: #050a10; color: #00bfff;")
+        self.setWindowTitle("J.A.C.K. \u2014 NEURAL COMMAND CENTER")
+        self.setMinimumSize(1400, 900)
+        self.setStyleSheet("""
+            QMainWindow {
+                background: qlineargradient(x1:0,y1:0,x2:1,y2:1, 
+                    stop:0 #030812, stop:0.3 #0a0f1e, stop:0.7 #060d18, stop:1 #020610);
+                color: #00bfff;
+            }
+            QTextEdit {
+                background: rgba(8,16,28,220);
+                border: 1px solid rgba(0,191,255,25);
+                border-radius: 8px;
+                color: #d4e8ff;
+                font-family: 'Segoe UI';
+                font-size: 12px;
+                padding: 8px;
+                selection-background-color: rgba(0,191,255,80);
+            }
+            QLabel {
+                background: transparent;
+            }
+            QScrollBar:vertical {
+                background: rgba(0,0,0,60);
+                width: 6px;
+                border-radius: 3px;
+            }
+            QScrollBar::handle:vertical {
+                background: rgba(0,191,255,80);
+                border-radius: 3px;
+                min-height: 20px;
+            }
+            QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {
+                height: 0px;
+            }
+        """)
         
         self.start_time = time.time()
         self.central_widget = QWidget()
         self.setCentralWidget(self.central_widget)
         self.root_layout = QVBoxLayout(self.central_widget)
-        self.root_layout.setContentsMargins(8, 8, 8, 4)
-        self.root_layout.setSpacing(6)
+        self.root_layout.setContentsMargins(12, 8, 12, 6)
+        self.root_layout.setSpacing(8)
+        
+        # === PREMIUM HEADER BANNER ===
+        header_frame = QFrame()
+        header_frame.setFixedHeight(50)
+        header_frame.setStyleSheet("""
+            background: qlineargradient(x1:0,y1:0,x2:1,y2:0, 
+                stop:0 rgba(0,30,80,240), stop:0.5 rgba(0,60,120,200), stop:1 rgba(0,30,80,240));
+            border: 1px solid rgba(0,191,255,50); border-radius: 12px;
+        """)
+        header_layout = QHBoxLayout(header_frame)
+        header_layout.setContentsMargins(16, 4, 16, 4)
+        
+        title_label = QLabel("\u26a1 J.A.C.K. TITAN \u2014 NEURAL COMMAND CENTER")
+        title_label.setStyleSheet("""
+            color: rgba(0, 220, 255, 255); font-family: 'Segoe UI'; font-size: 16px; 
+            font-weight: bold; letter-spacing: 3px;
+        """)
+        header_layout.addWidget(title_label)
+        
+        # Startup greeting label (will be populated via signal)
+        self.greeting_label = QLabel("")
+        self.greeting_label.setStyleSheet("""
+            color: rgba(0, 255, 180, 200); font-family: 'Segoe UI'; font-size: 11px;
+            font-style: italic;
+        """)
+        self.greeting_label.setAlignment(Qt.AlignRight | Qt.AlignVCenter)
+        header_layout.addWidget(self.greeting_label)
+        
+        self.root_layout.addWidget(header_frame)
+        
+        # Show greeting text
+        import datetime
+        hour = datetime.datetime.now().hour
+        if 5 <= hour < 12: greet = "\u2600 Good Morning, Sir"
+        elif 12 <= hour < 17: greet = "\u2600 Good Afternoon, Sir"
+        elif 17 <= hour < 21: greet = "\ud83c\udf19 Good Evening, Sir"
+        else: greet = "\u2b50 Good Night, Sir"
+        self.greeting_label.setText(f"{greet}  \u2022  Systems Online")
         
         # === TOP: Pipeline Status Bar ===
         self.pipeline = PipelineStatusBar()
@@ -687,8 +800,8 @@ class NexusDashboard(QMainWindow):
         self.center_panel = QVBoxLayout()
         self.center_panel.setSpacing(4)
         
-        chat_header = QLabel("NEURAL_CHAT_FEED")
-        chat_header.setStyleSheet("color: rgba(255, 140, 0, 180); font-weight: bold; font-family: 'Consolas'; font-size: 10px;")
+        chat_header = QLabel("\u2b24  NEURAL CHAT FEED")
+        chat_header.setStyleSheet("color: rgba(255, 160, 40, 220); font-weight: bold; font-family: 'Consolas'; font-size: 11px; letter-spacing: 1px; padding: 2px 0;")
         self.center_panel.addWidget(chat_header)
         
         self.chat_feed = QTextEdit()
@@ -712,8 +825,8 @@ class NexusDashboard(QMainWindow):
         self.right_panel = QVBoxLayout()
         self.right_panel.setSpacing(4)
         
-        log_header = QLabel("CORE_REASONING_LOG")
-        log_header.setStyleSheet("color: rgba(0, 191, 255, 180); font-weight: bold; font-family: 'Consolas'; font-size: 10px;")
+        log_header = QLabel("\u2b24  CORE REASONING LOG")
+        log_header.setStyleSheet("color: rgba(0, 200, 255, 220); font-weight: bold; font-family: 'Consolas'; font-size: 11px; letter-spacing: 1px; padding: 2px 0;")
         self.right_panel.addWidget(log_header)
         
         self.thought_log = QTextEdit()
@@ -725,8 +838,8 @@ class NexusDashboard(QMainWindow):
         self.tool_log = ToolExecutionLog()
         self.right_panel.addWidget(self.tool_log, 2)
         
-        news_header = QLabel("GLOBAL_NEWS_DECRYPTED")
-        news_header.setStyleSheet("color: rgba(0, 255, 127, 180); font-weight: bold; font-family: 'Consolas'; font-size: 10px;")
+        news_header = QLabel("\u2b24  GLOBAL NEWS FEED")
+        news_header.setStyleSheet("color: rgba(0, 255, 140, 220); font-weight: bold; font-family: 'Consolas'; font-size: 11px; letter-spacing: 1px; padding: 2px 0;")
         self.right_panel.addWidget(news_header)
         
         self.headline_log = QTextEdit()
@@ -815,10 +928,14 @@ class NexusDashboard(QMainWindow):
         tools = self.tool_log.entry_count
         synapses = self.neural_grid.total_fires
         self.statusBar().showMessage(
-            f"JACK AGENT DASHBOARD | UPTIME: {hrs:02}:{mins:02}:{secs:02} | "
-            f"TOOLS: {tools} | SYNAPSES: {synapses} | HUD: ONLINE | ENCRYPTION: AES-256"
+            f"  \u26a1 J.A.C.K. TITAN  |  UPTIME: {hrs:02}:{mins:02}:{secs:02}  |  "
+            f"TOOLS: {tools}  |  SYNAPSES: {synapses}  |  STATUS: IMMORTAL  |  ENCRYPTION: AES-256  |  MODE: OVERDRIVE"
         )
-        self.statusBar().setStyleSheet("color: #4488aa; font-family: 'Consolas'; font-size: 9px;")
+        self.statusBar().setStyleSheet("""
+            color: rgba(0, 180, 220, 200); font-family: 'Consolas'; font-size: 10px;
+            background: rgba(0, 10, 30, 240); border-top: 1px solid rgba(0, 191, 255, 40);
+            padding: 2px 8px; letter-spacing: 1px;
+        """)
 
     def poll_telemetry(self):
         try:
