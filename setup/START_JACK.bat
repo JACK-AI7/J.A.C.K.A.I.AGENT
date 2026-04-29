@@ -1,17 +1,21 @@
 @echo off
+setlocal
 echo ==========================================
 echo      J.A.C.K. TITAN - IMMORTAL START
 echo ==========================================
 echo.
-cd /d "%~dp0.."
+
+:: Get the root directory (one level up from setup folder)
+set "ROOT_DIR=%~dp0.."
+cd /d "%ROOT_DIR%"
 
 :: Activate virtual environment
 if exist "venv\Scripts\activate.bat" (
     call venv\Scripts\activate.bat
-    echo [OK] Virtual environment activated.
+    echo [OK] Neural Workspace Activated.
 ) else (
     echo [WARNING] No venv found. Using system Python.
-    echo          Run INSTALL_JACK.bat first for best results.
+    echo          Run install.bat first for best results.
 )
 
 :: Auto-start Ollama in background if not running
@@ -22,15 +26,16 @@ if %errorlevel% neq 0 (
     timeout /t 3 /nobreak >nul
 )
 
-echo [INIT] Launching J.A.R.V.I.S. Immortal Core (Watchdog)...
+echo [INIT] Launching J.A.R.V.I.S. Immortal Core...
 echo.
+
+:: Run main.py
 python main.py
-echo.
 
 :: If python exits with error, show the log
 if %errorlevel% neq 0 (
     echo.
-    echo [ERROR] JACK crashed. Checking error log...
+    echo [ERROR] JACK encountered a core failure. Checking error log...
     if exist "jack_error.log" (
         echo --- Last 10 lines of jack_error.log ---
         powershell -Command "Get-Content jack_error.log -Tail 10"
@@ -38,5 +43,5 @@ if %errorlevel% neq 0 (
 )
 
 echo.
-echo Process terminated.
+echo System session terminated.
 pause

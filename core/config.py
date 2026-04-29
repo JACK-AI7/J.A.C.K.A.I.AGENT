@@ -138,7 +138,7 @@ OLLAMA_SETTINGS = {
 
 # Open Interpreter Settings (Advanced Automation)
 INTERPRETER_SETTINGS = {
-    "model": f"ollama/{MODEL_PROFILES['voice-fast']['model']}",  # Use user-optimized fast model
+    "model": f"ollama/{MODEL_PROFILES['fast']['model']}",  # Use user-optimized fast model
     "api_base": OLLAMA_SETTINGS["base_url"],
     "offline": True,
     "auto_run": True,  # IMMORTAL OVERRIDE: execute without permission
