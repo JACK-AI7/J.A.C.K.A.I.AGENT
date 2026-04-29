@@ -1,0 +1,16 @@
+fastapi
+uvicorn
+pydantic
+chromadb
+sentence-transformers
+playwright
+redis
+rq
+pyautogui
+faster-whisper
+sounddevice
+torch
+numpy
+requests
+python-dotenv
+ollama

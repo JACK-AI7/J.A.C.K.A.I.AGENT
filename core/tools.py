@@ -237,6 +237,23 @@ def open_any_url(url):
     webbrowser.open(url)
     return f"Neural Command SUCCESS: The portal for {url} has been materialized by the system dispatch."
 
+def write_file(file_path, content):
+    """Write content to a file. Overwrites if exists."""
+    try:
+        with open(file_path, 'w', encoding='utf-8') as f:
+            f.write(content)
+        return f"Successfully written to {file_path}"
+    except Exception as e:
+        return f"File Write Error: {str(e)}"
+
+def wait(seconds):
+    """Wait for a specified number of seconds."""
+    try:
+        time.sleep(float(seconds))
+        return f"Waited for {seconds} seconds."
+    except Exception as e:
+        return f"Wait Error: {str(e)}"
+
 def open_youtube():
     """Open YouTube in the default browser."""
     return open_any_url("https://www.youtube.com")
@@ -1934,7 +1951,7 @@ FUNCTIONS = [
     },
     {
         "name": "auto_navigator",
-        "description": "Execute a high-level automated web mission (e.g., 'buy a mouse on Amazon').",
+        "description": "Execute a high-level automated web mission (e.g., search for info, interact with a site, or automate a workflow).",
         "parameters": {
             "type": "object",
             "properties": {
@@ -2105,6 +2122,17 @@ FUNCTIONS = [
         "name": "refresh_video",
         "description": "Refresh or reload the current web page. Use when the user says 'refresh the video' or 'reload page'.",
         "parameters": {"type": "object", "properties": {}},
+    },
+    {
+        "name": "youtube_master",
+        "description": "High-fidelity YouTube interaction: play specific videos, like, subscribe, or navigate YouTube channels autonomously.",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "task": {"type": "string", "description": "The YouTube mission (e.g., 'play the first video', 'like this video')."}
+            },
+            "required": ["task"]
+        }
     },
 ]
 
@@ -2294,4 +2322,20 @@ FUNCTION_MAP = {
     "morning_digest": morning_digest,
     "open_youtube": open_youtube,
     "refresh_video": refresh_video,
+    "youtube_master": lambda task: execute_titan_skill("youtube_master", task),
+    # --- ALIASES FOR OVERDRIVE ---
+    "open_url": open_any_url,
+    "click": dom_click,
+    "type": dom_type,
+    "read": dom_read,
+    "wait": wait,
+    "open_app": open_application,
+    "run_command": execute_terminal_command,
+    "read_file": read_file_content,
+    "write_file": write_file,
+    "web_search": live_web_search,
+    "open_whatsapp": lambda: execute_titan_skill("whatsapp_skill", "open"),
+    "search_chat": lambda name: execute_titan_skill("whatsapp_skill", f"search for {name}"),
+    "read_messages": lambda count: execute_titan_skill("whatsapp_skill", f"read {count} messages"),
+    "send_message": lambda name, message: execute_titan_skill("whatsapp_skill", f"whatsapp {name} : {message}"),
 }

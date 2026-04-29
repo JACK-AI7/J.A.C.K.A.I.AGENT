@@ -6,19 +6,34 @@ import logging
 from speech_handler import SpeechHandler
 from ai_handler import AIHandler
 from config import RECOGNITION_SETTINGS
+from tools import FUNCTION_MAP
 
+# --- PRODUCTION CORE IMPORTS ---
+import asyncio
+from core.executor import Executor
+from core.agent_loop import AgentLoop
+from core.tool_router import ToolRouter
+from core.state_manager import StateManager
+from core.logger import log_event
 
 class JackAIAgent:
     def __init__(self, hud=None, mode="voice"):
         self.mode = mode
+        self.hud = hud
         self.speech_handler = None
         self.ai_handler = AIHandler(hud=hud)
+        
+        # --- PRODUCTION CORE INITIALIZATION ---
+        self.state = StateManager()
+        self.router = ToolRouter(FUNCTION_MAP)
+        self.executor = Executor(self.ai_handler, self.router, self.state)
+        self.loop = AgentLoop(self.executor)
+        
         self.is_running = False
         self.is_active = True  # Tracks if AI brain is actually listening
-        self.hud = hud
         self.current_language = "en"
         self._consecutive_errors = 0
-        self._max_consecutive_errors = 15  # Enter safe mode after this many
+        self._max_consecutive_errors = 15
 
     def set_active(self, state):
         """Toggle the AI brain active state."""
@@ -272,8 +287,15 @@ class JackAIAgent:
                 get_signals().emit_bridge("neural_pulse", 8)
             except: pass
             
-            response = self.ai_handler.process_query(query)
-            self._handle_response(response)
+            # --- PRODUCTION CORE MISSION EXECUTION ---
+            try:
+                # Run the autonomous mission loop
+                result = asyncio.run(self.loop.run(query))
+                response = result.get("message", "Mission result unavailable.")
+                self._handle_response(response)
+            except Exception as e:
+                log_event(f"Mission Loop Failure: {e}")
+                self._handle_response(f"I encountered a core error during the mission, Sir: {str(e)}")
             
         elif is_wake_word and not query:
             # Just the wake word (e.g., "Hey Jack") - Acknowledge and restore HUD
@@ -318,6 +340,10 @@ class JackAIAgent:
             from nexus_bridge import get_signals
             get_signals().emit_bridge("pipeline_stage", "IDLE", "Standing by...")
         except: pass
+
+    def process_text_command(self, text):
+        """Execute a mission from text input (Production Core Interface)."""
+        return asyncio.run(self.loop.run(text))
 
     def get_conversation_stats(self):
         """Get conversation statistics."""

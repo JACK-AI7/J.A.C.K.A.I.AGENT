@@ -1,15 +1,46 @@
+# Python
 venv/
-.env
 __pycache__/
 *.pyc
-conversation_history.json
-jack_error.log
+*.pyo
+*.pyd
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# JACK Data & Logs
 *.log
-.DS_Store
+conversation_history.json
+vault/
+logs/
+browser_data/
+.gemini/
+
+# Environment
+.env
+.env.test
+
+# IDEs
 .vscode/
 .idea/
-*.tmp
-temp/
-model_cache/
-downloads/
-vault/memory/chroma.sqlite3
+.DS_Store
+
+# Temporary / Legacy
+scratch/
+backups/
+jarvis-tech-import/
+friday/
+test_streaming_voice.py

@@ -18,6 +18,7 @@ except Exception:
 from config import OLLAMA_SETTINGS, SYSTEM_PROMPT, MODEL_PROFILES, ACTIVE_PROFILE
 from tools import FUNCTIONS, FUNCTION_MAP
 from conversation_manager import ConversationManager
+import subprocess
 
 
 class AIHandler:
@@ -33,6 +34,31 @@ class AIHandler:
         # Initialize Ollama client
         self._init_clients()
         self.reasoning_mode = True  # Enable reflective thinking
+
+    def generate(self, prompt):
+        """Standard generation method for Production Core (Executor compatibility)."""
+        from config import FALLBACK_PROFILE
+        
+        try:
+            # 1. Main Mission: High-performance client
+            response = self.ollama_client.generate(model=self.model, prompt=prompt)
+            return response.get("response", "").strip()
+        except Exception as e:
+            # 2. Fallback Protocol: Reliability override
+            try:
+                fallback_model = MODEL_PROFILES[FALLBACK_PROFILE]["model"]
+                print(f"TITAN LOG: High-performance core offline. Deploying Fallback ({fallback_model})...")
+                response = self.ollama_client.generate(model=fallback_model, prompt=prompt)
+                return response.get("response", "").strip()
+            except:
+                # 3. Emergency Bypass: Subprocess
+                response = subprocess.run(
+                    ["ollama", "run", self.model],
+                    input=prompt,
+                    text=True,
+                    capture_output=True
+                )
+                return response.stdout.strip()
 
     def _init_clients(self):
         """Initialize local Ollama client. No paid API keys needed."""
@@ -105,104 +131,117 @@ class AIHandler:
             return f"Neural Interface Error: {str(e)}"
 
     def _process_ollama(self, query):
-        """Ollama local reasoning with dynamic worker delegation."""
+        """Strict JSON autonomous loop — upgraded for high-performance tool execution."""
+        from config import AUTONOMOUS_SETTINGS, MODEL_PROFILES
+        from memory_vault import vault
+        
+        max_depth = AUTONOMOUS_SETTINGS.get("max_tool_calls", 25)
         current_model = self.model
         
-        # --- DYNAMIC WORKER DELEGATION ---
-        query_lower = query.lower()
+        # --- MARKET-READY LOGGING ---
+        print(f"TITAN LOG: Mission started - '{query}'")
+        get_signals().emit_bridge("thought_received", f"Initializing Mission Protocol: {query}", "thought")
+
+        # --- MEMORY RECALL ---
+        relevant_facts = vault.retrieve_relevant_facts(query, limit=3)
+        context_facts = "\n".join([f"- {f}" for f in relevant_facts])
         
-        # Code tasks → Qwen2.5-Coder
-        is_coding = any(word in query_lower for word in ["code", "script", "program", "python", "javascript", "debug", "write a", "technical", "fix the", "implement"])
-        if is_coding and "coder" in MODEL_PROFILES:
-            coder_model = MODEL_PROFILES["coder"]["model"]
-            print(f"TITAN Worker: Deploying '{coder_model}' for high-accuracy engineering...")
-            get_signals().emit_bridge("thought_received", f"Neural Handshake: Engaging Coder worker ({coder_model})...", "thought")
-            current_model = coder_model
-        
-        # Deep reasoning → Use reasoning model explicitly
-        is_reasoning = any(word in query_lower for word in ["explain", "analyze", "think about", "why", "compare", "evaluate", "reason"])
-        if is_reasoning and "reasoning" in MODEL_PROFILES:
-            current_model = MODEL_PROFILES["reasoning"]["model"]
-        
-        # System actions → Qwen 2.5 (Best tool-calling model)
-        is_action = any(word in query_lower for word in ["open", "launch", "start", "run", "click", "type", "command", "system", "search", "terminal", "press", "refresh", "reload"])
-        if is_action and "qwen" in MODEL_PROFILES:
-            action_model = MODEL_PROFILES["qwen"]["model"]
-            print(f"TITAN Worker: Deploying '{action_model}' for reliable tool-calling...")
-            get_signals().emit_bridge("thought_received", f"Neural Overdrive: Engaging Action worker ({action_model})...", "thought")
-            current_model = action_model
-            
         messages = [{"role": "system", "content": SYSTEM_PROMPT}]
-        messages.extend(self.conversation_manager.get_context_messages())
-        messages.append({"role": "user", "content": query})
-        
-        tools = [{"type": "function", "function": f} for f in FUNCTIONS]
-        
-        # --- TOOL FILTERING ---
-        # Reduce tool noise for smaller models by filtering based on intent
-        if is_action:
-            action_keywords = ["browser", "click", "type", "navigator", "system", "command", "skill", "launch", "open", "press"]
-            tools = [t for t in tools if any(kw in t["function"]["name"].lower() or kw in t["function"]["description"].lower() for kw in action_keywords)]
-        elif is_coding:
-            coding_keywords = ["code", "file", "terminal", "python", "debug"]
-            tools = [t for t in tools if any(kw in t["function"]["name"].lower() or kw in t["function"]["description"].lower() for kw in coding_keywords)]
-        
-        # Always include auto_navigator and youtube_master for general missions
-        if is_action or is_reasoning:
-            important_tools = ["auto_navigator", "youtube_master", "open_any_url", "open_youtube"]
-            for tool_name in important_tools:
-                if not any(t["function"]["name"] == tool_name for t in tools):
-                    match = next((f for f in FUNCTIONS if f["name"] == tool_name), None)
-                    if match: tools.append({"type": "function", "function": match})
-        
-        try:
-            response = self.ollama_client.chat(model=current_model, messages=messages, tools=tools, options=self.profile["options"])
-        except:
-            response = self.ollama_client.chat(model=current_model, messages=messages, options=self.profile["options"])
+        if context_facts:
+            messages.append({"role": "system", "content": f"Neural Archive Context:\n{context_facts}"})
             
-        msg = response.get("message", {})
-        tool_results = []
-        content = msg.get("content", "")
-
-        # 1. Handle API Tool Calls
-        if msg.get("tool_calls"):
-            for tc in msg["tool_calls"]:
-                name = tc["function"]["name"]
-                args = tc["function"]["arguments"]
-                res = self._execute_function(name, args)
-                tool_results.append({"function": name, "args": args, "result": res})
+        messages.extend(self.conversation_manager.get_context_messages())
+        messages.append({"role": "user", "content": f"Task: {query}"})
         
-        # 2. Handle Inline Tool Calls (Fallback for smaller/unreliable models)
-        inline_tools = self._parse_inline_tool_calls(content)
-        for it in inline_tools:
-            name = it.get("name") or it.get("function")
-            args = it.get("arguments") or it.get("args") or {}
-            if name and name not in [tr["function"] for tr in tool_results]:
-                res = self._execute_function(name, args)
-                tool_results.append({"function": name, "args": args, "result": res})
+        tool_results_summary = []
+        
+        for step in range(max_depth):
+            print(f"TITAN LOG: Executing Mission Step {step+1}/{max_depth}...")
+            get_signals().emit_bridge("neural_pulse", 20 + (step * 5))
+            
+            data = None
+            # --- GENERATION RETRY MECHANISM ---
+            for attempt in range(2):
+                try:
+                    response = self.ollama_client.chat(
+                        model=current_model, 
+                        messages=messages, 
+                        format='json', 
+                        options=self.profile.get("options", {})
+                    )
+                    
+                    raw_content = response.get("message", {}).get("content", "")
+                    if not raw_content:
+                        continue
+                    
+                    # --- JSON VALIDATOR ---
+                    data = self._parse_json_robustly(raw_content)
+                    if data and data.get("type") in ["tool", "final"]:
+                        break # Successful parse
+                except Exception as e:
+                    print(f"TITAN LOG: Generation Attempt {attempt+1} failed: {e}")
+                    time.sleep(1)
+            
+            if not data:
+                return "Neural Error: Failed to generate valid JSON command after retries."
 
-        # 3. Final Content Determination
-        if tool_results:
-            # ALWAYS do a second pass for natural language response after execution
-            # This ensures the model confirms what it did instead of showing JSON/technical text.
-            try:
-                # Prepare context for the model to describe what it did
-                tool_resp_str = "\n".join([f"Tool '{tr['function']}' result: {tr['result']}" for tr in tool_results])
+            res_type = data.get("type")
+            
+            if res_type == "tool":
+                tool_name = data.get("name")
+                tool_args = data.get("args") or {}
                 
-                # Create a fresh conversation segment for the confirmation
-                confirmation_messages = [{"role": "system", "content": "You are JACK. A tool has just been executed. Provide a brief, professional, and natural confirmation to the user (e.g., 'I have opened YouTube for you, Sir'). Do NOT mention the tool name or technical details."}]
-                confirmation_messages.append({"role": "user", "content": f"Query: {query}\n\n{tool_resp_str}"})
+                # --- EXECUTION QUEUE LOGGING ---
+                print(f"TITAN LOG: Step {step+1} - Calling Tool: {tool_name}")
+                get_signals().emit_bridge("tool_log", f"EXECUTING: {tool_name}")
                 
-                final_response = self.ollama_client.chat(model=current_model, messages=confirmation_messages, options=self.profile["options"])
-                content = final_response.get("message", {}).get("content", content)
+                result = self._execute_function(tool_name, tool_args)
+                
+                tool_results_summary.append({"function": tool_name, "args": tool_args, "result": result})
+                
+                messages.append({"role": "assistant", "content": json.dumps(data)})
+                messages.append({"role": "user", "content": f"Result: {result}"})
+                
+                get_signals().emit_bridge("thought_received", f"Step {step+1} Complete: {tool_name} returned data.", "decision")
+                
+            elif res_type == "final":
+                final_msg = data.get("message", "Task completed.")
+                status = data.get("status", "success")
+                
+                # --- MEMORY STORAGE ---
+                if status == "success":
+                    vault.store_fact(f"User Task: {query} | Result: {final_msg}")
+                
+                print(f"TITAN LOG: Mission Finalized - Status: {status}")
+                self.conversation_manager.add_interaction(query, final_msg, tool_results_summary)
+                return final_msg
+            
+            else:
+                messages.append({"role": "user", "content": "Error: Your response must follow the strict JSON format (type: tool | final)."})
+
+        return "Mission Termination: Maximum depth reached."
+
+    def _parse_json_robustly(self, text):
+        """High-tech JSON validator/parser."""
+        try:
+            return json.loads(text)
+        except json.JSONDecodeError:
+            # Try to extract from potential markdown/clutter
+            match = re.search(r"\{.*\}", text, re.DOTALL)
+            if match:
+                try:
+                    return json.loads(match.group())
+                except: pass
+        return None
+                    
             except Exception as e:
-                print(f"Confirmation Error: {e}")
-                if not content:
-                    content = "The mission parameters have been executed, Sir."
-        
-        res = self._sanitize_persona_output(content)
-        self.conversation_manager.add_interaction(query, res, tool_results)
-        return res
+                print(f"Loop Error at Step {step+1}: {e}")
+                get_signals().emit_bridge("thought_received", f"Neural Warning: {str(e)}", "thought")
+                # Try to tell the model what went wrong
+                messages.append({"role": "user", "content": f"System Error: {str(e)}. Please correct your JSON format and continue."})
+                time.sleep(1)
+
+        return "Mission Termination: Maximum depth reached without finalization."
 
     def _parse_inline_tool_calls(self, text):
         """Extract tool calls from raw text using regex (JSON, code blocks, identifiers, etc.)."""
