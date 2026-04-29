@@ -79,7 +79,7 @@ VISION_SETTINGS = {
 # =============================================================================
 # MODEL PROFILES — 100% FREE & OPEN-SOURCE (All via Ollama — NO paid APIs)
 # =============================================================================
-ACTIVE_PROFILE = "reasoning"
+ACTIVE_PROFILE = "voice-fast"
 
 MODEL_PROFILES = {
     # --- HIGH-END REASONING (Best of the best, free) ---

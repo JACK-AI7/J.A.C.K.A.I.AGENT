@@ -124,6 +124,14 @@ class AIHandler:
         if is_reasoning and "reasoning" in MODEL_PROFILES:
             current_model = MODEL_PROFILES["reasoning"]["model"]
         
+        # System actions → Qwen 2.5 (Best tool-calling model)
+        is_action = any(word in query_lower for word in ["open", "launch", "start", "run", "click", "type", "command", "system", "search", "terminal", "press"])
+        if is_action and "qwen" in MODEL_PROFILES:
+            action_model = MODEL_PROFILES["qwen"]["model"]
+            print(f"TITAN Worker: Deploying '{action_model}' for reliable tool-calling...")
+            get_signals().emit_bridge("thought_received", f"Neural Overdrive: Engaging Action worker ({action_model})...", "thought")
+            current_model = action_model
+            
         messages = [{"role": "system", "content": SYSTEM_PROMPT}]
         messages.extend(self.conversation_manager.get_context_messages())
         messages.append({"role": "user", "content": query})

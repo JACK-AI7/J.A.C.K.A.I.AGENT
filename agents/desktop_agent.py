@@ -110,9 +110,16 @@ class DesktopAgent:
                         return f"At your command, Sir. Launching {app_name}."
                     except FileNotFoundError:
                         try:
+                            # Use PowerShell to find the executable path
+                            find_cmd = f"Get-Command {app_name_lower}* -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Source"
+                            ps_res = subprocess.check_output(["powershell", "-Command", find_cmd], text=True).strip()
+                            if ps_res:
+                                subprocess.Popen(ps_res)
+                                return f"At your command, Sir. Found and launching {app_name}."
+                            
                             # Use Windows 'start' command as ultimate fallback
                             subprocess.Popen(f'start "" "{app_name}"', shell=True)
-                            return f"At your command, Sir. Forcing {app_name} to launch."
+                            return f"At your command, Sir. Forcing {app_name} to launch via shell."
                         except Exception:
                             return f"Could not find application: {app_name}"
                 
