@@ -28,7 +28,7 @@ class Dashboard extends StatefulWidget {
 }
 
 class _DashboardState extends State<Dashboard> with SingleTickerProviderStateMixin {
-  String relayUrl = '10.24.156.92:8001';
+  String relayUrl = '192.168.0.14:8001'; // Updated to match PC IP
   late WebSocketChannel channel;
   late AnimationController _animationController;
   

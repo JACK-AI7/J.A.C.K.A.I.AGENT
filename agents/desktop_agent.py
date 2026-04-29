@@ -98,12 +98,18 @@ class DesktopAgent:
                 actual_app_name = app_mapping.get(app_name_lower)
                 
                 if actual_app_name:
-                    if actual_app_name.startswith("ms-"):
-                        # UWP/Settings apps use os.startfile
-                        os.startfile(actual_app_name)
-                    else:
-                        subprocess.Popen(actual_app_name)
-                    return f"At your command, Sir. Materializing {app_name} on your primary screen."
+                    try:
+                        if actual_app_name.startswith("ms-"):
+                            os.startfile(actual_app_name)
+                        else:
+                            # Try startfile first for smoother Windows integration
+                            try:
+                                os.startfile(actual_app_name)
+                            except:
+                                subprocess.Popen(actual_app_name)
+                        return f"At your command, Sir. Materializing {app_name} on your primary screen."
+                    except Exception as e:
+                        return f"Launch Error for {app_name}: {str(e)}"
                 else:
                     # Smart fallback: Try to launch directly, then search Start Menu
                     try:

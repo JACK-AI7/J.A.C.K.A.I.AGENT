@@ -1333,9 +1333,15 @@ def get_startup_greeting():
     return full_greeting
 
 
-def system_control(action):
+def system_control(action=None, command=None, **kwargs):
     """Control the system: shutdown, restart, sleep, lock, or log off."""
     import os
+    
+    # Handle multiple model argument styles (action vs command)
+    action = action or command or kwargs.get('task')
+    if not action:
+        return "System Control Error: No action specified. Available: shutdown, restart, sleep, lock, log off."
+        
     action = action.lower().strip()
     
     if action in ('shutdown', 'shut down', 'power off'):
@@ -2340,7 +2346,6 @@ FUNCTION_MAP = {
     "send_message": lambda name, message: execute_titan_skill("whatsapp_skill", f"whatsapp {name} : {message}"),
     
     # --- GUARDIAN & SYSTEM TOOLS ---
-    "open_app": lambda name: __import__("tools.app_control", fromlist=["open_app"]).open_app(name),
     "open_email_client": lambda: __import__("tools.app_control", fromlist=["open_email_client"]).open_email_client(),
     "open_gmail": lambda: __import__("tools.email_tools", fromlist=["open_gmail"]).open_gmail(),
     "compose_email": lambda to, subject, body: __import__("tools.email_tools", fromlist=["compose_email"]).compose_email(to, subject, body),

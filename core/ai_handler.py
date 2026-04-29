@@ -6,6 +6,8 @@ import re
 import os
 import subprocess
 import urllib.request
+import asyncio
+import inspect
 
 try:
     from nexus_bridge import get_signals
@@ -53,7 +55,12 @@ class AIHandler:
                 format='json',
                 options=self.profile.get("options", {})
             )
-            return response.get("message", {}).get("content", "").strip()
+            raw_content = response.get("message", {}).get("content", "").strip()
+            
+            # Use robust parser to ensure we return valid JSON string
+            from core.parser import parse_llm_output
+            parsed = parse_llm_output(raw_content)
+            return json.dumps(parsed)
         except Exception as e:
             # 2. Fallback Protocol: Reliability override
             try:
@@ -64,7 +71,10 @@ class AIHandler:
                     messages=messages,
                     format='json'
                 )
-                return response.get("message", {}).get("content", "").strip()
+                raw_content = response.get("message", {}).get("content", "").strip()
+                from core.parser import parse_llm_output
+                parsed = parse_llm_output(raw_content)
+                return json.dumps(parsed)
             except:
                 # 3. Emergency Bypass: Subprocess
                 response = subprocess.run(
@@ -313,16 +323,38 @@ class AIHandler:
                 
                 # Execute
                 func = FUNCTION_MAP[name]
+                
+                result = None
                 if isinstance(args, dict):
                     # Filter args to only those accepted by the function if needed
-                    # For now, just pass them
-                    return str(func(**args))
+                    result = func(**args)
                 else:
                     # Single argument or no arguments
                     try:
-                        return str(func(args))
+                        result = func(args)
                     except TypeError:
-                        return str(func())
+                        result = func()
+                
+                # --- ASYNC HANDLING ---
+                if inspect.iscoroutine(result) or asyncio.iscoroutine(result):
+                    try:
+                        # Try to get existing loop or create new one
+                        try:
+                            loop = asyncio.get_event_loop()
+                            if loop.is_running():
+                                # If loop is running (e.g. in a thread), we use run_coroutine_threadsafe
+                                # or similar, but since this is usually called from a sync context
+                                # in a dedicated thread, we might need a different approach.
+                                # For now, use a new event loop for simplicity if possible.
+                                result = asyncio.run_coroutine_threadsafe(result, loop).result()
+                            else:
+                                result = loop.run_until_complete(result)
+                        except RuntimeError:
+                            result = asyncio.run(result)
+                    except Exception as e:
+                        return f"Async Execution Error: {str(e)}"
+                
+                return str(result)
             except Exception as e:
                 return f"Execution Error: {str(e)}"
         return f"Neural Error: Tool '{name}' is not in my database."

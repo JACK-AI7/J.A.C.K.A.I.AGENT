@@ -3,6 +3,8 @@ import queue
 import time
 from concurrent.futures import ThreadPoolExecutor
 import logging
+import asyncio
+import inspect
 
 class ClawSwarm:
     """The parallel execution engine for JACK's multi-agent bots (Claws)."""
@@ -64,8 +66,17 @@ class ClawSwarm:
             if callable(func):
                 signals.bot_status.emit(name, "RUNNING", f"Executing...")
                 result = func(*args)
+                
+                # --- ASYNC HANDLING ---
+                if inspect.iscoroutine(result) or asyncio.iscoroutine(result):
+                    try:
+                        # Bots run in threads, so we can use asyncio.run or a new loop
+                        result = asyncio.run(result)
+                    except Exception as e:
+                        result = f"Async Bot Error: {str(e)}"
             else:
                 result = f"Error: '{name}' function is not callable."
+            
             signals.thought_received.emit(f"Bot '{name}' mission SUCCESS: {str(result)[:50]}...", "thought")
             try: signals.bot_status.emit(name, "SUCCESS", str(result)[:50])
             except: pass
