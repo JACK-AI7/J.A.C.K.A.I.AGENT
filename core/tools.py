@@ -2171,6 +2171,45 @@ FUNCTIONS = [
             "required": ["task"]
         }
     },
+    {
+        "name": "generate_image",
+        "description": "Generate a stunning high-resolution image from a text description using Pollinations AI (FREE).",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "prompt": {"type": "string", "description": "The description of the image to generate."}
+            },
+            "required": ["prompt"]
+        }
+    },
+    {
+        "name": "translate_text",
+        "description": "Translate text into any language using free translation services.",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "text": {"type": "string", "description": "The text to translate."},
+                "target_language": {"type": "string", "description": "The target language (e.g., 'spanish', 'telugu', 'french')."}
+            },
+            "required": ["text", "target_language"]
+        }
+    },
+    {
+        "name": "get_crypto_price",
+        "description": "Fetch real-time cryptocurrency prices in USD.",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "symbol": {"type": "string", "description": "The name of the cryptocurrency (e.g., 'bitcoin', 'ethereum', 'solana')."}
+            },
+            "required": ["symbol"]
+        }
+    },
+    {
+        "name": "tell_joke",
+        "description": "Fetch a random joke to lighten the mood.",
+        "parameters": {"type": "object", "properties": {}}
+    },
 ]
 
 
@@ -2241,6 +2280,75 @@ def system_power(action):
         os.system("shutdown /r /t 5")
         return "Restarting the system in 5 seconds."
     return "Invalid action."
+
+
+def generate_image(prompt):
+    """Generate an image using Pollinations.ai (FREE) and open it."""
+    import requests
+    import os
+    import urllib.parse
+    import time
+    try:
+        get_signals().emit_bridge("pipeline_stage", "CREATING", f"Generating Neural Art: {prompt[:40]}...")
+        encoded_prompt = urllib.parse.quote(prompt)
+        image_url = f"https://image.pollinations.ai/prompt/{encoded_prompt}?width=1024&height=1024&seed={int(time.time())}&nologo=true"
+        
+        # Download the image
+        response = requests.get(image_url)
+        if response.status_code == 200:
+            downloads_path = os.path.join(os.path.expanduser("~"), "Downloads")
+            file_name = f"JACK_GEN_{int(time.time())}.jpg"
+            file_path = os.path.join(downloads_path, file_name)
+            
+            with open(file_path, "wb") as f:
+                f.write(response.content)
+            
+            # Open the image
+            os.startfile(file_path)
+            return f"Mission Accomplished, Sir. I've generated the image and saved it to your Downloads folder: {file_name}"
+        else:
+            return f"Image Generation Error: Received status code {response.status_code}"
+    except Exception as e:
+        return f"Image Generation Error: {str(e)}"
+
+
+def translate_text(text, target_language="english"):
+    """Translate text using a free API."""
+    import requests
+    try:
+        url = f"https://api.mymemory.translated.net/get?q={text}&langpair=auto|{target_language}"
+        resp = requests.get(url).json()
+        translated_text = resp.get("responseData", {}).get("translatedText", "Translation failed.")
+        return f"Translated ({target_language}): {translated_text}"
+    except Exception as e:
+        return f"Translation Error: {str(e)}"
+
+
+def get_crypto_price(symbol="bitcoin"):
+    """Get live crypto price via CoinGecko."""
+    import requests
+    try:
+        symbol = symbol.lower()
+        url = f"https://api.coingecko.com/api/v3/simple/price?ids={symbol}&vs_currencies=usd"
+        resp = requests.get(url).json()
+        if symbol in resp:
+            price = resp[symbol]["usd"]
+            return f"Current {symbol.capitalize()} Price: ${price:,.2f} USD"
+        else:
+            return f"Could not find price for {symbol}. Try names like 'bitcoin', 'ethereum', 'solana'."
+    except Exception as e:
+        return f"Crypto Error: {str(e)}"
+
+
+def tell_joke():
+    """Fetch a random joke."""
+    import requests
+    try:
+        url = "https://official-joke-api.appspot.com/random_joke"
+        resp = requests.get(url).json()
+        return f"Here is one for you, Sir: {resp['setup']} ... {resp['punchline']}"
+    except Exception as e:
+        return f"I'm not in a funny mood right now, Sir. (Error: {e})"
 
 
 def push_to_git(commit_message):
@@ -2386,4 +2494,9 @@ FUNCTION_MAP = {
     "scan_path": lambda path=".": __import__("system_tools.security_tools", fromlist=["scan_path"]).scan_path(path),
     "find_large_files": lambda path=".": __import__("system_tools.security_tools", fromlist=["find_large_files"]).find_large_files(path),
     "safe_delete": lambda file_path: __import__("core.confirmation", fromlist=["safe_delete"]).safe_delete(file_path),
+    # --- NEW FREE TOOLS ---
+    "generate_image": generate_image,
+    "translate_text": translate_text,
+    "get_crypto_price": get_crypto_price,
+    "tell_joke": tell_joke,
 }

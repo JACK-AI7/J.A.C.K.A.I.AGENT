@@ -47,6 +47,14 @@ class BotDispatcher:
             "download_bot": {"tools": ["download_file"], "desc": "File downloads"},
             "clipboard_bot": {"tools": ["manage_clipboard"], "desc": "Clipboard management"},
             "security_bot": {"tools": ["virus_scan"], "desc": "Security scanning"},
+            
+            # --- CREATIVE & UTILITY BOTS ---
+            "creative_bot": {"tools": ["generate_image", "tell_joke"], "desc": "Image generation and humor"},
+            "finance_bot": {"tools": ["get_crypto_price", "get_stock_price"], "desc": "Crypto and stock prices"},
+            "translator_bot": {"tools": ["translate_text"], "desc": "Language translation"},
+            "image_bot": {"tools": ["generate_image"], "desc": "Image generation"},
+            "crypto_bot": {"tools": ["get_crypto_price"], "desc": "Crypto prices"},
+            "joke_bot": {"tools": ["tell_joke"], "desc": "Jokes and humor"},
         }
     
     async def dispatch(self, bot_name, task):
@@ -157,6 +165,18 @@ class BotDispatcher:
         
         if tool_name == "download_file":
             return {"url": task}
+            
+        if tool_name == "generate_image":
+            return {"prompt": task}
+            
+        if tool_name == "translate_text":
+            if ":" in task:
+                parts = task.split(":", 1)
+                return {"target_language": parts[0].strip(), "text": parts[1].strip()}
+            return {"text": task, "target_language": "english"}
+            
+        if tool_name == "get_crypto_price":
+            return {"symbol": task}
         
         # Default: try with task as generic argument
         return {"task": task}
