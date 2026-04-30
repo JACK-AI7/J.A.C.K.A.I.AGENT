@@ -20,7 +20,7 @@ except Exception:
 from config import OLLAMA_SETTINGS, SYSTEM_PROMPT, MODEL_PROFILES, ACTIVE_PROFILE
 from tools import FUNCTIONS, FUNCTION_MAP
 from conversation_manager import ConversationManager
-import subprocess
+from parser import parse_llm_output
 
 
 class AIHandler:
@@ -40,14 +40,13 @@ class AIHandler:
     def generate(self, prompt_or_messages):
         """Standard generation method for Production Core. Supports both single prompts and full message history."""
         from config import FALLBACK_PROFILE
-        from core.tools import FUNCTIONS
         
         # Format tools for the prompt
         tools_str = json.dumps(FUNCTIONS, indent=2)
         system_content = f"{SYSTEM_PROMPT}\n\n# 🛠️ AVAILABLE TOOLS\n{tools_str}"
         
         if isinstance(prompt_or_messages, list):
-            messages = prompt_or_messages
+            messages = list(prompt_or_messages)
             # Ensure system prompt is present and up-to-date
             system_msg_found = False
             for m in messages:

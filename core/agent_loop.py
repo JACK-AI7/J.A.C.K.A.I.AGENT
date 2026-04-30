@@ -18,8 +18,16 @@ class AgentLoop:
         for step in range(self.max_steps):
             log_event(f"Mission Step {step+1}/{self.max_steps}")
             
-            # Step the execution
-            result = await self.executor.step(context)
+            try:
+                # Step the execution
+                result = await self.executor.step(context)
+            except Exception as e:
+                log_event(f"Error during mission step: {e}")
+                result = {
+                    "type": "final",
+                    "status": "failed",
+                    "message": f"I encountered an unexpected error during execution: {str(e)}"
+                }
 
             # If result is the 'final' dict, mission is done
             if isinstance(result, dict) and result.get("type") == "final":

@@ -2,7 +2,11 @@ import requests
 import json
 import threading
 import time
-from core.nexus_bridge import register_forwarder
+try:
+    from nexus_bridge import register_forwarder
+except ImportError:
+    def register_forwarder(func):
+        pass
 
 class FirebaseBridge:
     """

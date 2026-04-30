@@ -263,9 +263,11 @@ def open_youtube():
 def refresh_video():
     """Reload the current browser page (useful for refreshing videos)."""
     try:
-        from web_navigator import web_navigator
-        web_navigator.driver.refresh()
-        return "System Pulse: Refreshing the current visual feed, Sir."
+        if web_navigator.page:
+            web_navigator.page.reload()
+            return "System Pulse: Refreshing the current visual feed, Sir."
+        else:
+            return "No browser page is currently open to refresh."
     except Exception as e:
         return f"Refresh failed: {e}"
 
@@ -404,9 +406,7 @@ def locate_and_click(x, y):
 
 def visual_locate(target_description):
     """Locate an element on screen using OCR and vision."""
-    from system_controller import visual_locate as vision_locate
-
-    return vision_locate(target_description)
+    return system_controller.visual_locate(target_description)
 
 
 def virus_scan(scan_type="quick"):
@@ -2380,10 +2380,10 @@ FUNCTION_MAP = {
     "send_message": lambda name, message: execute_titan_skill("whatsapp_skill", f"whatsapp {name} : {message}"),
     
     # --- GUARDIAN & SYSTEM TOOLS ---
-    "open_email_client": lambda: __import__("tools.app_control", fromlist=["open_email_client"]).open_email_client(),
-    "open_gmail": lambda: __import__("tools.email_tools", fromlist=["open_gmail"]).open_gmail(),
-    "compose_email": lambda to, subject, body: __import__("tools.email_tools", fromlist=["compose_email"]).compose_email(to, subject, body),
-    "scan_path": lambda path: __import__("tools.security_tools", fromlist=["scan_path"]).scan_path(path),
-    "find_large_files": lambda path: __import__("tools.security_tools", fromlist=["find_large_files"]).find_large_files(path),
+    "open_email_client": lambda: __import__("system_tools.app_control", fromlist=["open_email_client"]).open_email_client(),
+    "open_gmail": lambda: __import__("system_tools.email_tools", fromlist=["open_gmail"]).open_gmail() if hasattr(__import__("system_tools.email_tools", fromlist=["open_gmail"]), 'open_gmail') else open_any_url("gmail"),
+    "compose_email": lambda to="", subject="", body="": __import__("system_tools.app_control", fromlist=["open_email_client"]).open_email_client(),
+    "scan_path": lambda path=".": __import__("system_tools.security_tools", fromlist=["scan_path"]).scan_path(path),
+    "find_large_files": lambda path=".": __import__("system_tools.security_tools", fromlist=["find_large_files"]).find_large_files(path),
     "safe_delete": lambda file_path: __import__("core.confirmation", fromlist=["safe_delete"]).safe_delete(file_path),
 }

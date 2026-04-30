@@ -303,8 +303,29 @@ class JackAIAgent:
             
             # --- PRODUCTION CORE MISSION EXECUTION ---
             try:
-                # Run the autonomous mission loop
-                result = asyncio.run(self.loop.run(query))
+                # Run the autonomous mission loop safely, even if called from an existing event loop
+                try:
+                    loop = asyncio.get_event_loop()
+                except RuntimeError:
+                    loop = asyncio.new_event_loop()
+                    asyncio.set_event_loop(loop)
+                
+                if loop.is_running():
+                    import threading
+                    result_container = []
+                    def _run_in_thread():
+                        new_loop = asyncio.new_event_loop()
+                        asyncio.set_event_loop(new_loop)
+                        result_container.append(new_loop.run_until_complete(self.loop.run(query)))
+                        new_loop.close()
+                    
+                    t = threading.Thread(target=_run_in_thread)
+                    t.start()
+                    t.join()
+                    result = result_container[0]
+                else:
+                    result = loop.run_until_complete(self.loop.run(query))
+                
                 response = result.get("message", "Mission result unavailable.")
                 self._handle_response(response)
             except Exception as e:

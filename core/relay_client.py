@@ -4,7 +4,7 @@ import logging
 import threading
 import websockets
 import psutil
-from core.nexus_bridge import register_forwarder
+from nexus_bridge import register_forwarder
 
 class RelayClient:
     """Bridging the PC Agent to the Mobile Relay via WebSockets."""
