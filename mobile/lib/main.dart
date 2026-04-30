@@ -50,7 +50,8 @@ class _DashboardState extends State<Dashboard> with SingleTickerProviderStateMix
       vsync: this,
       duration: const Duration(seconds: 2),
     )..repeat(reverse: true);
-    _connect();
+    // Start by scanning the local network for the PC agent automatically
+    _discoverService();
   }
 
   @override
