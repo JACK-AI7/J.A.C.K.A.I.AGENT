@@ -37,15 +37,31 @@ class AIHandler:
         self._init_clients()
         self.reasoning_mode = True  # Enable reflective thinking
 
-    def generate(self, prompt):
-        """Standard generation method for Production Core (Executor compatibility)."""
+    def generate(self, prompt_or_messages):
+        """Standard generation method for Production Core. Supports both single prompts and full message history."""
         from config import FALLBACK_PROFILE
+        from core.tools import FUNCTIONS
         
-        # Build messages with system prompt for strict JSON enforcement
-        messages = [
-            {"role": "system", "content": SYSTEM_PROMPT},
-            {"role": "user", "content": prompt}
-        ]
+        # Format tools for the prompt
+        tools_str = json.dumps(FUNCTIONS, indent=2)
+        system_content = f"{SYSTEM_PROMPT}\n\n# 🛠️ AVAILABLE TOOLS\n{tools_str}"
+        
+        if isinstance(prompt_or_messages, list):
+            messages = prompt_or_messages
+            # Ensure system prompt is present and up-to-date
+            system_msg_found = False
+            for m in messages:
+                if m.get("role") == "system":
+                    m["content"] = system_content
+                    system_msg_found = True
+                    break
+            if not system_msg_found:
+                messages.insert(0, {"role": "system", "content": system_content})
+        else:
+            messages = [
+                {"role": "system", "content": system_content},
+                {"role": "user", "content": prompt_or_messages}
+            ]
         
         try:
             # 1. Main Mission: High-performance client with strict JSON formatting
@@ -62,12 +78,11 @@ class AIHandler:
             parsed = parse_llm_output(raw_content)
             return json.dumps(parsed)
         except Exception as e:
-            # 2. Fallback Protocol: Reliability override
+            print(f"TITAN ERROR: Primary engine '{self.model}' failed ({str(e)}). Attempting neural fallback to {FALLBACK_PROFILE}...")
             try:
-                fallback_model = MODEL_PROFILES[FALLBACK_PROFILE]["model"]
-                print(f"TITAN LOG: High-performance core offline. Deploying Fallback ({fallback_model})...")
+                # 2. Neural Fallback: Use smaller/faster model if primary fails
                 response = self.ollama_client.chat(
-                    model=fallback_model, 
+                    model=FALLBACK_PROFILE,
                     messages=messages,
                     format='json'
                 )
@@ -75,15 +90,13 @@ class AIHandler:
                 from core.parser import parse_llm_output
                 parsed = parse_llm_output(raw_content)
                 return json.dumps(parsed)
-            except:
-                # 3. Emergency Bypass: Subprocess
-                response = subprocess.run(
-                    ["ollama", "run", self.model, "--format", "json"],
-                    input=prompt,
-                    text=True,
-                    capture_output=True
-                )
-                return response.stdout.strip()
+            except Exception as e2:
+                print(f"TITAN CRITICAL: All neural engines failed ({str(e2)})")
+                return json.dumps({
+                    "type": "final", 
+                    "status": "failed", 
+                    "message": f"I'm sorry Sir, all my neural engines are offline. Error: {str(e2)}"
+                })
 
     def _init_clients(self):
         """Initialize local Ollama client. No paid API keys needed."""
@@ -247,16 +260,30 @@ class AIHandler:
         return "Mission Termination: Maximum depth reached."
 
     def _parse_json_robustly(self, text):
-        """High-tech JSON validator/parser."""
+        """High-tech JSON validator/parser with deep extraction."""
+        if not text: return None
         try:
             return json.loads(text)
         except json.JSONDecodeError:
-            # Try to extract from potential markdown/clutter
-            match = re.search(r"\{.*\}", text, re.DOTALL)
-            if match:
+            # Try to extract the first valid JSON block
+            # This handles cases where the AI adds preamble or postscript
+            try:
+                # Find the first '{' and the last '}'
+                start = text.find('{')
+                end = text.rfind('}')
+                if start != -1 and end != -1:
+                    candidate = text[start:end+1]
+                    return json.loads(candidate)
+            except:
+                pass
+            
+            # More aggressive: find all JSON-like objects
+            import re
+            matches = re.findall(r'\{.*?\}', text, re.DOTALL)
+            for m in matches:
                 try:
-                    return json.loads(match.group())
-                except: pass
+                    return json.loads(m)
+                except: continue
         return None
 
     def _parse_inline_tool_calls(self, text):

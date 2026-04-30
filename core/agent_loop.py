@@ -8,6 +8,11 @@ class AgentLoop:
 
     async def run(self, task):
         log_event(f"Starting Mission: {task}")
+        
+        # Reset executor for new mission
+        if hasattr(self.executor, "reset"):
+            self.executor.reset()
+            
         context = task
 
         for step in range(self.max_steps):
@@ -28,5 +33,5 @@ class AgentLoop:
         return {
             "type": "final",
             "status": "partial",
-            "message": "Max mission steps reached without finalization."
+            "message": "I've reached my maximum mission depth, Sir. I was able to complete some steps, but the task might be incomplete."
         }

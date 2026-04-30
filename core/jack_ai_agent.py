@@ -62,14 +62,22 @@ class JackAIAgent:
 
         # Initialize speech handler here (in background thread) if in voice mode
         if self.mode == "voice" and not self.speech_handler:
-            try:
-                from speech_handler import SpeechHandler
-                self.speech_handler = SpeechHandler()
-            except Exception as e:
-                print(f"Failed to initialize speech handler: {e}")
-                self.mode = "text" # Fallback to text mode
-                if self.hud:
-                    self.hud.signals.activity_received.emit("System: Speech Engine Error - Falling back to Text Mode")
+            max_stt_retries = 3
+            for attempt in range(max_stt_retries):
+                try:
+                    from speech_handler import SpeechHandler
+                    self.speech_handler = SpeechHandler()
+                    print(f"Speech Engine: ONLINE (Attempt {attempt+1})")
+                    break
+                except Exception as e:
+                    print(f"Speech Engine Startup Error (Attempt {attempt+1}/{max_stt_retries}): {e}")
+                    if attempt < max_stt_retries - 1:
+                        time.sleep(2) # Backoff
+                    else:
+                        print("Speech Engine: CRITICAL FAILURE - Falling back to Text Mode")
+                        self.mode = "text"
+                        if self.hud:
+                            self.hud.signals.activity_received.emit("System: Speech Engine Failure - Text Mode Active")
 
         # Complete Calibrate
         try:

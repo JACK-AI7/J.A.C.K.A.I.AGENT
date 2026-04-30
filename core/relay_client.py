@@ -41,6 +41,16 @@ class RelayClient:
                     # Send initial online status
                     await self.send_to_relay({"status": "ONLINE", "message": "PC Agent Connected"})
                     
+                    # Start keep-alive ping loop
+                    async def _ping():
+                        while self.websocket == ws:
+                            try:
+                                await ws.ping()
+                                await asyncio.sleep(20)
+                            except: break
+                    
+                    asyncio.create_task(_ping())
+
                     async for message in ws:
                         try:
                             # If it's a raw string command (from mobile)

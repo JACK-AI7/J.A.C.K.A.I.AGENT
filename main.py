@@ -103,6 +103,7 @@ mutex = None
 from core.jack_ai_agent import JackAIAgent
 from gui.hud_manager import HUDManager
 from core.relay_client import RelayClient
+from core.firebase_bridge import FirebaseBridge
 
 
 # --- IMMORTAL RESTART CONSTANTS ---
@@ -233,10 +234,16 @@ def main():
                                creationflags=subprocess.CREATE_NO_WINDOW | subprocess.DETACHED_PROCESS)
                 print("TITAN RELAY: Online (Port 8001)")
                 
-                # Wait for relay to boot, then connect bridge
+                # Start Local WebSocket Bridge
                 time.sleep(2)
                 bridge = RelayClient(assistant)
                 bridge.start()
+                
+                # --- START CLOUD BRIDGE (Optional) ---
+                firebase_url = os.getenv("FIREBASE_DB_URL")
+                if firebase_url:
+                    cloud_bridge = FirebaseBridge(assistant, firebase_url)
+                    cloud_bridge.start()
                 
             except Exception as e:
                 print(f"TITAN RELAY Error: {e}")

@@ -1,64 +1,101 @@
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect, Header, HTTPException
+import asyncio
 import json
 import os
-
-app = FastAPI(title="JACK Neural Relay", version="1.0.0")
+import socket
+import websockets
+from zeroconf import IPVersion, ServiceInfo, Zeroconf
 
 # SECURITY: Secret Token for authentication
-# In production, use environment variables
 SECRET_TOKEN = os.getenv("JACK_RELAY_TOKEN", "jack_secure_neural_link_2026")
+PORT = 8001
 
 class ConnectionManager:
     """Manages neural links between Mobile Controller and PC Agent."""
     def __init__(self):
-        self.active_links: list[WebSocket] = []
+        self.active_links = set()
 
-    async def connect(self, websocket: WebSocket, token: str):
-        if token != SECRET_TOKEN:
-            await websocket.close(code=4003) # Forbidden
-            return False
+    async def handle_connection(self, websocket, path):
+        # Path is expected to be /ws/{token}
+        try:
+            parts = path.strip("/").split("/")
+            if len(parts) < 2 or parts[0] != "ws" or parts[1] != SECRET_TOKEN:
+                print(f"RELAY: Unauthorized connection attempt from {websocket.remote_address} on path {path}")
+                await websocket.close(code=4003) # Forbidden
+                return
+
+            self.active_links.add(websocket)
+            print(f"RELAY: Neural Link Established from {websocket.remote_address}. Active Links: {len(self.active_links)}")
             
-        await websocket.accept()
-        self.active_links.append(websocket)
-        print(f"RELAY: Neural Link Established. Active Links: {len(self.active_links)}")
-        return True
+            try:
+                async for message in websocket:
+                    # Bridge the command/telemetry to all other linked nodes
+                    await self.broadcast(message, websocket)
+            except websockets.exceptions.ConnectionClosed:
+                pass
+            finally:
+                self.active_links.remove(websocket)
+                print(f"RELAY: Neural Link Severed for {websocket.remote_address}. Remaining: {len(self.active_links)}")
+        except Exception as e:
+            print(f"RELAY ERROR: {str(e)}")
 
-    def disconnect(self, websocket: WebSocket):
-        if websocket in self.active_links:
-            self.active_links.remove(websocket)
-            print("RELAY: Neural Link Severed.")
-
-    async def broadcast(self, message: str, sender: WebSocket):
+    async def broadcast(self, message, sender):
         """Bridge data between the Mobile App and the PC Agent."""
+        if not self.active_links:
+            return
+            
+        # Create a list of tasks for parallel sending
+        websockets_to_remove = []
         for connection in self.active_links:
             if connection != sender:
                 try:
-                    await connection.send_text(message)
+                    await connection.send(message)
                 except:
-                    self.active_links.remove(connection)
+                    websockets_to_remove.append(connection)
+        
+        for ws in websockets_to_remove:
+            if ws in self.active_links:
+                self.active_links.remove(ws)
 
 manager = ConnectionManager()
 
-@app.websocket("/ws/{token}")
-async def websocket_endpoint(websocket: WebSocket, token: str):
-    success = await manager.connect(websocket, token)
-    if not success: return
-
+async def main():
+    # --- M-DNS ADVERTISING ---
+    zeroconf = None
     try:
-        while True:
-            data = await websocket.receive_text()
-            # Bridge the command/telemetry to all other linked nodes
-            await manager.broadcast(data, websocket)
-    except WebSocketDisconnect:
-        manager.disconnect(websocket)
+        desc = {'version': '1.0.0', 'id': 'jack_agent_primary'}
+        hostname = socket.gethostname()
+        # Get actual local IP
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        try:
+            s.connect(("8.8.8.8", 80))
+            local_ip = s.getsockname()[0]
+        except:
+            local_ip = socket.gethostbyname(hostname)
+        finally:
+            s.close()
+        
+        info = ServiceInfo(
+            "_jack-relay._tcp.local.",
+            "JACK_AGENT._jack-relay._tcp.local.",
+            addresses=[socket.inet_aton(local_ip)],
+            port=PORT,
+            properties=desc,
+            server=f"{hostname}.local.",
+        )
+        
+        zeroconf = Zeroconf(ip_version=IPVersion.V4Only)
+        zeroconf.register_service(info)
+        print(f"RELAY_DNS: Advertising JACK Service at {local_ip}:{PORT}")
     except Exception as e:
-        print(f"RELAY ERROR: {str(e)}")
-        manager.disconnect(websocket)
+        print(f"RELAY_DNS_ERROR: {e}")
 
-@app.get("/health")
-def health():
-    return {"status": "RELAY_OPERATIONAL", "nodes": len(manager.active_links)}
+    # Start WebSocket Server
+    print(f"TITAN RELAY: Starting on 0.0.0.0:{PORT}...")
+    async with websockets.serve(manager.handle_connection, "0.0.0.0", PORT):
+        await asyncio.Future()  # run forever
 
 if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8001)
+    try:
+        asyncio.run(main())
+    except KeyboardInterrupt:
+        print("TITAN RELAY: Shutting down.")

@@ -15,20 +15,28 @@ def parse_llm_output(text: str):
         data = json.loads(text.strip())
     except:
         # 2. Robust Extraction Logic
-        matches = list(re.finditer(r'\{|\}', text))
-        for i in range(len(matches)):
-            if matches[i].group() == '{':
-                for j in range(len(matches) - 1, i, -1):
-                    if matches[j].group() == '}':
-                        candidate = text[matches[i].start():matches[j].end()]
-                        try:
-                            candidate_data = json.loads(candidate)
-                            if isinstance(candidate_data, dict):
-                                data = candidate_data
-                                break
-                        except:
-                            continue
-                if data: break
+        if not data:
+            # Pre-process text to fix common pseudo-JSON issues
+            # Fix single quotes
+            processed_text = re.sub(r"\'(\w+)\'\s*:", r'"\1":', text) # keys
+            processed_text = re.sub(r":\s*\'(.*?)\'", r': "\1"', processed_text) # values
+            
+            matches = list(re.finditer(r'\{|\}', processed_text))
+            for i in range(len(matches)):
+                if matches[i].group() == '{':
+                    for j in range(len(matches) - 1, i, -1):
+                        if matches[j].group() == '}':
+                            candidate = processed_text[matches[i].start():matches[j].end()]
+                            try:
+                                # Final cleanup for common mistakes
+                                candidate = candidate.replace("'", '"')
+                                candidate_data = json.loads(candidate)
+                                if isinstance(candidate_data, dict):
+                                    data = candidate_data
+                                    break
+                            except:
+                                continue
+                    if data: break
 
     # 3. Process parsed data
     if isinstance(data, dict):
@@ -45,8 +53,11 @@ def parse_llm_output(text: str):
                 if "status" not in data: data["status"] = "success"
         return data
 
-    # 4. Fallback: If it's just plain text, treat as final message
-    if len(text.split()) < 50 and "{" not in text:
+    # 4. Fallback: If it's just plain text or failed to parse JSON, treat as final message
+    # We strip common JSON characters to see if there's any text left
+    clean_text = re.sub(r'[\{\}\[\]\"\'\:]', '', text).strip()
+    
+    if clean_text or len(text) < 500:
         return {
             "type": "final",
             "status": "success",

@@ -2,6 +2,8 @@ import 'dart:convert';
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
+import 'package:nsd/nsd.dart';
+import 'dart:async';
 
 void main() {
   runApp(const JackUltraApp());
@@ -37,6 +39,8 @@ class _DashboardState extends State<Dashboard> with SingleTickerProviderStateMix
   String status = "OFFLINE";
   List<String> logs = [];
   bool isListening = false;
+  Timer? _reconnectTimer;
+  bool _isConnecting = false;
 
   @override
   void initState() {
@@ -56,12 +60,18 @@ class _DashboardState extends State<Dashboard> with SingleTickerProviderStateMix
   }
 
   void _connect() {
+    if (_isConnecting) return;
+    _isConnecting = true;
+    
     setState(() => status = "CONNECTING...");
+    _reconnectTimer?.cancel();
+
     try {
       channel = WebSocketChannel.connect(
         Uri.parse('ws://$relayUrl/ws/jack_secure_neural_link_2026'),
       );
       channel.stream.listen((data) {
+        _isConnecting = false;
         try {
           final jsonData = jsonDecode(data);
           setState(() {
@@ -76,13 +86,44 @@ class _DashboardState extends State<Dashboard> with SingleTickerProviderStateMix
           logs.insert(0, "CMD: $data");
         }
       }, onError: (err) {
-        setState(() => status = "ERROR");
+        _isConnecting = false;
+        _scheduleReconnect();
       }, onDone: () {
-        setState(() => status = "OFFLINE");
+        _isConnecting = false;
+        _scheduleReconnect();
       });
     } catch (e) {
-      setState(() => status = "FAILED");
+      _isConnecting = false;
+      _scheduleReconnect();
     }
+  }
+
+  void _scheduleReconnect() {
+    setState(() => status = "OFFLINE (RETRYING...)");
+    _reconnectTimer?.cancel();
+    _reconnectTimer = Timer(const Duration(seconds: 3), () => _connect());
+  }
+
+  Future<void> _discoverService() async {
+    setState(() => status = "SCANNING...");
+    final discovery = await startDiscovery('_jack-relay._tcp');
+    discovery.addListener(() {
+      if (discovery.services.isNotEmpty) {
+        final service = discovery.services.first;
+        final host = service.host;
+        final port = service.port ?? 8001;
+        if (host != null) {
+          setState(() {
+            relayUrl = "$host:$port";
+            _connect();
+          });
+          stopDiscovery(discovery);
+        }
+      }
+    });
+    
+    // Stop scanning after 10 seconds if nothing found
+    Timer(const Duration(seconds: 10), () => stopDiscovery(discovery));
   }
 
   void sendCommand(String cmd) {
@@ -162,7 +203,7 @@ class _DashboardState extends State<Dashboard> with SingleTickerProviderStateMix
                 shape: BoxShape.circle,
                 border: Border.all(color: Colors.white10),
                 boxShadow: [
-                  BoxShadow(color: Colors.cyanAccent.withOpacity(0.05), blurRadius: 10, spreadRadius: 2)
+                  BoxShadow(color: Colors.cyanAccent.withValues(alpha: 0.05), blurRadius: 10, spreadRadius: 2)
                 ]
               ),
               child: const Icon(Icons.settings_outlined, color: Colors.white70, size: 24),
@@ -199,8 +240,8 @@ class _DashboardState extends State<Dashboard> with SingleTickerProviderStateMix
         child: Container(
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.03),
-            border: Border.all(color: Colors.white.withOpacity(0.05)),
+            color: Colors.white.withValues(alpha: 0.03),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
             borderRadius: BorderRadius.circular(20),
           ),
           child: Column(
@@ -215,7 +256,7 @@ class _DashboardState extends State<Dashboard> with SingleTickerProviderStateMix
                     child: CircularProgressIndicator(
                       value: value / 100,
                       color: color,
-                      backgroundColor: color.withOpacity(0.1),
+                      backgroundColor: color.withValues(alpha: 0.1),
                       strokeWidth: 4,
                     ),
                   ),
@@ -236,8 +277,8 @@ class _DashboardState extends State<Dashboard> with SingleTickerProviderStateMix
       child: Row(
         children: [
           _actionTile("CORE_SYNC", Icons.sync, () => _connect()),
+          _actionTile("AUTO_SCAN", Icons.radar, () => _discoverService()),
           _actionTile("BROWSER_X", Icons.public, () => sendCommand("open chrome")),
-          _actionTile("SYS_SCAN", Icons.radar, () => sendCommand("scan system")),
           _actionTile("CLEAN_SWEEP", Icons.auto_fix_high, () => sendCommand("clean junk")),
         ],
       ),
@@ -251,9 +292,9 @@ class _DashboardState extends State<Dashboard> with SingleTickerProviderStateMix
         margin: const EdgeInsets.only(right: 12),
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
         decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.03),
+          color: Colors.white.withValues(alpha: 0.03),
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: Colors.white.withOpacity(0.05)),
+          border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
         ),
         child: Row(
           children: [
@@ -272,7 +313,7 @@ class _DashboardState extends State<Dashboard> with SingleTickerProviderStateMix
         width: double.infinity,
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: Colors.black.withOpacity(0.4),
+          color: Colors.black.withValues(alpha: 0.4),
           borderRadius: BorderRadius.circular(16),
           border: Border.all(color: Colors.white10),
         ),
@@ -317,7 +358,7 @@ class _DashboardState extends State<Dashboard> with SingleTickerProviderStateMix
                 ),
                 boxShadow: [
                   BoxShadow(
-                    color: (isListening ? Colors.redAccent : Colors.cyanAccent).withOpacity(0.3),
+                    color: (isListening ? Colors.redAccent : Colors.cyanAccent).withValues(alpha: 0.3),
                     blurRadius: 20 + (_animationController.value * 20),
                     spreadRadius: 5 + (_animationController.value * 5),
                   )
@@ -364,7 +405,7 @@ class _DashboardState extends State<Dashboard> with SingleTickerProviderStateMix
                   labelText: "RELAY_ENDPOINT",
                   labelStyle: const TextStyle(color: Colors.white38, fontSize: 10),
                   filled: true,
-                  fillColor: Colors.white.withOpacity(0.05),
+                  fillColor: Colors.white.withValues(alpha: 0.05),
                   border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
                   prefixIcon: const Icon(Icons.lan, color: Colors.white24),
                 ),
