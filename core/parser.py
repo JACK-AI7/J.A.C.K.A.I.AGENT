@@ -45,12 +45,29 @@ def parse_llm_output(text: str):
             if any(k in data for k in ["message", "response", "answer", "result"]):
                 data["type"] = "final"
                 if "status" not in data: data["status"] = "success"
+                
+                # Ensure 'message' key exists for final results
+                if "message" not in data:
+                    data["message"] = data.get("response") or data.get("answer") or data.get("result")
             elif "name" in data and ("args" in data or "task" in data):
                 data["type"] = "tool"
             else:
                 # Last resort: treat as final if it has ANY content
                 data["type"] = "final"
                 if "status" not in data: data["status"] = "success"
+                
+                # Try to find something to use as message
+                if "message" not in data:
+                    for key in ["response", "answer", "result", "thought", "text"]:
+                        if key in data:
+                            data["message"] = data[key]
+                            break
+                    if "message" not in data:
+                        # Use first string value found
+                        for v in data.values():
+                            if isinstance(v, str) and v:
+                                data["message"] = v
+                                break
         return data
 
     # 4. Fallback: If it's just plain text or failed to parse JSON, treat as final message

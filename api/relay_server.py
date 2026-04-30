@@ -30,8 +30,12 @@ class ConnectionManager:
     def __init__(self):
         self.active_links = set()
 
-    async def handle_connection(self, websocket, path):
+    async def handle_connection(self, websocket, path=None):
         try:
+            # Handle path for newer websockets versions where it's not passed as an argument
+            if path is None:
+                path = getattr(websocket, 'path', '/')
+                
             parts = path.strip("/").split("/")
             if len(parts) < 2 or parts[0] != "ws" or parts[1] != SECRET_TOKEN:
                 logger.warning(f"Unauthorized connection attempt from {websocket.remote_address} on path {path}")

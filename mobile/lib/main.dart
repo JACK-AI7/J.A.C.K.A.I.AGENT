@@ -3,7 +3,9 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 import 'package:nsd/nsd.dart';
+import 'package:mobile_scanner/mobile_scanner.dart';
 import 'dart:async';
+import 'dart:typed_data';
 
 void main() {
   runApp(const JackUltraApp());
@@ -234,12 +236,21 @@ class _DashboardState extends State<Dashboard> with SingleTickerProviderStateMix
             Text("TITAN PROTOCOL // $status", style: TextStyle(color: _getStatusColor(), fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 1.5)),
           ],
         ),
-        Material(
-          color: Colors.transparent,
-          child: InkWell(
-            borderRadius: BorderRadius.circular(30),
-            onTap: _showSettingsPanel,
-            child: Container(
+        Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                border: Border.all(color: Colors.white10),
+              ),
+              child: IconButton(
+                icon: const Icon(Icons.qr_code_scanner, color: Colors.cyanAccent),
+                onPressed: _showScanner,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
@@ -250,10 +261,67 @@ class _DashboardState extends State<Dashboard> with SingleTickerProviderStateMix
               ),
               child: const Icon(Icons.settings_outlined, color: Colors.white70, size: 24),
             ),
-          ),
+          ],
         ),
       ],
     );
+  }
+
+  void _showScanner() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.black,
+      builder: (context) => SizedBox(
+        height: MediaQuery.of(context).size.height * 0.8,
+        child: Column(
+          children: [
+            const Padding(
+              padding: EdgeInsets.all(24.0),
+              child: Text("SCAN NEURAL LINK", style: TextStyle(color: Colors.cyanAccent, fontWeight: FontWeight.bold, letterSpacing: 2)),
+            ),
+            Expanded(
+              child: MobileScanner(
+                onDetect: (capture) {
+                  final List<Barcode> barcodes = capture.barcodes;
+                  for (final barcode in barcodes) {
+                    final String? code = barcode.rawValue;
+                    if (code != null && code.startsWith("jack_link:")) {
+                      _handlePairing(code);
+                      Navigator.pop(context);
+                      break;
+                    }
+                  }
+                },
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.all(24.0),
+              child: TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text("CANCEL", style: TextStyle(color: Colors.white38)),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _handlePairing(String code) {
+    try {
+      final b64 = code.split(":")[1];
+      final decoded = utf8.decode(base64.decode(b64));
+      final data = jsonDecode(decoded);
+      
+      setState(() {
+        relayUrl = "${data['ip']}:${data['port']}";
+        logs.insert(0, "SYSTEM: Paired with ${data['name']} via QR");
+        _connect();
+      });
+    } catch (e) {
+      logs.insert(0, "ERROR: Pairing failed ($e)");
+    }
   }
 
   Color _getStatusColor() {

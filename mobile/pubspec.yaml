@@ -12,6 +12,7 @@ dependencies:
   cupertino_icons: ^1.0.2
   web_socket_channel: ^2.4.0
   nsd: ^2.3.1
+  mobile_scanner: ^3.2.0
 
 dev_dependencies:
   flutter_test:

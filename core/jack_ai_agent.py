@@ -326,7 +326,10 @@ class JackAIAgent:
                 else:
                     result = loop.run_until_complete(self.loop.run(query))
                 
-                response = result.get("message", "Mission result unavailable.")
+                # Robust message extraction
+                response = result.get("message") or result.get("response") or result.get("answer") or result.get("result")
+                if not response:
+                    response = "Mission result unavailable."
                 self._handle_response(response)
             except Exception as e:
                 log_event(f"Mission Loop Failure: {e}")

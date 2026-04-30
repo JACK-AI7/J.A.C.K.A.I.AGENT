@@ -675,6 +675,84 @@ class ReasoningGraph(QGraphicsView):
 
 
 # =============================================================================
+# PAIRING OVERLAY — Displays QR Code for Mobile Link
+# =============================================================================
+
+class PairingOverlay(QFrame):
+    """Premium glassmorphism overlay displaying the pairing QR code."""
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setFixedSize(400, 500)
+        self.setStyleSheet("""
+            background: rgba(10, 20, 40, 240);
+            border: 2px solid rgba(0, 191, 255, 100);
+            border-radius: 24px;
+        """)
+        
+        layout = QVBoxLayout(self)
+        layout.setContentsMargins(30, 30, 30, 30)
+        layout.setSpacing(20)
+        
+        # Close button
+        close_btn = QLabel("\u2715")
+        close_btn.setFixedSize(30, 30)
+        close_btn.setStyleSheet("color: white; font-size: 20px; font-weight: bold;")
+        close_btn.setCursor(Qt.PointingHandCursor)
+        close_btn.mousePressEvent = lambda e: self.hide()
+        
+        header_layout = QHBoxLayout()
+        header_layout.addStretch()
+        header_layout.addWidget(close_btn)
+        layout.addLayout(header_layout)
+        
+        title = QLabel("MOBILE_NEURAL_LINK")
+        title.setStyleSheet("color: cyan; font-family: 'Segoe UI'; font-size: 18px; font-weight: bold; letter-spacing: 2px;")
+        title.setAlignment(Qt.AlignCenter)
+        layout.addWidget(title)
+        
+        desc = QLabel("Scan this code with the J.A.C.K. Mobile app to establish a secure link.")
+        desc.setStyleSheet("color: rgba(255, 255, 255, 150); font-size: 11px;")
+        desc.setWordWrap(True)
+        desc.setAlignment(Qt.AlignCenter)
+        layout.addWidget(desc)
+        
+        # QR Code Display
+        self.qr_label = QLabel()
+        self.qr_label.setFixedSize(250, 250)
+        self.qr_label.setAlignment(Qt.AlignCenter)
+        self.qr_label.setStyleSheet("background: white; border-radius: 12px; padding: 10px;")
+        layout.addWidget(self.qr_label, alignment=Qt.AlignCenter)
+        
+        # IP Info
+        self.ip_info = QLabel("ENDPOINT: --")
+        self.ip_info.setStyleSheet("color: #00ff7f; font-family: 'Consolas'; font-size: 10px;")
+        self.ip_info.setAlignment(Qt.AlignCenter)
+        layout.addWidget(self.ip_info)
+        
+        layout.addStretch()
+        
+        self.hide()
+
+    def show_pairing(self):
+        try:
+            from core.pairing_manager import PairingManager
+            data = PairingManager.generate_qr_pixmap_data()
+            pixmap = QPixmap()
+            pixmap.loadFromData(data)
+            self.qr_label.setPixmap(pixmap.scaled(230, 230, Qt.KeepAspectRatio))
+            self.ip_info.setText(f"ENDPOINT: {PairingManager.get_local_ip()}:{PairingManager.PORT}")
+            
+            # Center in parent
+            if self.parent():
+                p_rect = self.parent().rect()
+                self.move(p_rect.center() - self.rect().center())
+            
+            self.show()
+            self.raise_()
+        except Exception as e:
+            print(f"Pairing Error: {e}")
+
+# =============================================================================
 # MAIN DASHBOARD — The full JACK AGENT DASHBOARD
 # =============================================================================
 
@@ -793,10 +871,39 @@ class NexusDashboard(QMainWindow):
         self.weather = WeatherWidget()
         self.left_panel.addWidget(self.weather)
         
+        # --- PAIRING BUTTON ---
+        self.pair_btn = QFrame()
+        self.pair_btn.setFixedHeight(50)
+        self.pair_btn.setCursor(Qt.PointingHandCursor)
+        self.pair_btn.setStyleSheet("""
+            QFrame {
+                background: rgba(0, 255, 255, 15);
+                border: 1px solid rgba(0, 255, 255, 50);
+                border-radius: 10px;
+            }
+            QFrame:hover {
+                background: rgba(0, 255, 255, 30);
+                border: 1px solid rgba(0, 255, 255, 100);
+            }
+        """)
+        pair_layout = QHBoxLayout(self.pair_btn)
+        pair_icon = QLabel("\ud83d\udcf1") # Mobile Icon
+        pair_icon.setStyleSheet("font-size: 16px;")
+        pair_text = QLabel("PAIR_MOBILE_LINK")
+        pair_text.setStyleSheet("color: #00ffff; font-family: 'Consolas'; font-size: 10px; font-weight: bold; letter-spacing: 1px;")
+        pair_layout.addWidget(pair_icon)
+        pair_layout.addWidget(pair_text)
+        pair_layout.addStretch()
+        self.pair_btn.mousePressEvent = lambda e: self.pairing_overlay.show_pairing()
+        self.left_panel.addWidget(self.pair_btn)
+        
         self.left_panel.addStretch()
         self.main_layout.addLayout(self.left_panel, 1)
         
-        # --- CENTER PANEL (Chat + Thinking + Graph) ---
+        # --- OVERLAYS ---
+        self.pairing_overlay = PairingOverlay(self.central_widget)
+        
+        # === CENTER PANEL (Chat + Thinking + Graph) ---
         self.center_panel = QVBoxLayout()
         self.center_panel.setSpacing(4)
         

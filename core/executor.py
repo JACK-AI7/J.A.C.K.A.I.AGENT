@@ -104,17 +104,18 @@ class Executor:
                     pass
                 return f"BOT_ERROR ({bot_name}): Could not dispatch bot - {str(e)}"
 
-        # 6. Handle Finalization
-        elif res_type == "final":
+        # 6. Handle Finalization & Common Response Types
+        if res_type in ["final", "chat", "response", "answer", "message", "thought"]:
+            # Standardize on 'final' type
+            parsed["type"] = "final"
+            if "status" not in parsed: parsed["status"] = "success"
+            
+            # Ensure 'message' key exists
+            if not parsed.get("message"):
+                parsed["message"] = parsed.get("response") or parsed.get("answer") or parsed.get("thought") or str(parsed)
+            
             return parsed
 
-        # 7. Handle Common Hallucinated Types
-        elif res_type in ["chat", "response", "answer", "message", "thought"]:
-            return {
-                "type": "final",
-                "status": "success",
-                "message": parsed.get("message") or parsed.get("response") or parsed.get("answer") or parsed.get("thought") or str(parsed)
-            }
             
         elif res_type == "action":
             # Treat "action" as tool
