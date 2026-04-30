@@ -30,7 +30,7 @@ class Dashboard extends StatefulWidget {
 }
 
 class _DashboardState extends State<Dashboard> with SingleTickerProviderStateMixin {
-  String relayUrl = '192.168.0.14:8001'; // Updated to match PC IP
+  String relayUrl = '10.24.156.92:8001'; // Dynamically detected PC IP
   late WebSocketChannel channel;
   late AnimationController _animationController;
   
@@ -41,6 +41,7 @@ class _DashboardState extends State<Dashboard> with SingleTickerProviderStateMix
   bool isListening = false;
   Timer? _reconnectTimer;
   bool _isConnecting = false;
+  int _retryCount = 0;
 
   @override
   void initState() {
@@ -55,7 +56,10 @@ class _DashboardState extends State<Dashboard> with SingleTickerProviderStateMix
   @override
   void dispose() {
     _animationController.dispose();
-    channel.sink.close();
+    _reconnectTimer?.cancel();
+    try {
+       channel.sink.close();
+    } catch (_) {}
     super.dispose();
   }
 
@@ -67,33 +71,52 @@ class _DashboardState extends State<Dashboard> with SingleTickerProviderStateMix
     _reconnectTimer?.cancel();
 
     try {
-      channel = WebSocketChannel.connect(
-        Uri.parse('ws://$relayUrl/ws/jack_secure_neural_link_2026'),
-      );
+      final uri = Uri.parse('ws://$relayUrl/ws/jack_secure_neural_link_2026');
+      logs.insert(0, "SYSTEM: Attempting link to $uri");
+      
+      channel = WebSocketChannel.connect(uri);
+      
       channel.stream.listen((data) {
         _isConnecting = false;
+        _retryCount = 0;
         try {
           final jsonData = jsonDecode(data);
           setState(() {
-            cpu = (jsonData["cpu"] ?? 0.0).toDouble();
-            ram = (jsonData["ram"] ?? 0.0).toDouble();
+            if (jsonData["type"] == "telemetry_pulsed" || jsonData.containsKey("cpu")) {
+              cpu = (jsonData["cpu"] ?? 0.0).toDouble();
+              ram = (jsonData["ram"] ?? 0.0).toDouble();
+            }
             status = "ONLINE";
             if (logs.length > 100) logs.removeLast();
-            logs.insert(0, jsonData.toString());
+            if (jsonData["type"] != "telemetry_pulsed") {
+               logs.insert(0, "DATA: $data");
+            }
           });
         } catch (e) {
           if (logs.length > 100) logs.removeLast();
           logs.insert(0, "CMD: $data");
         }
       }, onError: (err) {
-        _isConnecting = false;
-        _scheduleReconnect();
+        logs.insert(0, "ERROR: Connection failed ($err)");
+        _handleFailure();
       }, onDone: () {
-        _isConnecting = false;
-        _scheduleReconnect();
+        logs.insert(0, "SYSTEM: Connection closed by host");
+        _handleFailure();
       });
     } catch (e) {
-      _isConnecting = false;
+      logs.insert(0, "ERROR: Setup error ($e)");
+      _handleFailure();
+    }
+  }
+
+  void _handleFailure() {
+    _isConnecting = false;
+    _retryCount++;
+    
+    if (_retryCount >= 3) {
+      logs.insert(0, "SYSTEM: Multi-failure. Starting Auto-Scan...");
+      _discoverService();
+    } else {
       _scheduleReconnect();
     }
   }
@@ -101,29 +124,47 @@ class _DashboardState extends State<Dashboard> with SingleTickerProviderStateMix
   void _scheduleReconnect() {
     setState(() => status = "OFFLINE (RETRYING...)");
     _reconnectTimer?.cancel();
-    _reconnectTimer = Timer(const Duration(seconds: 3), () => _connect());
+    _reconnectTimer = Timer(const Duration(seconds: 5), () => _connect());
   }
 
   Future<void> _discoverService() async {
     setState(() => status = "SCANNING...");
-    final discovery = await startDiscovery('_jack-relay._tcp');
-    discovery.addListener(() {
-      if (discovery.services.isNotEmpty) {
-        final service = discovery.services.first;
-        final host = service.host;
-        final port = service.port ?? 8001;
-        if (host != null) {
-          setState(() {
-            relayUrl = "$host:$port";
-            _connect();
-          });
-          stopDiscovery(discovery);
-        }
-      }
-    });
+    logs.insert(0, "SCAN: Searching for TITAN Core...");
     
-    // Stop scanning after 10 seconds if nothing found
-    Timer(const Duration(seconds: 10), () => stopDiscovery(discovery));
+    try {
+      final discovery = await startDiscovery('_jack-relay._tcp');
+      
+      // Auto-stop scan after 15 seconds
+      Timer(const Duration(seconds: 15), () {
+        stopDiscovery(discovery);
+        if (status == "SCANNING...") {
+           setState(() => status = "SCAN_TIMEOUT");
+           logs.insert(0, "SCAN: No services found. Check Firewall.");
+           _scheduleReconnect();
+        }
+      });
+
+      discovery.addListener(() {
+        if (discovery.services.isNotEmpty) {
+          final service = discovery.services.first;
+          final host = service.host;
+          final port = service.port ?? 8001;
+          
+          if (host != null) {
+            logs.insert(0, "SCAN: Found core at $host:$port");
+            setState(() {
+              relayUrl = "$host:$port";
+              _retryCount = 0;
+              _connect();
+            });
+            stopDiscovery(discovery);
+          }
+        }
+      });
+    } catch (e) {
+      logs.insert(0, "SCAN ERROR: $e");
+      _scheduleReconnect();
+    }
   }
 
   void sendCommand(String cmd) {
