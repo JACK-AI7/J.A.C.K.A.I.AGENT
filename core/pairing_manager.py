@@ -50,7 +50,7 @@ class PairingManager:
         qr.add_data(payload)
         qr.make(fit=True)
 
-        img = qr.make_image(fill_color="white", back_color="transparent")
+        img = qr.make_image(fill_color="black", back_color="white")
         buffer = BytesIO()
         img.save(buffer, format="PNG")
         return buffer.getvalue()
