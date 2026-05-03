@@ -4,14 +4,11 @@ import sys
 import json
 import tempfile
 import traceback
-import pyautogui
-import numpy as np
-from PIL import Image
 import time
 import re
 import shutil
 try:
-    from nexus_bridge import get_signals
+    from core.nexus_bridge import get_signals
 except Exception:
     class _DummySignals:
         def emit_bridge(self, *a, **kw): pass
@@ -38,21 +35,41 @@ except ImportError:
     ollama = None
     print("System Controller: Ollama Python client not installed.")
 
+from utils.humanized_input import HumanizedInput, HumanConfig
+
 
 class SystemController:
     """Handles advanced system control, dynamic code execution, and visual GUI automation."""
 
     def __init__(self):
-        from config import DESKTOP_SETTINGS
+        from core.config import DESKTOP_SETTINGS
         self.workspace = os.getcwd()
-        pyautogui.FAILSAFE = DESKTOP_SETTINGS.get("failsafe", True) # IMMORTAL OVERRIDE
-        pyautogui.PAUSE = DESKTOP_SETTINGS.get("pause", 0.1)
-        # Initialize OCR Reader (loads models on first use)
+        
+        # Humanized input system for realistic automation
+        human_config = HumanConfig(
+            mouse_precision=0.88,
+            typing_speed_base=0.08,
+            typo_chance=0.01
+        )
+        self.human = HumanizedInput(human_config)
+        
+        # Get signals for agent status
+        try:
+            from core.nexus_bridge import get_signals
+            self.signals = get_signals()
+            self.signals.emit_bridge("agent_status", "SystemController", "INITIALIZED", "Vision & Control ready")
+        except Exception as e:
+            print(f"SystemController signals init failed: {e}")
+        
+        # Initialize OCR Reader
         self.reader = None
         if easyocr is not None:
             try:
                 self.reader = easyocr.Reader(["en"])
                 print("Visual Engine: EasyOCR Initialization Successful.")
+                try:
+                    self.signals.emit_bridge("agent_status", "SystemController", "ACTIVE", "OCR engine online")
+                except: pass
             except Exception as e:
                 print(f"Visual Engine: OCR failed to load: {e}")
         else:
@@ -122,8 +139,8 @@ class SystemController:
             return "Vision Error: OpenCV not installed."
 
         try:
-            # Take screenshot
-            screenshot = pyautogui.screenshot()
+            # Take screenshot using human module (consistent)
+            screenshot = self.human.capture_screen()
             screenshot_np = np.array(screenshot)
             # Convert RGB to BGR for OpenCV
             screenshot_bgr = cv2.cvtColor(screenshot_np, cv2.COLOR_RGB2BGR)
@@ -135,7 +152,6 @@ class SystemController:
             for bbox, text, prob in results:
                 if target_description.lower() in text.lower():
                     # Calculate center of bounding box
-                    # bbox: [[x1, y1], [x2, y2], [x3, y3], [x4, y4]]
                     center_x = int((bbox[0][0] + bbox[2][0]) / 2)
                     center_y = int((bbox[0][1] + bbox[2][1]) / 2)
                     return {
@@ -156,7 +172,7 @@ class SystemController:
         try:
             # Save temporary screenshot
             temp_path = os.path.join(tempfile.gettempdir(), "agent_eye.png")
-            pyautogui.screenshot(temp_path)
+            self.human.capture_screen_to_file(temp_path)
 
             print("Visual Engine: Engaging LLaVA for deep analysis...")
             response = ollama.chat(
@@ -164,7 +180,7 @@ class SystemController:
                 messages=[
                     {
                         "role": "user",
-                        "content": "What is currently on this computer screen? Describe the apps, text, and overall context.",
+                        "content": "What is currently on this computer screen? Describe the apps, windows, text, and overall context in detail.",
                         "images": [temp_path],
                     }
                 ],
@@ -176,7 +192,6 @@ class SystemController:
 
             return response["message"]["content"]
         except Exception as e:
-            # Check if the error is about image input not supported
             if "does not support image input" in str(e) or "image" in str(e).lower():
                 return "Visual Engine Error: The current AI model does not support image input. Please switch to a multimodal model like LLaVA."
             else:
@@ -185,43 +200,54 @@ class SystemController:
     def locate_and_click(self, x, y, verify=True):
         """Execute a precision click at specific coordinates with optional verification."""
         try:
-            # Capture state before click
-            before_path = os.path.join(tempfile.gettempdir(), "click_before.png")
+            try:
+                self.signals.emit_bridge("agent_action", "SystemController", "CLICK", f"Clicking at ({x}, {y})")
+            except: pass
+            
+            # Capture state before click for verification
+            before_path = None
+            after_path = None
             if verify:
-                pyautogui.screenshot(before_path)
-
-            pyautogui.click(x, y)
-            print(f"Visual Engine: Clicked at ({x}, {y})")
-
+                before_path = os.path.join(tempfile.gettempdir(), "click_before.png")
+                self.human.capture_screen_to_file(before_path)
+            
+            # Use humanized click with smooth movement
+            self.human.click(x, y)
+            
             if verify:
-                time.sleep(0.3)  # Fast-path: reduced wait
+                time.sleep(0.5)  # Wait for UI to react
                 after_path = os.path.join(tempfile.gettempdir(), "click_after.png")
-                pyautogui.screenshot(after_path)
-
+                self.human.capture_screen_to_file(after_path)
                 # Cleanup
                 for p in [before_path, after_path]:
                     if os.path.exists(p):
-                        os.remove(p)
+                        try:
+                            os.remove(p)
+                        except:
+                            pass
 
-            return f"Clicked at ({x}, {y})"
+            result = f"Clicked at ({x}, {y})"
+            
+            try:
+                self.signals.emit_bridge("agent_action", "SystemController", "CLICK", result)
+                self.signals.emit_bridge("agent_status", "SystemController", "ACTIVE", "Click executed")
+            except: pass
+            
+            return result
         except Exception as e:
+            try:
+                self.signals.emit_bridge("agent_action", "SystemController", "CLICK", f"Error: {str(e)}")
+            except: pass
             return f"Control Error: {str(e)}"
 
-    def smart_ui_click(self, target_description):
-        """TITAN Fast-Path: Try logical UI control before vision."""
-        from visual_orchestrator import VisualOrchestrator
-        orchestrator = VisualOrchestrator()
-        return orchestrator.smart_click(target_description)
-
     def ai_vision_click(self, target_description):
-        """The 'Immortal' click: Uses LLaVA to find the coordinate, then clicks and verifies."""
+        """Use LLaVA vision AI to find and click UI elements."""
         if ollama is None:
             return "Vision Error: Ollama not available for AI vision click."
         try:
             print(f"Visual Engine: Analyzing screen to find '{target_description}'...")
-            # 1. Get deep analysis with coordinates
             temp_path = os.path.join(tempfile.gettempdir(), "vision_search.png")
-            pyautogui.screenshot(temp_path)
+            self.human.capture_screen_to_file(temp_path)
 
             prompt = f"Find the UI element for '{target_description}' on this screen. Return ONLY the JSON coordinates like {{'x': 500, 'y': 300}}. If not found, return {{'x': -1, 'y': -1}}"
 
@@ -230,18 +256,16 @@ class SystemController:
                 messages=[{"role": "user", "content": prompt, "images": [temp_path]}],
             )
 
-            # Cleanup
             if os.path.exists(temp_path):
                 os.remove(temp_path)
 
-            # Simple regex to extract JSON from LLaVA response
             match = re.search(r"\{.*\}", response["message"]["content"])
             if match:
                 coords = json.loads(match.group().replace("'", '"'))
                 if coords["x"] != -1:
                     return self.locate_and_click(coords["x"], coords["y"], verify=True)
 
-            # Fallback to OCR if LLaVA coordinate prediction is vague
+            # Fallback to OCR
             print("Visual Engine: Coordinate prediction failed, falling back to OCR...")
             res = self.visual_locate(target_description)
             if isinstance(res, dict):

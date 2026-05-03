@@ -12,6 +12,49 @@ from PySide6.QtWidgets import (
     QFrame,
     QSystemTrayIcon,
     QMenu,
+    QScrollArea,
+)
+from PySide6.QtCore import (
+    Qt,
+    QTimer,
+    Property,
+    QPropertyAnimation,
+    QEasingCurve,
+    QRect,
+    QRectF,
+    QSize,
+    QPoint,
+    QPointF,
+    Signal,
+    QObject,
+)
+from PySide6.QtGui import (
+    QPainter,
+    QColor,
+    QPen,
+    QBrush,
+    QFont,
+    QRadialGradient,
+    QLinearGradient,
+    QConicalGradient,
+    QIcon,
+    QAction,
+    QPixmap,
+    QRegion,
+)
+import math
+import tempfile
+import time
+from PySide6.QtWidgets import (
+    QApplication,
+    QMainWindow,
+    QWidget,
+    QVBoxLayout,
+    QLabel,
+    QFrame,
+    QSystemTrayIcon,
+    QMenu,
+    QScrollArea,
 )
 from PySide6.QtCore import (
     Qt,
@@ -419,8 +462,44 @@ class HUDWindow(QMainWindow):
         )
         self.thinking_label.setAlignment(Qt.AlignCenter)
         self.layout.addWidget(self.thinking_label)
-        # Mission Progress Bar (Hidden by default)
-        self.mission_container = QFrame()
+        # Mission progress bar and activity log - I'll keep existing
+        # ... existing code ...
+        
+        # NEW: Agent Dashboard Panel
+        try:
+            from gui.agent_status_panel import AgentDashboard
+            self.agent_dashboard = AgentDashboard()
+            # Insert before mission container or at a suitable location
+            # For now, add to main layout after subtitle
+            self.layout.addWidget(self.agent_dashboard)
+            self.agent_dashboard.hide()  # Hidden by default, show when agents active
+            
+            # Connect agent signals
+            signals = get_signals()
+            signals.agent_status.connect(self.on_agent_status)
+            signals.agent_action.connect(self.on_agent_action)
+            signals.agent_thought.connect(self.on_agent_thought)
+        except Exception as e:
+            print(f"Agent Dashboard init failed: {e}")
+            self.agent_dashboard = None
+        
+    def on_agent_status(self, agent_name, status, detail):
+        """Handle agent status updates from nexus bridge"""
+        if hasattr(self, 'agent_dashboard') and self.agent_dashboard:
+            self.agent_dashboard.update_agent_status(agent_name, status, detail)
+            # Show dashboard when first agent becomes active
+            if status in ["ACTIVE", "RUNNING", "THINKING"] and self.agent_dashboard.isHidden():
+                self.agent_dashboard.show()
+                
+    def on_agent_action(self, agent_name, action_type, target, result):
+        """Handle agent action updates"""
+        if hasattr(self, 'agent_dashboard') and self.agent_dashboard:
+            self.agent_dashboard.update_agent_action(agent_name, action_type, target, result)
+            
+    def on_agent_thought(self, agent_name, thought, confidence):
+        """Handle agent thought updates"""
+        if hasattr(self, 'agent_dashboard') and self.agent_dashboard:
+            self.agent_dashboard.add_agent_thought(agent_name, thought)
         self.mission_container.setFixedHeight(30)
         self.mission_container.setStyleSheet(
             "background: rgba(0, 0, 0, 50); border-radius: 15px; border: 1px solid rgba(0, 191, 255, 30);"

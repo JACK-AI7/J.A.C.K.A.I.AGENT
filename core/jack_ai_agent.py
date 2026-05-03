@@ -154,7 +154,7 @@ class JackAIAgent:
             )
         
         try:
-            from nexus_bridge import get_signals
+            from core.nexus_bridge import get_signals
             get_signals().emit_bridge("pipeline_stage", "LISTENING", "Awaiting voice input...")
             get_signals().emit_bridge("neural_pulse", 2)
         except: pass
@@ -181,7 +181,7 @@ class JackAIAgent:
         
         # Dashboard Sync: User Chat + Pipeline
         try:
-            from nexus_bridge import get_signals
+            from core.nexus_bridge import get_signals
             get_signals().emit_bridge("pipeline_stage", "TRANSCRIBED", f"Heard: {text[:60]}")
             get_signals().emit_bridge("chat_received", "USER", text)
             get_signals().emit_bridge("neural_pulse", 5)
@@ -296,7 +296,7 @@ class JackAIAgent:
                 self.hud.signals.activity_received.emit("System: Wake word detected")
 
             try:
-                from nexus_bridge import get_signals
+                from core.nexus_bridge import get_signals
                 get_signals().emit_bridge("pipeline_stage", "THINKING", f"Processing: {query[:50]}")
                 get_signals().emit_bridge("neural_pulse", 8)
             except: pass
@@ -358,7 +358,7 @@ class JackAIAgent:
             
         # Dashboard Sync: JACK Chat + Pipeline
         try:
-            from nexus_bridge import get_signals
+            from core.nexus_bridge import get_signals
             get_signals().emit_bridge("pipeline_stage", "SPEAKING", f"Responding: {response[:50]}")
             get_signals().emit_bridge("chat_received", "JACK", response)
             get_signals().emit_bridge("neural_pulse", 4)
@@ -375,7 +375,7 @@ class JackAIAgent:
             self.hud.signals.activity_received.emit("System: Ready for next command")
         
         try:
-            from nexus_bridge import get_signals
+            from core.nexus_bridge import get_signals
             get_signals().emit_bridge("pipeline_stage", "IDLE", "Standing by...")
         except: pass
 

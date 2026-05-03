@@ -291,7 +291,7 @@ async def entrypoint(ctx: JobContext) -> None:
     tts = _build_tts()
 
     try:
-        from nexus_bridge import get_signals
+        from core.nexus_bridge import get_signals
         model_name = GEMINI_LLM_MODEL if LLM_PROVIDER == "gemini" else OPENAI_LLM_MODEL
         get_signals().emit_bridge("model_active", f"{LLM_PROVIDER.upper()}", f"{model_name.upper()} | STT: {STT_PROVIDER.upper()}")
         get_signals().emit_bridge("pipeline_stage", "IDLE", "LiveKit Agent ready")
@@ -307,7 +307,7 @@ async def entrypoint(ctx: JobContext) -> None:
 
     @agent.on("user_speech_committed")
     def on_user_speech_committed(msg):
-        from nexus_bridge import get_signals
+        from core.nexus_bridge import get_signals
         try:
             # Add to dashboard
             get_signals().emit_bridge("pipeline_stage", "TRANSCRIBED", "User spoke")
@@ -320,7 +320,7 @@ async def entrypoint(ctx: JobContext) -> None:
 
     @agent.on("agent_speech_committed")
     def on_agent_speech_committed(msg):
-        from nexus_bridge import get_signals
+        from core.nexus_bridge import get_signals
         try:
             get_signals().emit_bridge("pipeline_stage", "SPEAKING", "Agent speaking")
             text = getattr(msg, "content", getattr(msg, "text", str(msg)))
@@ -331,7 +331,7 @@ async def entrypoint(ctx: JobContext) -> None:
             
     @agent.on("function_calls_collected")
     def on_function_calls_collected(called_functions):
-        from nexus_bridge import get_signals
+        from core.nexus_bridge import get_signals
         try:
             get_signals().emit_bridge("pipeline_stage", "EXECUTING", "Executing tools")
             for f in called_functions:
@@ -343,7 +343,7 @@ async def entrypoint(ctx: JobContext) -> None:
 
     @agent.on("function_calls_finished")
     def on_function_calls_finished(called_functions):
-        from nexus_bridge import get_signals
+        from core.nexus_bridge import get_signals
         try:
             get_signals().emit_bridge("pipeline_stage", "THINKING", "Synthesizing response")
         except Exception:

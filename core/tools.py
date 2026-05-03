@@ -10,7 +10,7 @@ import os
 import shutil
 import subprocess
 try:
-    from nexus_bridge import get_signals
+    from core.nexus_bridge import get_signals
 except Exception:
     class _DummySignals:
         def emit_bridge(self, *a, **kw): pass
@@ -2228,9 +2228,9 @@ def file_management(action, path, destination=None):
 def keyboard_shortcut(keys):
     """Press a keyboard shortcut like ctrl+c, alt+f4, win+d."""
     try:
-        import pyautogui
+        from desktop_agent import desktop_agent
         key_parts = [k.strip() for k in keys.lower().split('+')]
-        pyautogui.hotkey(*key_parts)
+        desktop_agent.human.hotkey(*key_parts)
         return f"Pressed shortcut: {keys}"
     except Exception as e:
         return f"Keyboard Error: {str(e)}"

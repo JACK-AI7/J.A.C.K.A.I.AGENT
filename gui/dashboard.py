@@ -34,7 +34,7 @@ from PySide6.QtGui import QColor, QPainter, QBrush, QPen, QRadialGradient, QFont
 import psutil
 import subprocess
 import threading
-from nexus_bridge import get_signals
+from core.nexus_bridge import get_signals
 try:
     import warnings
     warnings.filterwarnings("ignore", category=RuntimeWarning, module="duckduckgo_search")

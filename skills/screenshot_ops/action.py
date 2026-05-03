@@ -1,6 +1,6 @@
-import pyautogui
 import os
 import time
+from agents.desktop_agent import desktop_agent
 
 def execute(task=None):
     """
@@ -15,8 +15,8 @@ def execute(task=None):
         filename = f"screenshot_{timestamp}.png"
         filepath = os.path.join(out_dir, filename)
         
-        screenshot = pyautogui.screenshot()
-        screenshot.save(filepath)
+        # Use desktop_agent's humanized screenshot
+        desktop_agent.take_screenshot(filepath)
         
         return f"Screenshot captured successfully: {filepath}"
     

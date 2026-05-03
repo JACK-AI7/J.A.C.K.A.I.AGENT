@@ -3,7 +3,7 @@ import json
 import threading
 import time
 try:
-    from nexus_bridge import register_forwarder
+    from core.nexus_bridge import register_forwarder
 except ImportError:
     def register_forwarder(func):
         pass

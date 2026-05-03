@@ -49,6 +49,20 @@ class NexusSignals(QObject):
     # thinking_token: raw reasoning text token from the AI (for live stream)
     thinking_token = Signal(str)
 
+    # --- NEW: Agent Lifecycle Signals ---
+    
+    # agent_status: agent_name, status (INITIALIZED/ACTIVE/IDLE/ERROR), detail
+    agent_status = Signal(str, str, str)
+    
+    # agent_thought: agent_name, thought_text, confidence
+    agent_thought = Signal(str, str, float)
+    
+    # agent_action: agent_name, action_type, target, result
+    agent_action = Signal(str, str, str, str)
+    
+    # agent_visualization: agent_name, visualization_data (dict)
+    agent_visualization = Signal(str, dict)
+
     def __init__(self):
         super().__init__()
         self._bridge_port = 55050

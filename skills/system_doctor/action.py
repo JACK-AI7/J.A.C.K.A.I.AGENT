@@ -4,7 +4,7 @@ import psutil
 import shutil
 import subprocess
 import time
-from nexus_bridge import get_signals
+from core.nexus_bridge import get_signals
 
 # Add parent dir to path
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..")))

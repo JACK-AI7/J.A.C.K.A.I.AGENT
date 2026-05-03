@@ -1,6 +1,7 @@
 import os
 import base64
 import time
+import random
 import requests
 import json
 from PIL import Image
@@ -8,13 +9,16 @@ from desktop_agent import desktop_agent
 from mss import mss
 import io
 import re
-from config import MODEL_PROFILES
+from core.config import MODEL_PROFILES
+from utils.humanized_input import HumanizedInput
 
 class ComputerUseAgent:
     def __init__(self, model=MODEL_PROFILES["eyes"]["model"]):
         self.model = model
         self.ollama_url = "http://localhost:11434/api/generate"
         self.screen_width, self.screen_height = self._get_screen_res()
+        # Humanized input for realistic actions
+        self.human = HumanizedInput()
 
     def _get_screen_res(self):
         # Get actual screen size
@@ -83,19 +87,13 @@ Output Format: ACTION: click(500, 250)
                     action_type = action_match.group(1).lower()
                     params = [p.strip().strip("'").strip('"') for p in action_match.group(2).split(',')]
                     
-                    if action_type == "click" and len(params) == 2:
-                        desktop_agent.click_position(int(params[0]), int(params[1]))
-                    elif action_type == "type" and len(params) == 1:
-                        desktop_agent.type_text(params[0])
-                    elif action_type == "move" and len(params) == 2:
-                        # desktop_agent doesn't have move yet, we'll use click as placeholder
-                        desktop_agent.click_position(int(params[0]), int(params[1]))
-                    elif action_type == "scroll" and len(params) == 1:
-                        desktop_agent.scroll(params[0])
-                    elif action_type == "close":
-                        desktop_agent.close_active_window()
-                        
-                    time.sleep(1) # Wait for UI to react
+                    # Execute with verification and retry
+                    success = self._execute_action_with_retry(action_type, params)
+                    if not success:
+                        print(f"  [WARNING] Action failed after retries: {action_type}({params})")
+                    
+                    # Human think time between actions
+                    time.sleep(random.uniform(0.8, 1.5))
                 else:
                     if "FINISH" in response_text or "COMPLETE" in response_text:
                         print("Task completed according to brain.")
@@ -105,6 +103,56 @@ Output Format: ACTION: click(500, 250)
             except Exception as e:
                 print(f"Local Brain Error: {e}")
                 break
+    
+    def _execute_action_with_retry(self, action_type: str, params: list) -> bool:
+        """Execute action with retry logic and verification."""
+        max_attempts = 3
+        
+        for attempt in range(max_attempts):
+            try:
+                result = self._perform_action(action_type, params)
+                print(f"  Action result: {result}")
+                
+                # For certain actions, verify success
+                if action_type in ['click', 'type']:
+                    # Wait for UI to update
+                    time.sleep(0.5)
+                    # Simple verification: if no exception, assume success
+                    # Could enhance with visual verification here
+                    return True
+                else:
+                    return True
+                    
+            except Exception as e:
+                if attempt < max_attempts - 1:
+                    delay = 0.5 * (2 ** attempt)  # exponential backoff
+                    time.sleep(delay + random.uniform(0, 0.3))
+                else:
+                    print(f"  [ERROR] Action failed: {e}")
+                    return False
+        return False
+        
+    def _perform_action(self, action_type: str, params: list):
+        """Perform a single action."""
+        if action_type == "click" and len(params) == 2:
+            x, y = int(params[0]), int(params[1])
+            desktop_agent.click_position(x, y)
+        elif action_type == "type" and len(params) == 1:
+            desktop_agent.type_text(params[0])
+        elif action_type == "move" and len(params) == 2:
+            # desktop_agent doesn't have move, use click as placeholder
+            x, y = int(params[0]), int(params[1])
+            self.human.move_to(x, y, smooth=True)
+        elif action_type == "scroll" and len(params) >= 1:
+            direction = params[0]
+            amount = int(params[1]) if len(params) > 1 else 3
+            desktop_agent.scroll(direction, amount)
+        elif action_type == "wait" and len(params) == 1:
+            time.sleep(float(params[0]))
+        elif action_type == "close":
+            desktop_agent.close_active_window()
+        else:
+            print(f"  Unknown action: {action_type} with params {params}")
 
 if __name__ == "__main__":
     # Test

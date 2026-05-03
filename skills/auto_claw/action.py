@@ -5,7 +5,7 @@ import json
 # Add root directory to path for direct execution testing
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))
 
-from nexus_bridge import get_signals
+from core.nexus_bridge import get_signals
 
 try:
     from interpreter import interpreter

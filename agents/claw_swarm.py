@@ -24,7 +24,7 @@ class ClawSwarm:
             hud.signals.status_changed.emit(f"Swarm Active ({len(tasks)} Bots)", "pulsing")
 
         # Nexus Integration: Add nodes for each bot
-        from nexus_bridge import get_signals
+        from core.nexus_bridge import get_signals
         signals = get_signals()
         
         for task in tasks:
@@ -59,7 +59,7 @@ class ClawSwarm:
         print(f"  [Bot: {name}] Started...")
         start_time = time.time()
         
-        from nexus_bridge import get_signals
+        from core.nexus_bridge import get_signals
         signals = get_signals()
         
         try:

@@ -7,7 +7,7 @@ from RealtimeTTS import TextToAudioStream, SystemEngine, PiperEngine, KokoroEngi
 from config import VOICE_SETTINGS, RECOGNITION_SETTINGS, WHISPER_SETTINGS, LANGUAGE_SETTINGS
 
 try:
-    from nexus_bridge import get_signals
+    from core.nexus_bridge import get_signals
 except Exception:
     class _DummySignals:
         def emit_bridge(self, *a, **kw): pass

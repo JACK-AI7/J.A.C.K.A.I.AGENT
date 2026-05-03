@@ -20,16 +20,41 @@ class WebNavigator:
         self.headless = headless
     
     def _ensure_driver(self):
-        """Lazy load the Playwright driver."""
+        """Lazy load the Playwright driver with user profile for logged-in sessions."""
         if not PLAYWRIGHT_AVAILABLE:
-            raise RuntimeError("Playwright is not installed. Run: pip install playwright && python -m playwright install chromium")
+            raise RuntimeError("Playwright not installed. Run: pip install playwright && python -m playwright install chromium")
         if self.page is None:
-            print(f"Launching Playwright Automation Engine (Headless={self.headless})...")
+            import os
+            print("Launching Playwright with Chrome profile...")
             self.playwright = sync_playwright().start()
-            self.browser = self.playwright.chromium.launch(headless=self.headless)
-            self.context = self.browser.new_context()
+            
+            user_data_dir = os.path.expandvars(r'%LOCALAPPDATA%\Google\Chrome\User Data')
+            has_profile = os.path.isdir(user_data_dir) if user_data_dir else False
+            
+            try:
+                if has_profile:
+                    self.context = self.playwright.chromium.launch_persistent_context(
+                        user_data_dir=user_data_dir,
+                        channel="chrome",
+                        headless=self.headless,
+                        viewport={'width': 1920, 'height': 1080}
+                    )
+                    self._persistent = True
+                    print(f"  Using logged-in Chrome profile: {user_data_dir}")
+                else:
+                    self.browser = self.playwright.chromium.launch(channel="chrome", headless=self.headless)
+                    self._persistent = False
+                    self.context = self.browser.new_context()
+                    print("  Using Chrome (no profile dir)")
+            except Exception as e:
+                print(f"  Chrome launch failed ({e}), using bundled Chromium")
+                self.browser = self.playwright.chromium.launch(headless=self.headless)
+                self._persistent = False
+                self.context = self.browser.new_context()
+                print("  Using bundled Chromium")
+            
             self.page = self.context.new_page()
-            self.page.set_viewport_size({"width": 1280, "height": 720})
+            self.page.set_viewport_size({"width": 1920, "height": 1080})
     
     def navigate(self, url):
         self._ensure_driver()
@@ -174,9 +199,12 @@ class WebNavigator:
     
     def close(self):
         if self.playwright:
-            print("Closing Playwright instance...")
+            print("Closing browser session...")
             try:
-                self.browser.close()
+                if getattr(self, "_persistent", False):
+                    self.context.close()
+                else:
+                    self.browser.close()
                 self.playwright.stop()
             except Exception:
                 pass
@@ -184,6 +212,9 @@ class WebNavigator:
             self.context = None
             self.browser = None
             self.playwright = None
+            try:
+                self.signals.emit_bridge("agent_status", "WebNavigator", "INITIALIZED", "Ready")
+            except: pass
             return "Automation Engine closed."
         return "No engine running."
 

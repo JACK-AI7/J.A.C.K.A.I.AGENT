@@ -4,7 +4,7 @@ import sys
 # Add root for signals
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..")))
 try:
-    from nexus_bridge import get_signals
+    from core.nexus_bridge import get_signals
 except ImportError:
     def get_signals(): return type('Signals', (), {'thought_received': type('S', (), {'emit': lambda *a: None})()})()
 

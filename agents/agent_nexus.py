@@ -1,7 +1,7 @@
 import os
 import json
 import asyncio
-from config import OLLAMA_SETTINGS, AUTONOMOUS_SETTINGS
+from core.config import OLLAMA_SETTINGS, AUTONOMOUS_SETTINGS
 
 # --- SAFE IMPORTS: Graceful fallback for every optional dependency ---
 try:

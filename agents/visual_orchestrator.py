@@ -3,11 +3,13 @@ import os
 import json
 import re
 import logging
+import random
 import pyautogui
 import pywinauto
 from pywinauto import Desktop
-from system_controller import system_controller
-from desktop_agent import desktop_agent
+from agents.system_controller import system_controller
+from agents.desktop_agent import desktop_agent
+from utils.humanized_input import HumanizedInput, HumanConfig
 
 # Screen awareness imports
 import tempfile
@@ -22,7 +24,7 @@ try:
 except ImportError:
     cv2 = None
 
-from config import OLLAMA_SETTINGS
+from core.config import OLLAMA_SETTINGS
 
 
 class VisualOrchestrator:
@@ -38,7 +40,12 @@ class VisualOrchestrator:
         self.history = []
         self.max_steps = 15
         self.desktop = Desktop(backend="uia")
-        self.model = OLLAMA_SETTINGS["current"]["model"]
+        
+        # Humanized input for realistic automation
+        self.human = HumanizedInput(HumanConfig(
+            mouse_precision=0.87,
+            typing_speed_base=0.08
+        ))
 
     def execute_mission(self, task_description):
         """Perform a multi-step autonomous mission using LLM-driven planning."""
@@ -113,7 +120,7 @@ class VisualOrchestrator:
         # 2. Vision-Based (OCR) Awareness (The Eyes)
         try:
             if system_controller.reader:
-                screenshot = pyautogui.screenshot()
+                screenshot = self.human.capture_screen()
                 import numpy as np
                 import cv2
                 screenshot_np = np.array(screenshot)
@@ -220,15 +227,20 @@ Reply with ONLY the JSON, nothing else."""
         """Launch an app and wait for it to be ready for interaction."""
         print(f"Smart Open: Launching '{app_name}'...")
         result = desktop_agent.open_application(app_name)
-
-        # Wait for the window to appear
+        
+        # Human delay for app to start
+        time.sleep(random.uniform(1.5, 3.0))
+        
+        # Wait for the window to appear using human verification
         start_time = time.time()
-        while time.time() - start_time < 10:
+        while time.time() - start_time < 15:  # Increased timeout
             try:
                 for win in self.desktop.windows():
                     if app_name.lower() in win.window_text().lower():
                         win.set_focus()
                         print(f"  '{app_name}' is ready and focused.")
+                        # Additional stabilization time
+                        time.sleep(random.uniform(0.5, 1.0))
                         return f"Opened and focused '{app_name}'"
             except Exception:
                 pass
@@ -249,19 +261,19 @@ Reply with ONLY the JSON, nothing else."""
 
             elif atype == "type":
                 text = action.get("text", "")
-                pyautogui.write(text, interval=0.02)
+                self.human.type_text(text)
                 return f"Typed: '{text}'"
 
             elif atype == "key":
                 keys = action.get("keys", "")
                 key_parts = [k.strip() for k in keys.split("+")]
-                pyautogui.hotkey(*key_parts)
+                self.human.hotkey(*key_parts)
                 return f"Pressed: {keys}"
 
             elif atype == "scroll":
                 direction = action.get("direction", "down")
                 amount = action.get("amount", 3)
-                pyautogui.scroll(amount if direction == "up" else -amount)
+                self.human.scroll(amount, direction)
                 return f"Scrolled {direction}"
 
             else:

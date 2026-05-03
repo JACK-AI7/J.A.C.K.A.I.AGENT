@@ -10,7 +10,7 @@ import asyncio
 import inspect
 
 try:
-    from nexus_bridge import get_signals
+    from core.nexus_bridge import get_signals
 except Exception:
     class _DummySignals:
         def emit_bridge(self, *a, **kw): pass

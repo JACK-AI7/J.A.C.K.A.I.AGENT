@@ -1,7 +1,7 @@
 import ollama
 import base64
 import os
-from config import VISION_SETTINGS
+from core.config import VISION_SETTINGS
 
 def execute(task=None):
     """

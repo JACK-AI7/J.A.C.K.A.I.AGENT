@@ -19,8 +19,8 @@ except ImportError:
     LANGCHAIN_AVAILABLE = False
     ChatOllama = None
     print("TITAN AI: Engine 'langchain-ollama' still installing...")
-from config import OLLAMA_SETTINGS
-from nexus_bridge import get_signals
+from core.config import OLLAMA_SETTINGS
+from core.nexus_bridge import get_signals
 
 # Path to real Chrome User Data identified earlier
 CHROME_USER_DATA = os.path.expandvars('%LOCALAPPDATA%\\Google\\Chrome\\User Data')

@@ -2,7 +2,7 @@ import os
 import re
 import traceback
 import json
-from nexus_bridge import get_signals
+from core.nexus_bridge import get_signals
 
 
 def execute(task="diagnose", fix=False, **kwargs):

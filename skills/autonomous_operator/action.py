@@ -2,7 +2,7 @@ import asyncio
 import os
 from operate.main import main as operate_main
 try:
-    from nexus_bridge import get_signals
+    from core.nexus_bridge import get_signals
 except ImportError:
     class _DummySignals:
         def emit_bridge(self, *a, **kw): pass

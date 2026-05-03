@@ -1,7 +1,7 @@
 import asyncio
 import re
-from config import SEARCH_SETTINGS
-from nexus_bridge import get_signals
+from core.config import SEARCH_SETTINGS
+from core.nexus_bridge import get_signals
 
 # Safe import — crawl4ai may not be installed
 try:
