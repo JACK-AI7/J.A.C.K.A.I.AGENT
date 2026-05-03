@@ -6,6 +6,7 @@ import 'package:nsd/nsd.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'dart:async';
 import 'dart:typed_data';
+import 'dart:math';
 
 void main() {
   runApp(const JackUltraApp());
@@ -44,6 +45,12 @@ class _DashboardState extends State<Dashboard> with SingleTickerProviderStateMix
   Timer? _reconnectTimer;
   bool _isConnecting = false;
   int _retryCount = 0;
+  
+  // New: ADB & screenshot support
+  Uint8List? _lastScreenshot;
+  bool _showScreenshot = false;
+  List<Map<String, dynamic>> _commandHistory = [];
+  bool _showCommands = true;
 
   @override
   void initState() {
@@ -52,7 +59,6 @@ class _DashboardState extends State<Dashboard> with SingleTickerProviderStateMix
       vsync: this,
       duration: const Duration(seconds: 2),
     )..repeat(reverse: true);
-    // Start by scanning the local network for the PC agent automatically
     _discoverService();
   }
 
@@ -84,17 +90,42 @@ class _DashboardState extends State<Dashboard> with SingleTickerProviderStateMix
         _retryCount = 0;
         try {
           final jsonData = jsonDecode(data);
-          setState(() {
-            if (jsonData["type"] == "telemetry_pulsed" || jsonData.containsKey("cpu")) {
+          
+          // Handle telemetry
+          if (jsonData["type"] == "telemetry_pulsed" || jsonData.containsKey("cpu")) {
+            setState(() {
               cpu = (jsonData["cpu"] ?? 0.0).toDouble();
               ram = (jsonData["ram"] ?? 0.0).toDouble();
+              status = "ONLINE";
+              if (logs.length > 100) logs.removeLast();
+            });
+          }
+          // Handle command result
+          else if (jsonData["type"] == "command_result") {
+            setState(() {
+              logs.insert(0, "RES: ${jsonData["result"]}");
+              if (logs.length > 100) logs.removeLast();
+            });
+          }
+          // Handle screenshot update
+          else if (jsonData["type"] == "screenshot_update" && jsonData.containsKey("data")) {
+            try {
+              final b64 = jsonData["data"];
+              final bytes = base64Decode(b64);
+              setState(() {
+                _lastScreenshot = bytes;
+                _showScreenshot = true;
+              });
+            } catch (e) {
+              if (logs.length > 100) logs.removeLast();
+              logs.insert(0, "IMG ERR: $e");
             }
-            status = "ONLINE";
+          }
+          // Other messages
+          else {
             if (logs.length > 100) logs.removeLast();
-            if (jsonData["type"] != "telemetry_pulsed") {
-               logs.insert(0, "DATA: $data");
-            }
-          });
+            logs.insert(0, "CMD: $data");
+          }
         } catch (e) {
           if (logs.length > 100) logs.removeLast();
           logs.insert(0, "CMD: $data");
@@ -110,6 +141,22 @@ class _DashboardState extends State<Dashboard> with SingleTickerProviderStateMix
       logs.insert(0, "ERROR: Setup error ($e)");
       _handleFailure();
     }
+  }
+
+  void _sendAdbCommand(String action, Map<String, dynamic> params) {
+    final command = {
+      "type": "adb_command",
+      "action": action,
+      "params": params,
+      "timestamp": DateTime.now().millisecondsSinceEpoch ~/ 1000
+    };
+    channel.sink.add(jsonEncode(command));
+    setState(() {
+      _commandHistory.insert(0, command);
+      if (_commandHistory.length > 50) _commandHistory.removeLast();
+      if (logs.length > 100) logs.removeLast();
+      logs.insert(0, "SENT: $action ${params.toString()}");
+    });
   }
 
   void _handleFailure() {
@@ -137,7 +184,6 @@ class _DashboardState extends State<Dashboard> with SingleTickerProviderStateMix
     try {
       final discovery = await startDiscovery('_jack-relay._tcp');
       
-      // Auto-stop scan after 15 seconds
       Timer(const Duration(seconds: 15), () {
         stopDiscovery(discovery);
         if (status == "SCANNING...") {
@@ -182,6 +228,109 @@ class _DashboardState extends State<Dashboard> with SingleTickerProviderStateMix
     }
   }
 
+  void _pressKey(String key) {
+    _sendAdbCommand("key", {"key": key});
+  }
+
+  void _launchApp(String package) {
+    _sendAdbCommand("launch", {"package": package});
+  }
+
+  Widget _buildCommandPad() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text("DEVICE CONTROLS", style: TextStyle(color: Colors.cyanAccent, fontSize: 10, letterSpacing: 2, fontWeight: FontWeight.bold)),
+        const SizedBox(height: 8),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceAround,
+          children: [
+            ElevatedButton(
+              onPressed: () => _pressKey('BACK'),
+              style: ElevatedButton.styleFrom(backgroundColor: Colors.blueGrey),
+              child: const Text('BACK', style: TextStyle(fontSize: 10)),
+            ),
+            ElevatedButton(
+              onPressed: () => _pressKey('HOME'),
+              style: ElevatedButton.styleFrom(backgroundColor: Colors.blueGrey),
+              child: const Text('HOME', style: TextStyle(fontSize: 10)),
+            ),
+            ElevatedButton(
+              onPressed: () => _pressKey('ENTER'),
+              style: ElevatedButton.styleFrom(backgroundColor: Colors.blueGrey),
+              child: const Text('ENTER', style: TextStyle(fontSize: 10)),
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceAround,
+          children: [
+            ElevatedButton(
+              onPressed: () => _launchApp('com.android.chrome'),
+              child: const Text('Chrome'),
+            ),
+            ElevatedButton(
+              onPressed: () => _launchApp('com.whatsapp'),
+              child: const Text('WhatsApp'),
+            ),
+            ElevatedButton(
+              onPressed: () => _launchApp('com.google.android.youtube'),
+              child: const Text('YouTube'),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildCommandFeed() {
+    if (_commandHistory.isEmpty) return const SizedBox.shrink();
+    return Container(
+      height: 120,
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.05),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: ListView.builder(
+        itemCount: _commandHistory.length,
+        itemBuilder: (context, i) {
+          final cmd = _commandHistory[i];
+          final action = cmd['action'] ?? '';
+          final params = cmd['params'] != null ? cmd['params'].toString() : '';
+          return ListTile(
+            dense: true,
+            visualDensity: VisualDensity.compact,
+            title: Text("$action $params", style: const TextStyle(fontSize: 11, color: Colors.white70)),
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildScreenshotView() {
+    if (_lastScreenshot == null) return const SizedBox.shrink();
+    return Column(
+      children: [
+        const Text("DEVICE SCREEN", style: TextStyle(color: Colors.white38, fontSize: 10)),
+        const SizedBox(height: 8),
+        Container(
+          width: 320,
+          height: 200,
+          decoration: BoxDecoration(
+            border: Border.all(color: Colors.cyanAccent),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Image.memory(_lastScreenshot!, gaplessPlayback: true, fit: BoxFit.contain),
+        ),
+        TextButton(
+          onPressed: () => setState(() => _showScreenshot = !_showScreenshot),
+          child: Text(_showScreenshot ? 'Hide Screenshot' : 'Show Screenshot'),
+        ),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -214,6 +363,12 @@ class _DashboardState extends State<Dashboard> with SingleTickerProviderStateMix
                   const Text("LIVE TELEMETRY", style: TextStyle(color: Colors.white38, fontSize: 10, letterSpacing: 2)),
                   const SizedBox(height: 12),
                   _buildLogFeed(),
+                  const SizedBox(height: 20),
+                  _buildCommandPad(),
+                  const SizedBox(height: 20),
+                  _buildCommandFeed(),
+                  const SizedBox(height: 20),
+                  _buildScreenshotView(),
                   const SizedBox(height: 20),
                   _buildMainInterface(),
                 ],
