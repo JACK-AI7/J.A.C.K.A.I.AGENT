@@ -86,6 +86,9 @@ from PySide6.QtGui import (
 )
 import math
 
+# Import nexus bridge signals for agent dashboard integration
+from core.nexus_bridge import get_signals
+
 # Explicit fallback for environment-specific symbol binding issues
 try:
     from PySide6.QtCore import QPointF, QRectF, QSize, QPoint, QRect, Qt
