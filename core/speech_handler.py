@@ -76,22 +76,53 @@ class SpeechHandler:
                 print("[JACK Hearing] Neural Sensors OFFLINE (STT Init Failed)")
                 return None
 
-            # The recorder handles the silence detection and returns text instantly
-            # Pass timeout to break potential hangs
-            text = self.recorder.text()
-            if text:
-                text = text.strip()
-                if text:
-                    print(f"[JACK Hearing] Neural Capture: '{text}'")
-                    return text
+            # Use a try-except with shorter timeout to avoid blocking
+            start = time.time()
+            text = None
+            while time.time() - start < timeout:
+                try:
+                    # RealtimeSTT's text() blocks until speech is detected and transcribed
+                    text = self.recorder.text()
+                    if text:
+                        text = text.strip()
+                        if text:
+                            print(f"[JACK Hearing] Neural Capture: '{text}'")
+                            return text
+                except Exception as e:
+                    # If the recorder throws an error (e.g., broken pipe), attempt to continue
+                    if "broken" in str(e).lower() or "pipe" in str(e).lower():
+                        print(f"[JACK Hearing] Recorder error, reinitializing...")
+                        self._reinit_recorder()
+                    # Small delay before retry
+                    time.sleep(0.1)
+            return None
         except Exception as e:
-            print(f"Neural Capture Error: {e}")
-            # Check for broken pipe or engine crash
-            if "pipe" in str(e).lower() or "connection" in str(e).lower():
-                print("Attempting to re-initialize STT Engine...")
-                self._reinit_recorder()
-        
-        return None
+            print(f"[JACK Hearing] Capture Error: {e}")
+            return None
+
+            # Use a try-except with shorter timeout to avoid blocking
+            start = time.time()
+            text = None
+            while time.time() - start < timeout:
+                try:
+                    # RealtimeSTT's text() blocks until speech is detected and transcribed
+                    text = self.recorder.text()
+                    if text:
+                        text = text.strip()
+                        if text:
+                            print(f"[JACK Hearing] Neural Capture: '{text}'")
+                            return text
+                except Exception as e:
+                    # If the recorder throws an error (e.g., broken pipe), attempt to continue
+                    if "broken" in str(e).lower() or "pipe" in str(e).lower():
+                        print(f"[JACK Hearing] Recorder error, reinitializing...")
+                        self._reinit_recorder()
+                    # Small delay before retry
+                    time.sleep(0.1)
+            return None
+        except Exception as e:
+            print(f"[JACK Hearing] Capture Error: {e}")
+            return None
 
     def speak(self, text, lang=None):
         """Local High-End Streaming TTS. No API delay."""
@@ -147,7 +178,14 @@ class SpeechHandler:
     def calibrate_microphone(self):
         """Standardizes environmental noise levels."""
         print("[JACK Hearing] Calibrating Neural Sensors...")
-        # Since RealtimeSTT handles this internally via VAD, 
+        # RealtimeSTT handles VAD internally; just ensure recorder exists
+        if self.recorder:
+            try:
+                # Attempt to read a small buffer to warm up
+                _ = self.recorder.text()
+            except:
+                pass
+        return True 
         # we perform a brief wake check.
         try:
             if self.recorder:
