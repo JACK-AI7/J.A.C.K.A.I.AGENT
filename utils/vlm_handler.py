@@ -5,9 +5,9 @@ import json
 from core.logger import log_event
 
 class VLMHandler:
-    """Interface for local Vision-Language Models (Llava/Llama3.2-Vision) via Ollama."""
+    """Interface for local Vision-Language Models (Llama3.2-Vision) via Ollama."""
     
-    def __init__(self, model="llava:latest", base_url="http://localhost:11434"):
+    def __init__(self, model="llama3.2-vision:latest", base_url="http://localhost:11434"):
         self.model = model
         self.base_url = base_url
 
