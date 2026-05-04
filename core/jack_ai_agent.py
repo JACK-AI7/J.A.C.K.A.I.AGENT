@@ -330,6 +330,11 @@ class JackAIAgent:
                 response = result.get("message") or result.get("response") or result.get("answer") or result.get("result")
                 if not response:
                     response = "Mission result unavailable."
+                
+                # Ensure response is a string (might be a dict if LLM returns complex message)
+                if not isinstance(response, str):
+                    response = str(response)
+                    
                 self._handle_response(response)
             except Exception as e:
                 log_event(f"Mission Loop Failure: {e}")
@@ -350,16 +355,24 @@ class JackAIAgent:
 
     def _handle_response(self, response):
         """Helper to handle AI responses consistently."""
+        # Ensure response is a string
+        if not isinstance(response, str):
+            response = str(response)
+            
         print(f"JACK: {response}")
         if self.hud:
             self.hud.signals.response_received.emit(response)
             self.hud.signals.status_changed.emit("Speaking...", "speaking")
-            self.hud.signals.activity_received.emit(f"Response: {response[:50]}...")
+            
+            # Safe slicing
+            display_text = response[:50] if isinstance(response, str) else "Processing..."
+            self.hud.signals.activity_received.emit(f"Response: {display_text}...")
             
         # Dashboard Sync: JACK Chat + Pipeline
         try:
             from core.nexus_bridge import get_signals
-            get_signals().emit_bridge("pipeline_stage", "SPEAKING", f"Responding: {response[:50]}")
+            display_text = response[:50] if isinstance(response, str) else "Responding..."
+            get_signals().emit_bridge("pipeline_stage", "SPEAKING", f"Responding: {display_text}")
             get_signals().emit_bridge("chat_received", "JACK", response)
             get_signals().emit_bridge("neural_pulse", 4)
         except: pass

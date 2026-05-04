@@ -262,6 +262,12 @@ class AIHandler:
                 if status == "success":
                     vault.store_fact(f"User Task: {query} | Result: {final_msg}")
                 
+                # --- SANITIZATION & STRINGIFICATION ---
+                if not isinstance(final_msg, str):
+                    final_msg = json.dumps(final_msg)
+                
+                final_msg = self._sanitize_persona_output(final_msg)
+                
                 print(f"TITAN LOG: Mission Finalized - Status: {status}")
                 self.conversation_manager.add_interaction(query, final_msg, tool_results_summary)
                 return final_msg
@@ -401,6 +407,21 @@ class AIHandler:
     def _sanitize_persona_output(self, text):
         if not text: return "Action completed, Sir."
         
+        # If it's a JSON string that looks like a UserMessage object (seen in some browser-use results)
+        # try to extract the actual text value
+        if text.startswith('{') and 'text' in text and 'value' in text:
+            try:
+                data = json.loads(text)
+                if isinstance(data, dict):
+                    # Check for nested text.value (common in browser-use/langchain objects)
+                    val = data.get('text', {}).get('value')
+                    if val: return str(val)
+                    # Check for direct message
+                    val = data.get('message')
+                    if val: return str(val)
+            except:
+                pass
+
         # Remove reasoning tags
         text = re.sub(r"<(thought|reasoning|reflection|thought_process)>.*?</\1>", "", text, flags=re.DOTALL)
         
