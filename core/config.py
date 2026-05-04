@@ -74,19 +74,19 @@ VISION_SETTINGS = {
     "min_confidence": 0.4,  # Confidence threshold for OCR
     "search_scale": [0.5, 1.5],  # Scaling range for visual mouse search
     "visual_feedback": True,  # Pulse or highlight when searching
-    "deep_vision_model": "llava:latest",  # Using verified local model for stability
+    "deep_vision_model": "llama3.2-vision:latest",  # Upgraded to high-fidelity Llama 3.2 Vision
 }
 
 # =============================================================================
 # MODEL PROFILES - PREDICTABLE PRODUCTION STACK (100% FREE & OSS)
 # =============================================================================
-ACTIVE_PROFILE = "qwen-coder"
+ACTIVE_PROFILE = "mistral"
 FALLBACK_PROFILE = "mistral"  # Reliability override
 
 MODEL_PROFILES = {
     # --- MAIN EXECUTION ENGINE (Qwen 2.5 Coder 7B) ---
     "qwen-coder": {
-        "model": "qwen2.5-coder:7b",
+        "model": "llama3:latest",
         "description": "Deterministic: High-performance tool-calling (Qwen 2.5)",
         "options": {
             "temperature": 0.2, # Predictability override
@@ -118,7 +118,7 @@ MODEL_PROFILES = {
     },
     # --- SPECIALIZED WORKERS ---
     "reasoning": {
-        "model": "deepseek-r1:7b",
+        "model": "deepseek-r1:1.5b",
         "description": "Chain-of-thought reasoning powerhouse (DeepSeek R1)",
         "options": {"temperature": 0.6},
     },
@@ -135,7 +135,7 @@ MODEL_PROFILES = {
 }
 
 # --- PERFORMANCE OPTIMIZATION ---
-LOW_RESOURCE_MODE = False # Set to True to force 1B models and save RAM/GPU
+LOW_RESOURCE_MODE = True # IMMORTAL OVERRIDE: Fast & Lightweight
 if LOW_RESOURCE_MODE:
     ACTIVE_PROFILE = "ultra-low"
     MODEL_PROFILES["reasoning"]["model"] = "deepseek-r1:1.5b" # Use 1.5B instead of 7B
