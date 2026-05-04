@@ -281,9 +281,9 @@ def run_full_test_suite():
     print(f"Success Rate: {((result.testsRun - len(result.failures) - len(result.errors)) / result.testsRun * 100):.1f}%")
     
     if result.wasSuccessful():
-        print("\n✓ ALL TESTS PASSED - Automation is 1100% operational!")
+        print("\n[OK] ALL TESTS PASSED - Automation is 1100% operational!")
     else:
-        print("\n✗ Some tests failed. Review and fix.")
+        print("\n[ERROR] Some tests failed. Review and fix.")
         for test, trace in result.failures + result.errors:
             print(f"  - {test}: {trace[:100]}")
     

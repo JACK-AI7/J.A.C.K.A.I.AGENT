@@ -181,7 +181,7 @@ class ToolExecutionLog(QFrame):
         # Color code by result
         is_running = result_summary == "Running..."
         color = "#ffaa00" if is_running else "#00ff7f"
-        icon = "⚡" if is_running else "✓"
+        icon = "[ACTIVE]" if is_running else "[OK]"
         
         if is_running:
             self.feed.append(

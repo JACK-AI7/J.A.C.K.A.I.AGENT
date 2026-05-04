@@ -61,6 +61,9 @@ for folder in ["core", "agents", "gui", "utils", "setup"]:
     if folder_path not in sys.path:
         sys.path.insert(0, folder_path)
 
+from utils.fix_windows_encoding import setup_windows_encoding
+setup_windows_encoding()
+
 # Set up logging to file for debugging "just closing" issues
 logging.basicConfig(
     filename="jack_error.log",

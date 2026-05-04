@@ -324,21 +324,14 @@ class DesktopAgent:
             return f"Could not get running apps: {str(e)}"
     
     def copy_to_clipboard(self, text):
-        """Copy text to clipboard using human-like typing."""
+        """Copy text to clipboard using pyperclip."""
         try:
+            import pyperclip
             try:
-                self.signals.emit_bridge("agent_action", "DesktopAgent", "CLIPBOARD", f"Copying: {text[:20]}...")
+                self.signals.emit_bridge("agent_action", "DesktopAgent", "CLIPBOARD", f"Copying to clipboard: {text[:20]}...")
             except: pass
             
-            if self.system == "Darwin":
-                self.human.hotkey('cmd', 'a')
-            elif self.system == "Windows":
-                self.human.hotkey('ctrl', 'a')
-            elif self.system == "Linux":
-                self.human.hotkey('ctrl', 'a')
-                
-            time.sleep(random.uniform(0.1, 0.3))
-            self.human.type_text(text)
+            pyperclip.copy(text)
             result = f"Copied '{text}' to clipboard"
             
             try:

@@ -4,11 +4,11 @@ def predict_system_issues(stats: dict):
 
     # CPU Threshold
     if stats.get("cpu", 0) > 85:
-        alerts.append("⚠️ HIGH NEURAL LOAD: System latency imminent. Consider closing heavy applications.")
+        alerts.append("[WARN] HIGH NEURAL LOAD: System latency imminent. Consider closing heavy applications.")
 
     # RAM Threshold
     if stats.get("ram", 0) > 90:
-        alerts.append("⚠️ MEMORY DEPLETION: Neural processing restricted. RAM usage critical.")
+        alerts.append("[WARN] MEMORY DEPLETION: Neural processing restricted. RAM usage critical.")
 
     # Disk Space (Junk)
     junk_count = len(stats.get("junk", []))

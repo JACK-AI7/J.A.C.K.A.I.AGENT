@@ -49,7 +49,7 @@ def demo_mouse_movement():
         agent.click_position(x, y)
         time.sleep(0.8)  # Watch the movement
     
-    print("✓ Mouse movement demo complete")
+    print("[OK] Mouse movement demo complete")
 
 
 def demo_typing():
@@ -83,7 +83,7 @@ def demo_typing():
     
     # Restore settings
     agent.human.config.typo_chance = original_typo
-    print("\n✓ Typing demo complete")
+    print("\n[OK] Typing demo complete")
 
 
 def demo_precision():
@@ -124,7 +124,7 @@ def demo_precision():
     
     print(f"\nStandard deviation: X={x_std:.1f}px, Y={y_std:.1f}px")
     print("This is the 'human jitter' - normal and expected!")
-    print("✓ Precision demo complete")
+    print("[OK] Precision demo complete")
 
 
 def demo_application_launch():
@@ -154,7 +154,7 @@ def demo_application_launch():
         agent.close_active_window()
         time.sleep(1)
     
-    print("\n✓ Application launch demo complete")
+    print("\n[OK] Application launch demo complete")
 
 
 def demo_vision_system():
@@ -180,7 +180,7 @@ def demo_vision_system():
     else:
         print(f"No text found (or no screen content): {result}")
     
-    print("\n✓ Vision demo complete")
+    print("\n[OK] Vision demo complete")
 
 
 def demo_full_automation():
@@ -230,7 +230,7 @@ def demo_full_automation():
     time.sleep(0.5)
     
     # 7. Don't save (if prompted) - would need UI interaction
-    print(f"\n✓ Full automation complete! File should be saved as: {filename}")
+    print(f"\n[OK] Full automation complete! File should be saved as: {filename}")
 
 
 def main():

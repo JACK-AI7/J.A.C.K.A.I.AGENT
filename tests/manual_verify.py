@@ -47,7 +47,7 @@ def test_mouse_movement(agent: DesktopAgent):
         print(f"  Moved to ({x}, {y}) in {elapsed:.2f}s")
         time.sleep(0.5)  # Observe movement
         
-    print("  ✓ Mouse movement test complete")
+    print("  [OK] Mouse movement test complete")
 
 
 def test_typing(agent: DesktopAgent):
@@ -75,7 +75,7 @@ def test_typing(agent: DesktopAgent):
         
     # Restore original setting
     agent.human.config.typo_chance = original_typo
-    print("\n  ✓ Typing test complete")
+    print("\n  [OK] Typing test complete")
 
 
 def test_keyboard_shortcuts(agent: DesktopAgent):
@@ -90,7 +90,7 @@ def test_keyboard_shortcuts(agent: DesktopAgent):
         print(f"    {result}")
         time.sleep(0.5)
         
-    print("  ✓ Keyboard shortcuts test complete")
+    print("  [OK] Keyboard shortcuts test complete")
 
 
 def test_application_launch(agent: DesktopAgent):
@@ -110,7 +110,7 @@ def test_application_launch(agent: DesktopAgent):
     else:
         print("  (Skipped - Windows-specific test)")
         
-    print("  ✓ Application launch test complete")
+    print("  [OK] Application launch test complete")
 
 
 def test_action_verifier(agent: DesktopAgent):
@@ -128,7 +128,7 @@ def test_action_verifier(agent: DesktopAgent):
     img2 = agent.human._capture_screen()
     diff = verifier._image_difference(img1, img2)
     print(f"    Screen change difference: {diff:.4f}")
-    print("  ✓ Verification system operational")
+    print("  [OK] Verification system operational")
 
 
 def test_visual_orchestrator():
@@ -142,7 +142,7 @@ def test_visual_orchestrator():
         # Test screen awareness
         summary = orch.get_screen_summary()
         print(f"  Screen summary: {summary[:100]}...")
-        print("  ✓ Visual orchestrator operational")
+        print("  [OK] Visual orchestrator operational")
     except Exception as e:
         print(f"  ⚠ Visual orchestrator limited: {e}")
 
@@ -158,7 +158,7 @@ def test_system_controller():
         # Test basic interaction
         result = controller.locate_and_click(100, 100, verify=False)
         print(f"  Locate and click: {result}")
-        print("  ✓ System controller operational")
+        print("  [OK] System controller operational")
     except Exception as e:
         print(f"  ⚠ System controller error: {e}")
 
@@ -171,18 +171,18 @@ def run_sanity_checks():
     config = HumanConfig()
     assert config.mouse_speed_factor > 0
     assert config.typing_speed_base > 0
-    print("  ✓ HumanConfig valid")
+    print("  [OK] HumanConfig valid")
     
     # Test human input creation
     human = HumanizedInput(config)
     assert human.screen_width > 0
     assert human.screen_height > 0
-    print("  ✓ HumanizedInput initialized")
+    print("  [OK] HumanizedInput initialized")
     
     # Test desktop agent
     agent = DesktopAgent()
     assert agent.human is not None
-    print("  ✓ DesktopAgent ready")
+    print("  [OK] DesktopAgent ready")
     
 
 def main():
@@ -196,7 +196,7 @@ def main():
     try:
         run_sanity_checks()
     except Exception as e:
-        print(f"\n✗ SANITY CHECK FAILED: {e}")
+        print(f"\n[ERROR] SANITY CHECK FAILED: {e}")
         return False
     
     print("\n" + "="*60)
@@ -228,7 +228,7 @@ def main():
             test_func()
             passed += 1
         except Exception as e:
-            print(f"\n✗ TEST FAILED: {test_name}")
+            print(f"\n[ERROR] TEST FAILED: {test_name}")
             print(f"  Error: {e}")
             import traceback
             traceback.print_exc()
@@ -244,9 +244,9 @@ def main():
     print(f"Success Rate: {passed/len(tests)*100:.1f}%")
     
     if failed == 0:
-        print("\n✓ ALL MANUAL TESTS PASSED - Automation is 1100% operational!")
+        print("\n[OK] ALL MANUAL TESTS PASSED - Automation is 1100% operational!")
     else:
-        print(f"\n✗ {failed} test suite(s) failed. Review errors above.")
+        print(f"\n[ERROR] {failed} test suite(s) failed. Review errors above.")
         
     return failed == 0
 

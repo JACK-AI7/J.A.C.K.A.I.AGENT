@@ -304,10 +304,10 @@ def run_integration_tests():
     print(f"Errors: {len(result.errors)}")
     
     if result.wasSuccessful():
-        print("\n✓ ALL INTEGRATION TESTS PASSED")
+        print("\n[OK] ALL INTEGRATION TESTS PASSED")
         print("  Automation system is 1100% operational!")
     else:
-        print("\n✗ Some integration tests failed:")
+        print("\n[ERROR] Some integration tests failed:")
         for test, trace in result.failures + result.errors:
             print(f"  - {test}: {trace[:200]}")
     

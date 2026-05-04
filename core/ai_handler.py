@@ -43,7 +43,7 @@ class AIHandler:
         
         # Format tools for the prompt
         tools_str = json.dumps(FUNCTIONS, indent=2)
-        system_content = f"{SYSTEM_PROMPT}\n\n# 🛠️ AVAILABLE TOOLS\n{tools_str}"
+        system_content = f"{SYSTEM_PROMPT}\n\n# [FIX] AVAILABLE TOOLS\n{tools_str}"
         
         if isinstance(prompt_or_messages, list):
             messages = list(prompt_or_messages)
@@ -72,10 +72,16 @@ class AIHandler:
             )
             raw_content = response.get("message", {}).get("content", "").strip()
             
+            if not raw_content:
+                raise ValueError("Empty response from primary engine")
+                
             # Use robust parser to ensure we return valid JSON string
             from core.parser import parse_llm_output
             parsed = parse_llm_output(raw_content)
+            if not parsed:
+                raise ValueError("Failed to parse LLM output")
             return json.dumps(parsed)
+            
         except Exception as e:
             print(f"TITAN ERROR: Primary engine '{self.model}' failed ({str(e)}). Attempting neural fallback to {FALLBACK_PROFILE}...")
             try:
@@ -86,15 +92,22 @@ class AIHandler:
                     format='json'
                 )
                 raw_content = response.get("message", {}).get("content", "").strip()
+                
+                if not raw_content:
+                    raise ValueError("Empty response from fallback engine")
+                    
                 from core.parser import parse_llm_output
                 parsed = parse_llm_output(raw_content)
+                if not parsed:
+                    raise ValueError("Failed to parse fallback output")
                 return json.dumps(parsed)
             except Exception as e2:
                 print(f"TITAN CRITICAL: All neural engines failed ({str(e2)})")
+                # ABSOLUTE FALLBACK: Return a valid JSON indicating failure
                 return json.dumps({
                     "type": "final", 
                     "status": "failed", 
-                    "message": f"I'm sorry Sir, all my neural engines are offline. Error: {str(e2)}"
+                    "message": f"I'm sorry Sir, all my neural engines are offline or returned invalid data. Error: {str(e2)}"
                 })
 
     def _init_clients(self):

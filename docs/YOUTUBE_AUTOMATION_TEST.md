@@ -1,6 +1,6 @@
 # YOUTUBE AUTOMATION TEST - COMPLETE GUIDE
 
-## 🎯 What This Test Does
+## [GOAL] What This Test Does
 
 Full end-to-end automation test of YouTube:
 1. **Open Chrome** and navigate to YouTube
@@ -10,7 +10,7 @@ Full end-to-end automation test of YouTube:
 
 All actions use **1100% human-like** movement, typing, and clicking.
 
-## 🚀 Running the Test
+## [START] Running the Test
 
 ```bash
 cd C:\Users\bjasw\Downloads\jarvis-main\jarvis-main
@@ -34,10 +34,10 @@ python tests/youtube_automation_test.py
 ## 📋 Prerequisites
 
 ### Required Software:
-- ✅ Chrome browser installed
-- ✅ Ollama with `llava` model (for vision mode)
-- ✅ EasyOCR (for visual mode)
-- ✅ Playwright chromium (for web_navigator)
+- [DONE] Chrome browser installed
+- [DONE] Ollama with `llava` model (for vision mode)
+- [DONE] EasyOCR (for visual mode)
+- [DONE] Playwright chromium (for web_navigator)
 
 ### Install Playwright:
 ```bash
@@ -67,16 +67,16 @@ ollama pull llava
 │   VisualOrchestrator: Clicked '... │
 │ [STEP 4] Subscribing to channel...  │
 │   Trying: 'subscribe button'       │
-│   ✓ Clicked subscribe              │
+│   [OK] Clicked subscribe              │
 │ [STEP 5] Verifying playback...      │
-│   ✓ Video appears to be playing    │
+│   [OK] Video appears to be playing    │
 └─────────────────────────────────────┘
 ```
 
 **Live HUD Display:**
 ```
 ┌─────────────────────────────────────┐
-│ 🤖 AGENT MATRIX                    │
+│ [BOT] AGENT MATRIX                    │
 │ ┌─ DesktopAgent ──────────────┐   │
 │ │ [ACTIVE] ●                 │   │
 │ │ OPEN: chrome → At your...  │   │
@@ -90,7 +90,7 @@ ollama pull llava
 └─────────────────────────────────────┘
 ```
 
-## 🔍 How It Works
+## [FIND] How It Works
 
 ### 1. **Open YouTube**
 ```python
@@ -116,7 +116,7 @@ da.human.hotkey('ctrl', 'enter')  # Staggered hotkey
 - Checks for time display (`01:23 / 10:45`)
 - Reports success/failure
 
-## 🎨 Agent HUD Visualization
+## [STYLE] Agent HUD Visualization
 
 As the test runs, HUD shows:
 
@@ -127,13 +127,13 @@ As the test runs, HUD shows:
 | VisualOrchestrator | THINKING → ACTIVE | `CLICK: first video thumbnail` |
 | SystemController | ACTIVE (if used) | `OCR locate: "subscribe"` |
 
-## 📊 Success Criteria
+## [RESULTS] Success Criteria
 
-- ✅ Chrome opens
-- ✅ YouTube loads (check title or URL)
-- ✅ First video clicked (video player visible)
-- ⚠️ Subscribe may fail if not logged in (expected)
-- ✅ Video playback verified via UI elements
+- [DONE] Chrome opens
+- [DONE] YouTube loads (check title or URL)
+- [DONE] First video clicked (video player visible)
+- [WARN] Subscribe may fail if not logged in (expected)
+- [DONE] Video playback verified via UI elements
 
 ## 🔧 Troubleshooting
 
@@ -159,12 +159,12 @@ pip install easyocr torch torchvision
 ollama pull llava
 ```
 
-## 📁 Test Files
+## [FILES] Test Files
 
 - `tests/youtube_automation_test.py` - Main test script
 - Can be run standalone or from test suite
 
-## 🎯 Real-World Usage
+## [GOAL] Real-World Usage
 
 This test demonstrates JARVIS' ability to:
 - Control desktop applications
@@ -183,4 +183,4 @@ You can adapt this pattern for:
 
 **Run it**: `python tests/youtube_automation_test.py`
 **Watch HUD**: See all agents working in real-time!
-**Status**: ✅ Complete and ready
+**Status**: [DONE] Complete and ready

@@ -172,7 +172,7 @@ class AgentDashboard(QWidget):
         layout.setSpacing(8)
         
         # Header
-        header = QLabel("🤖 AGENT MATRIX")
+        header = QLabel("[BOT] AGENT MATRIX")
         header.setStyleSheet("""
             color: rgba(0, 191, 255, 255);
             font-family: 'Segoe UI Light';

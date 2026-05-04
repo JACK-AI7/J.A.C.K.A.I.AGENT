@@ -6,19 +6,19 @@ JACK is a high-performance autonomous AI agent designed to live on your local ma
 
 ---
 
-## ⚡ Key Features
+## [ACTIVE] Key Features
 
-*   **🧠 High-Performance Neural Core**: Optimized for local models like `qwen2.5-coder:7b` and `mistral:latest`.
-*   **🌐 Persistent Web Grid**: Built-in Playwright session management for persistent logins (WhatsApp, GitHub, etc.).
+*   **[BRAIN] High-Performance Neural Core**: Optimized for local models like `qwen2.5-coder:7b` and `mistral:latest`.
+*   **[NET] Persistent Web Grid**: Built-in Playwright session management for persistent logins (WhatsApp, GitHub, etc.).
 *   **🖥️ Desktop Orchestration**: Full control over system applications, terminal, and UI elements.
-*   **📁 Neural Archive**: Long-term vector memory using **ChromaDB** for context awareness across missions.
+*   **[FILES] Neural Archive**: Long-term vector memory using **ChromaDB** for context awareness across missions.
 *   **🔁 Autonomous Mission Loop**: Self-correcting loop logic that plans, executes, and re-evaluates until completion.
 *   **🔐 Production-Grade Safety**: Integrated command guards and permission layers for secure automation.
 *   **🎤 Jarvis-Style Voice**: Low-latency neural TTS and streaming STT for a natural interface.
 
 ---
 
-## 🛠️ Architecture
+## [FIX] Architecture
 
 ```mermaid
 graph TD
@@ -34,7 +34,7 @@ graph TD
 
 ---
 
-## 🚀 Quick Start (Overdrive Mode)
+## [START] Quick Start (Overdrive Mode)
 
 ### 1. Requirements
 *   **Python 3.10+**
@@ -74,7 +74,7 @@ python main.py
 
 ---
 
-## 🛡️ Safety & Privacy
+## [SHIELD] Safety & Privacy
 JACK is built with a **Local-First Policy**. No data ever leaves your machine unless you explicitly instruct a tool to send a message or perform a search. Dangerous commands are automatically blocked via the `safety.py` guard layer.
 
 ---

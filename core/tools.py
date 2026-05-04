@@ -1026,9 +1026,9 @@ def list_folder(folder_path=None):
             if os.path.isdir(full_path):
                 try:
                     count = len(os.listdir(full_path))
-                    items.append(f"  📁 {item}/ ({count} items)")
+                    items.append(f"  [FILES] {item}/ ({count} items)")
                 except:
-                    items.append(f"  📁 {item}/")
+                    items.append(f"  [FILES] {item}/")
             else:
                 try:
                     size = os.path.getsize(full_path)

@@ -30,9 +30,9 @@ def test_all_agents_initialized():
     
     for agent_name in expected_agents:
         if agent_name in agents:
-            print(f"  ✓ {agent_name} registered")
+            print(f"  [OK] {agent_name} registered")
         else:
-            print(f"  ✗ {agent_name} NOT FOUND")
+            print(f"  [ERROR] {agent_name} NOT FOUND")
     
     success = all(agent in agents for agent in expected_agents)
     print(f"\nResult: {'PASS' if success else 'FAIL'}")
@@ -55,17 +55,17 @@ def test_agent_signals():
         # Perform a simple action
         print("  Testing click_position...")
         da.click_position(100, 100)
-        print("  ✓ Click signal emitted")
+        print("  [OK] Click signal emitted")
         
         # Test typing
         print("  Testing type_text...")
         da.type_text("Test signal")
-        print("  ✓ Type signal emitted")
+        print("  [OK] Type signal emitted")
         
         print("  Result: PASS")
         return True
     else:
-        print("  ✗ DesktopAgent not available")
+        print("  [ERROR] DesktopAgent not available")
         return False
 
 
@@ -78,13 +78,13 @@ def test_hud_integration():
     try:
         # Try to import HUD components
         from gui.hud_manager import HUDManager, AgentDashboard
-        print("  ✓ HUD components imported")
+        print("  [OK] HUD components imported")
         
         # Check if AgentDashboard class exists
         if hasattr(AgentDashboard, 'register_agent'):
-            print("  ✓ AgentDashboard has register_agent method")
+            print("  [OK] AgentDashboard has register_agent method")
         else:
-            print("  ✗ AgentDashboard missing methods")
+            print("  [ERROR] AgentDashboard missing methods")
             return False
             
         # Check signal connections
@@ -93,13 +93,13 @@ def test_hud_integration():
         if app is None:
             print("  ⚠ No QApplication - HUD needs GUI mode")
         else:
-            print("  ✓ QApplication available")
+            print("  [OK] QApplication available")
         
         print("  Result: PASS")
         return True
         
     except Exception as e:
-        print(f"  ✗ HUD integration error: {e}")
+        print(f"  [ERROR] HUD integration error: {e}")
         import traceback
         traceback.print_exc()
         return False
@@ -115,24 +115,24 @@ def test_visual_orchestrator():
         from agents.visual_orchestrator import VisualOrchestrator
         
         orch = VisualOrchestrator()
-        print("  ✓ VisualOrchestrator initialized")
+        print("  [OK] VisualOrchestrator initialized")
         
         # Test screen awareness
         summary = orch.get_screen_summary()
         print(f"  Screen summary: {summary[:80]}...")
-        print("  ✓ Screen awareness working")
+        print("  [OK] Screen awareness working")
         
         # Test simple mission (doesn't need to complete)
         print("  Testing autonomous mission (5 steps max)...")
         result = orch.execute_mission("Open Notepad")
         print(f"  Mission result: {result[:80]}...")
-        print("  ✓ Autonomous execution working")
+        print("  [OK] Autonomous execution working")
         
         print("  Result: PASS")
         return True
         
     except Exception as e:
-        print(f"  ✗ VisualOrchestrator error: {e}")
+        print(f"  [ERROR] VisualOrchestrator error: {e}")
         import traceback
         traceback.print_exc()
         return False
@@ -152,18 +152,18 @@ def test_system_controller_vision():
         # Test visual_locate (search for something on screen)
         result = system_controller.visual_locate("test")
         print(f"  visual_locate('test'): {type(result).__name__}")
-        print("  ✓ OCR vision working")
+        print("  [OK] OCR vision working")
         
         # Test locate_and_click
         result = system_controller.locate_and_click(100, 100, verify=False)
         print(f"  locate_and_click(100,100): {result[:50]}...")
-        print("  ✓ Humanized click working")
+        print("  [OK] Humanized click working")
         
         print("  Result: PASS")
         return True
         
     except Exception as e:
-        print(f"  ✗ SystemController error: {e}")
+        print(f"  [ERROR] SystemController error: {e}")
         import traceback
         traceback.print_exc()
         return False
@@ -182,17 +182,17 @@ def test_web_navigator():
         
         # Test navigation (we won't actually navigate, just check method exists)
         if hasattr(web_navigator, 'navigate'):
-            print("  ✓ navigate() method available")
+            print("  [OK] navigate() method available")
         if hasattr(web_navigator, 'click_element'):
-            print("  ✓ click_element() method available")
+            print("  [OK] click_element() method available")
         if hasattr(web_navigator, 'fill_input'):
-            print("  ✓ fill_input() method available")
+            print("  [OK] fill_input() method available")
         
         print("  Result: PASS")
         return True
         
     except Exception as e:
-        print(f"  ✗ WebNavigator error: {e}")
+        print(f"  [ERROR] WebNavigator error: {e}")
         return False
 
 
@@ -212,30 +212,30 @@ def test_humanized_input():
             typo_chance=0.0  # No typos in test
         )
         human = HumanizedInput(config)
-        print("  ✓ HumanizedInput created")
+        print("  [OK] HumanizedInput created")
         
         # Test mouse movement (non-smooth for speed)
         human.move_to(200, 200, smooth=False)
-        print("  ✓ Mouse movement working")
+        print("  [OK] Mouse movement working")
         
         # Test typing
         human.type_text("Test typing")
-        print("  ✓ Typing working")
+        print("  [OK] Typing working")
         
         # Test hotkey
         human.hotkey('ctrl', 'c')
-        print("  ✓ Hotkey working")
+        print("  [OK] Hotkey working")
         
         # Test Bezier path generation
         path = human._calculate_bezier_path((0,0), (100,100), 30)
         assert len(path) == 30, "Bezier path wrong length"
-        print("  ✓ Bezier curves working")
+        print("  [OK] Bezier curves working")
         
         print("  Result: PASS")
         return True
         
     except Exception as e:
-        print(f"  ✗ HumanizedInput error: {e}")
+        print(f"  [ERROR] HumanizedInput error: {e}")
         import traceback
         traceback.print_exc()
         return False
@@ -253,7 +253,7 @@ def test_action_verifier():
         
         human = HumanizedInput()
         verifier = ActionVerifier(human)
-        print("  ✓ ActionVerifier created")
+        print("  [OK] ActionVerifier created")
         
         # Test image difference
         import numpy as np
@@ -261,7 +261,7 @@ def test_action_verifier():
         img2 = np.full((10, 10), 255, dtype=np.uint8)
         diff = verifier._image_difference(img1, img2)
         assert diff > 0.5, f"Image diff should be high, got {diff}"
-        print(f"  ✓ Image difference working (diff={diff:.2f})")
+        print(f"  [OK] Image difference working (diff={diff:.2f})")
         
         # Test verified_action wrapper
         def good_action():
@@ -269,13 +269,13 @@ def test_action_verifier():
         
         success, msg = verified_action(good_action, lambda: True, 1)
         assert success, "verified_action should succeed"
-        print("  ✓ Retry wrapper working")
+        print("  [OK] Retry wrapper working")
         
         print("  Result: PASS")
         return True
         
     except Exception as e:
-        print(f"  ✗ ActionVerifier error: {e}")
+        print(f"  [ERROR] ActionVerifier error: {e}")
         import traceback
         traceback.print_exc()
         return False
@@ -304,7 +304,7 @@ def run_all_tests():
             result = test_func()
             results.append((name, result))
         except Exception as e:
-            print(f"\n  ✗ Test '{name}' crashed: {e}")
+            print(f"\n  [ERROR] Test '{name}' crashed: {e}")
             results.append((name, False))
     
     # Summary
@@ -316,7 +316,7 @@ def run_all_tests():
     total = len(results)
     
     for name, result in results:
-        status = "✓ PASS" if result else "✗ FAIL"
+        status = "[OK] PASS" if result else "[ERROR] FAIL"
         print(f"  {status}: {name}")
     
     print(f"\nTotal: {passed}/{total} tests passed ({passed/total*100:.1f}%)")

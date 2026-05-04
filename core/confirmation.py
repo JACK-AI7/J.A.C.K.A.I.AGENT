@@ -5,7 +5,7 @@ def confirm_action(action_description: str):
     Mandatory human-in-the-loop confirmation for dangerous actions.
     In a headless/GUI mode, this would trigger a UI popup.
     """
-    print(f"\n[⚠️ SECURITY ALERT] JACK is requesting permission to:")
+    print(f"\n[[WARN] SECURITY ALERT] JACK is requesting permission to:")
     print(f"👉 {action_description}")
     
     # In CLI mode

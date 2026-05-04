@@ -157,12 +157,12 @@ def test_youtube_full_flow():
         # Use vision to check for play/pause button
         play_btn = sc.visual_locate("pause")
         if isinstance(play_btn, dict):
-            print("  ✓ Video appears to be playing (pause button visible)")
+            print("  [OK] Video appears to be playing (pause button visible)")
         else:
             # Look for time indicator (01:23 / 10:45)
             time_display = sc.visual_locate(":")
             if isinstance(time_display, dict):
-                print("  ✓ Video appears to be playing (time display visible)")
+                print("  [OK] Video appears to be playing (time display visible)")
             else:
                 print("  ⚠ Could not verify video playback")
     except Exception as e:
