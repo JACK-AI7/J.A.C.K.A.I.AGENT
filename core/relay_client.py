@@ -15,9 +15,14 @@ class RelayClient:
         self.websocket = None
         self.loop = None
         self.is_running = False
+        self._mobile_controller = None  # Will be set by main.py
         
         # Register as forwarder to capture telemetry
         register_forwarder(self.forward_telemetry)
+
+    def set_mobile_controller(self, controller):
+        """Inject the MobileController instance for ADB command execution."""
+        self._mobile_controller = controller
 
     def start(self):
         """Start the relay client in a background thread."""
@@ -38,26 +43,39 @@ class RelayClient:
                     self.websocket = ws
                     print(f"TITAN_MOBILE_BRIDGE: Connected to {self.relay_url}")
                     
-                    # Send initial online status
                     await self.send_to_relay({"status": "ONLINE", "message": "PC Agent Connected"})
                     
-                    # Start keep-alive ping loop
                     async def _ping():
                         while self.websocket == ws:
                             try:
                                 await ws.ping()
                                 await asyncio.sleep(20)
-                            except: break
-                    
+                            except:
+                                break
                     asyncio.create_task(_ping())
 
                     async for message in ws:
                         try:
-                            # If it's a raw string command (from mobile)
-                            print(f"TITAN_MOBILE_BRIDGE: Received Command: {message}")
-                            # Execute on agent
-                            if self.agent:
-                                threading.Thread(target=self.agent.process_text_command, args=(message,), daemon=True).start()
+                            data = json.loads(message)
+                            
+                            # ADB command from mobile app
+                            if data.get("type") == "adb_command":
+                                action = data.get("action")
+                                params = data.get("params", {})
+                                result = await self._execute_adb_action(action, params)
+                                response = {"type": "command_result", "action": action, "result": result}
+                                await ws.send(json.dumps(response))
+                                await self.broadcast(json.dumps(response), ws)
+                            
+                            # Legacy: raw string command
+                            elif "command" in data:
+                                command = data["command"]
+                                print(f"TITAN_MOBILE_BRIDGE: Received Command: {command}")
+                                if self.agent:
+                                    threading.Thread(target=self.agent.process_text_command, args=(command,), daemon=True).start()
+                            else:
+                                print(f"TITAN_MOBILE_BRIDGE: Unknown message type: {data}")
+                                
                         except Exception as e:
                             print(f"TITAN_MOBILE_BRIDGE: Command Error: {e}")
                             
@@ -65,6 +83,55 @@ class RelayClient:
                 self.websocket = None
                 print(f"TITAN_MOBILE_BRIDGE: Connection failed ({e}). Retrying in 5s...")
                 await asyncio.sleep(5)
+
+    async def _execute_adb_action(self, action, params):
+        """Execute ADB command using the injected controller."""
+        if not self._mobile_controller:
+            return "ERROR: Mobile ADB controller not attached"
+        
+        loop = asyncio.get_event_loop()
+        return await loop.run_in_executor(None, self._run_adb_action_sync, action, params)
+    
+    def _run_adb_action_sync(self, action, params):
+        """Synchronous ADB action runner."""
+        try:
+            ctrl = self._mobile_controller
+            if action == "tap":
+                return ctrl.adb_input_tap(params.get("x", 0), params.get("y", 0))
+            elif action == "swipe":
+                return ctrl.adb_input_swipe(
+                    params.get("x1", 0), params.get("y1", 0),
+                    params.get("x2", 0), params.get("y2", 0),
+                    params.get("duration", 300))
+            elif action == "text":
+                return ctrl.adb_input_text(params.get("text", ""))
+            elif action == "key":
+                return ctrl.adb_press_key(params.get("key", ""))
+            elif action == "launch":
+                return ctrl.adb_start_app(params.get("package", ""))
+            elif action == "screencap":
+                img = ctrl.adb_screencap()
+                if img:
+                    import base64
+                    from io import BytesIO
+                    buf = BytesIO()
+                    img.save(buf, format="PNG")
+                    b64 = base64.b64encode(buf.getvalue()).decode('utf-8')
+                    screenshot_msg = {
+                        "type": "screenshot_update",
+                        "data": b64,
+                        "timestamp": time.time()
+                    }
+                    asyncio.run_coroutine_threadsafe(
+                        self.broadcast(json.dumps(screenshot_msg), None),
+                        self.loop
+                    )
+                    return "Screenshot sent"
+                return "Screenshot failed"
+            else:
+                return f"Unknown action: {action}"
+        except Exception as e:
+            return f"ADB error: {e}"
 
     def forward_telemetry(self, signal_name, *args):
         """Forward internal signals to the mobile app."""
@@ -87,10 +154,8 @@ class RelayClient:
             payload["speaker"] = args[0]
             payload["text"] = args[1]
         else:
-            # Generic payload for other signals
             payload["args"] = list(args)
 
-        # Schedule sending in the event loop
         asyncio.run_coroutine_threadsafe(self.send_to_relay(payload), self.loop)
 
     async def send_to_relay(self, data):
