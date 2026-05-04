@@ -1,5 +1,7 @@
 from core.parser import parse_llm_output
 from core.logger import log_event
+from core.aimp_bridge import AIMPBridge
+from memory.persistent_memory import persistent_memory
 import json
 
 class Executor:
@@ -21,7 +23,13 @@ class Executor:
         if not self.mission_history:
             self.mission_history = []
             
-        # 0. Append user input/result to history
+        # 0. Query Long-Term Memory for Context
+        memories = persistent_memory.search(str(user_input), limit=2)
+        if memories:
+            mem_context = "\nRelevant Memories:\n" + "\n".join([f"- {m['content']}" for m in memories])
+            self.mission_history.append({"role": "system", "content": mem_context})
+
+        # 1. Append user input/result to history
         self.mission_history.append({"role": "user", "content": str(user_input)})
         
         # 1. Generate response from AI using full history
@@ -33,6 +41,15 @@ class Executor:
         
         # Append AI response to history
         self.mission_history.append({"role": "assistant", "content": json.dumps(parsed)})
+
+        # --- EMIT THOUGHT FOR VISUALIZATION ---
+        thought = parsed.get("thought")
+        if thought:
+            try:
+                from core.nexus_bridge import get_signals
+                get_signals().emit_bridge("thought_received", thought, "thought")
+                get_signals().emit_bridge("agent_thought", "JACK", thought, 0.95)
+            except: pass
 
         # 3. Stuck Detection
         action_key = f"{parsed.get('type')}:{parsed.get('name')}:{json.dumps(parsed.get('args', {}), sort_keys=True)}"
@@ -61,7 +78,35 @@ class Executor:
                     # If it's a simple string, wrap it as the first expected arg
                     tool_args = {"task": tool_args}
             
+            # --- PRIVACY GUARD ---
+            from core.privacy_guard import check_privacy
+            if check_privacy(tool_name, tool_args):
+                return {
+                    "type": "final",
+                    "status": "failed",
+                    "message": "SECURITY ALERT: I've blocked this action because it contains potentially sensitive information (passwords, keys, or credentials) that shouldn't be sent online. Your safety is my priority, Sir."
+                }
+
+            # Wrap in AIMP format for internal standardization
+            aimp_req = AIMPBridge.wrap_tool_call(tool_name, tool_args)
+            log_event(f"AIMP Request: {json.dumps(aimp_req)}")
+            
             result = await self.tools.execute(tool_name, tool_args)
+            
+            # Wrap result in AIMP
+            aimp_res = AIMPBridge.wrap_tool_result(tool_name, result)
+            log_event(f"AIMP Response: {json.dumps(aimp_res)}")
+            
+            # --- EMIT OBSERVATION FOR VISUALIZATION ---
+            result_summary = str(result)[:200] + ("..." if len(str(result)) > 200 else "")
+            try:
+                from core.nexus_bridge import get_signals
+                signals = get_signals()
+                signals.emit_bridge("thought_received", f"Observation ({tool_name}): {result_summary}", "log")
+                signals.emit_bridge("agent_action", "JACK", "OBSERVATION", tool_name, result_summary)
+                # Streaming Output for TUI/Dashboard
+                signals.emit_bridge("tool_output", tool_name, str(result))
+            except: pass
             
             # --- BEHAVIOR LEARNING ---
             try:
@@ -114,6 +159,14 @@ class Executor:
             if not parsed.get("message"):
                 parsed["message"] = parsed.get("response") or parsed.get("answer") or parsed.get("thought") or str(parsed)
             
+            # Log to Persistent Memory if it's a significant summary
+            if parsed.get("status") == "success":
+                persistent_memory.add_memory(
+                    content=parsed["message"],
+                    memory_type="mission_result",
+                    metadata={"status": "success", "mission": str(user_input)}
+                )
+
             return parsed
 
             
@@ -126,7 +179,16 @@ class Executor:
                     tool_args = json.loads(tool_args)
                 except:
                     tool_args = {"task": tool_args}
+            
+            # Wrap in AIMP format
+            aimp_req = AIMPBridge.wrap_tool_call(tool_name, tool_args)
+            log_event(f"AIMP Request (Action): {json.dumps(aimp_req)}")
+
             result = await self.tools.execute(tool_name, tool_args)
+            
+            # Wrap result in AIMP
+            aimp_res = AIMPBridge.wrap_tool_result(tool_name, result)
+            log_event(f"AIMP Response (Action): {json.dumps(aimp_res)}")
             result_str = result.get("result", result.get("error", str(result))) if isinstance(result, dict) else str(result)
             return f"TOOL_RESULT ({tool_name}): {result_str}"
 

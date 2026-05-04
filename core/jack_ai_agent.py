@@ -38,6 +38,29 @@ class JackAIAgent:
         self.is_running = False
         self.is_active = True  # Tracks if AI brain is actually listening
         self.current_language = "en"
+        
+        # --- HERMES TECH: SCHEDULER & SUMMARIZER ---
+        from core.scheduler import NLScheduler
+        from memory.memory_summarizer import MemorySummarizer
+        self.scheduler = NLScheduler(self.loop)
+        self.summarizer = MemorySummarizer(self.ai_handler)
+        
+        # Start background engines
+        import asyncio
+        try:
+            loop = asyncio.get_event_loop()
+            if loop.is_running():
+                asyncio.create_task(self.scheduler.start())
+                asyncio.create_task(self.summarizer.start())
+            else:
+                # If no loop, it will be started in start() method or similar
+                pass
+        except: pass
+
+        # Set global reference for tools
+        import core.jack_ai_agent as jaa
+        jaa.global_agent = self
+        
         self._consecutive_errors = 0
         self._max_consecutive_errors = 15
 
@@ -171,6 +194,13 @@ class JackAIAgent:
                 return
 
         if not text:
+            return
+
+        # --- SLASH COMMAND PROCESSING ---
+        from core.command_processor import process_slash_command
+        cmd_res = process_slash_command(self, text)
+        if cmd_res:
+            self._handle_response(cmd_res)
             return
 
         if self.hud:

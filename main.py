@@ -308,7 +308,11 @@ def main():
                 while assistant_thread.is_alive():
                     assistant_thread.join(timeout=1.0)
             except KeyboardInterrupt:
-                shutdown()
+                if assistant.loop and assistant.loop.interrupt is False:
+                    print("\nNeural Interrupt detected. Stopping current mission...")
+                    assistant.loop.interrupt = True
+                else:
+                    shutdown()
             return 0
 
     except Exception as e:

@@ -2499,4 +2499,33 @@ FUNCTION_MAP = {
     "translate_text": translate_text,
     "get_crypto_price": get_crypto_price,
     "tell_joke": tell_joke,
+    "schedule_automation": schedule_automation,
+    "execute_in_docker": execute_in_docker,
+    "switch_model": switch_model,
+    "execute_on_remote_server": execute_on_remote_server,
 }
+
+# --- ATTACH SCHEDULER TOOL ---
+def schedule_automation(task_description: str, timing: str):
+    """Tool for JACK to schedule tasks autonomously. Use timing like 'every minute', 'every hour', or 'ISO-timestamp'."""
+    from core.jack_ai_agent import global_agent
+    if hasattr(global_agent, "scheduler"):
+        return global_agent.scheduler.schedule_task(task_description, timing)
+    return "Scheduler not initialized."
+
+def execute_in_docker(code: str):
+    """Tool for JACK to run code in a safe, isolated Docker container. Use this for untrusted code or complex scripts."""
+    from core.docker_executor import execute_in_docker as run_docker
+    return run_docker(code)
+
+def switch_model(profile_name: str):
+    """Switch JACK's neural profile. Available: 'qwen-coder', 'mistral', 'llama3', 'fast', 'reasoning', 'eyes'."""
+    from core.jack_ai_agent import global_agent
+    if hasattr(global_agent, "ai_handler"):
+        return global_agent.ai_handler.switch_model(profile_name)
+    return "AI Handler not initialized."
+
+def execute_on_remote_server(host, username, auth, command):
+    """Tool for JACK to manage remote servers via SSH. 'auth' can be a password or path to a private key."""
+    from core.ssh_executor import execute_on_remote_server as run_ssh
+    return run_ssh(host, username, auth, command)

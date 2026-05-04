@@ -209,6 +209,7 @@ You must ALWAYS respond with a JSON object. No preamble, no postscript.
 
 ### TOOL CALL (To execute a single tool):
 {
+"thought": "Your internal reasoning process: what you are doing and why.",
 "type": "tool",
 "name": "tool_name",
 "args": {"arg1": "value"}
@@ -216,6 +217,7 @@ You must ALWAYS respond with a JSON object. No preamble, no postscript.
 
 ### BOT DELEGATION (To use a specialized bot for a task):
 {
+"thought": "Your internal reasoning process: why you are delegating to this bot.",
 "type": "bot",
 "name": "bot_name",
 "task": "detailed instructions for the bot"
@@ -223,6 +225,7 @@ You must ALWAYS respond with a JSON object. No preamble, no postscript.
 
 ### FINAL RESPONSE (Only when the task is COMPLETELY finished):
 {
+"thought": "Reflection on the mission: what was achieved and how.",
 "type": "final",
 "status": "success | failed",
 "message": "A natural, high-fidelity response summarizing exactly what you accomplished for the user."

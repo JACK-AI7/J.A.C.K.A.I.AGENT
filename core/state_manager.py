@@ -5,7 +5,12 @@ class StateManager:
             "last_tool": None,
             "app_open": {},
             "history": [],
-            "mission_start_time": None
+            "mission_start_time": None,
+            "user_profile": {
+                "name": "Boss",
+                "preferences": {},
+                "learned_facts": []
+            }
         }
 
     def update(self, key, value):
