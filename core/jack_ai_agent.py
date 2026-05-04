@@ -148,10 +148,11 @@ class JackAIAgent:
 
         # Listening state
         if self.hud:
-            self.hud.signals.status_changed.emit("Listening...", "listening")
-            self.hud.signals.activity_received.emit(
-                "System: Listening for commands..."
-            )
+            try:
+                self.hud.signals.status_changed.emit("Listening...", "listening")
+                self.hud.signals.activity_received.emit("System: Listening for commands...")
+            except (RuntimeError, AttributeError):
+                self.hud = None
         
         try:
             from core.nexus_bridge import get_signals
@@ -173,11 +174,12 @@ class JackAIAgent:
             return
 
         if self.hud:
-            self.hud.signals.status_changed.emit("Thinking...", "thinking")
-            self.hud.signals.activity_received.emit(
-                f"System: Processing query: {text[:50]}..."
-            )
-            self.hud.signals.transcription_received.emit(text)
+            try:
+                self.hud.signals.status_changed.emit("Thinking...", "thinking")
+                self.hud.signals.activity_received.emit(f"System: Processing query: {text[:50]}...")
+                self.hud.signals.transcription_received.emit(text)
+            except (RuntimeError, AttributeError):
+                self.hud = None
         
         # Dashboard Sync: User Chat + Pipeline
         try:
@@ -361,12 +363,15 @@ class JackAIAgent:
             
         print(f"JACK: {response}")
         if self.hud:
-            self.hud.signals.response_received.emit(response)
-            self.hud.signals.status_changed.emit("Speaking...", "speaking")
-            
-            # Safe slicing
-            display_text = response[:50] if isinstance(response, str) else "Processing..."
-            self.hud.signals.activity_received.emit(f"Response: {display_text}...")
+            try:
+                self.hud.signals.response_received.emit(response)
+                self.hud.signals.status_changed.emit("Speaking...", "speaking")
+                
+                # Safe slicing
+                display_text = response[:50] if isinstance(response, str) else "Processing..."
+                self.hud.signals.activity_received.emit(f"Response: {display_text}...")
+            except (RuntimeError, AttributeError):
+                self.hud = None
             
         # Dashboard Sync: JACK Chat + Pipeline
         try:

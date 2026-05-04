@@ -73,7 +73,11 @@ class NexusSignals(QObject):
         """Emit locally AND send across the IPC bridge if acting as client."""
         # Always emit locally for internal components
         try:
-            getattr(self, signal_name).emit(*args)
+            signal = getattr(self, signal_name)
+            signal.emit(*args)
+        except (RuntimeError, AttributeError):
+            # Signal source or object has been deleted (common on GUI close)
+            pass
         except Exception:
             pass
         
@@ -119,7 +123,10 @@ class NexusSignals(QObject):
                             args = payload["args"]
                             # Emit the signal in the Dashboard process
                             try:
-                                getattr(self, signal_name).emit(*args)
+                                signal = getattr(self, signal_name)
+                                signal.emit(*args)
+                            except (RuntimeError, AttributeError):
+                                pass
                             except:
                                 pass
                         except socket.timeout:

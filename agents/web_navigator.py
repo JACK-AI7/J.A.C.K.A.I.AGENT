@@ -82,6 +82,10 @@ class WebNavigator:
             # Wait a moment for dynamic content
             import time
             time.sleep(2)
+            try:
+                from core.nexus_bridge import get_signals
+                get_signals().emit_bridge("pipeline_stage", "NAVIGATED", f"Browsing: {url}")
+            except: pass
             return f"Navigated to {url}"
         except Exception as e:
             return f"Failed to navigate to {url}: {str(e)}"
@@ -213,7 +217,8 @@ class WebNavigator:
             self.browser = None
             self.playwright = None
             try:
-                self.signals.emit_bridge("agent_status", "WebNavigator", "INITIALIZED", "Ready")
+                from core.nexus_bridge import get_signals
+                get_signals().emit_bridge("agent_status", "WebNavigator", "OFFLINE", "Closed")
             except: pass
             return "Automation Engine closed."
         return "No engine running."
