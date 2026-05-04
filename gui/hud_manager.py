@@ -588,33 +588,33 @@ class HUDWindow(QMainWindow):
                 self.activateWindow()
                 self.raise_()
 
-     def launch_nexus_dashboard(self):
-         """Launch the Titan Nexus Dashboard in-process for live signal integration."""
-         try:
-             # Import dashboard (creates its own QMainWindow)
-             from gui.dashboard import NexusDashboard
-             
-             # Create and show the dashboard window (keep reference)
-             if not hasattr(self, 'dashboard_window') or self.dashboard_window is None:
-                 self.dashboard_window = NexusDashboard()
-                 self.dashboard_window.show()
-                 
-                 # Connect pipeline updates from HUD to dashboard
-                 try:
-                     signals = get_signals()
-                     signals.pipeline_stage.connect(self.dashboard_window.pipeline.set_stage)
-                     signals.neural_pulse.connect(self.dashboard_window.neural_grid.pulse)
-                     signals.thinking_token.connect(self.dashboard_window.thinking_stream.add_token)
-                 except: pass
-             else:
-                 self.dashboard_window.show()
-                 self.dashboard_window.raise_()
-             
-             print("HUD: Nexus Dashboard launched successfully.")
-             self.update_status("NEXUS LINK ACTIVE", "idle")
-         except Exception as e:
-             print(f"HUD: Failed to launch dashboard: {e}")
-             self.update_status("NEXUS LINK FAILED", "executing")
+    def launch_nexus_dashboard(self):
+        """Launch the Titan Nexus Dashboard in-process for live signal integration."""
+        try:
+            # Import dashboard (creates its own QMainWindow)
+            from gui.dashboard import NexusDashboard
+            
+            # Create and show the dashboard window (keep reference)
+            if not hasattr(self, 'dashboard_window') or self.dashboard_window is None:
+                self.dashboard_window = NexusDashboard()
+                self.dashboard_window.show()
+                
+                # Connect pipeline updates from HUD to dashboard
+                try:
+                    signals = get_signals()
+                    signals.pipeline_stage.connect(self.dashboard_window.pipeline.set_stage)
+                    signals.neural_pulse.connect(self.dashboard_window.neural_grid.pulse)
+                    signals.thinking_token.connect(self.dashboard_window.thinking_stream.add_token)
+                except: pass
+            else:
+                self.dashboard_window.show()
+                self.dashboard_window.raise_()
+            
+            print("HUD: Nexus Dashboard launched successfully.")
+            self.update_status("NEXUS LINK ACTIVE", "idle")
+        except Exception as e:
+            print(f"HUD: Failed to launch dashboard: {e}")
+            self.update_status("NEXUS LINK FAILED", "executing")
 
     def _animate_to(self, target_rect):
         """Smoothly animate the window to a target rectangle."""
