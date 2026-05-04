@@ -23,8 +23,6 @@ class SpeechHandler:
         # --- LOCAL AI SPEECH ENGINE (ZERO API LATENCY) ---
         start_time = time.time()
         print(f"[{time.time()-start_time:.2f}s] Initializing Local Neural Hearing (RealtimeSTT)...")
-        # Use AudioToTextRecorder for super fast local transcription
-        # It handles VAD, Buffering, and Transcription internally
         try:
             self.recorder = AudioToTextRecorder(
                 model=WHISPER_SETTINGS["model_size"],
@@ -32,12 +30,12 @@ class SpeechHandler:
                 compute_type=WHISPER_SETTINGS["compute_type"],
                 beam_size=WHISPER_SETTINGS["beam_size"],
                 silero_sensitivity=WHISPER_SETTINGS["vad_parameters"].get("threshold", 0.4),
-                silero_use_onnx=True, # Faster VAD processing
+                silero_use_onnx=True,
                 post_speech_silence_duration=WHISPER_SETTINGS["vad_parameters"].get("min_silence_duration_ms", 300) / 1000.0,
                 min_length_of_recording=RECOGNITION_SETTINGS.get("min_length_of_recording", 0.5),
                 input_device_index=RECOGNITION_SETTINGS.get("FORCE_MICROPHONE_INDEX"),
                 spinner=False,
-                level=30 # Only log errors
+                level=30
             )
             print(f"[{time.time()-start_time:.2f}s] Local Neural Hearing Online (Model: {WHISPER_SETTINGS['model_size']})")
         except Exception as e:
@@ -45,12 +43,9 @@ class SpeechHandler:
             self.recorder = None
 
         print(f"[{time.time()-start_time:.2f}s] Initializing Local Neural Voice (RealtimeTTS)...")
-        # SystemEngine used as fallback
-        # KokoroEngine used for high-end local voice
         try:
             if VOICE_SETTINGS.get("engine") == "kokoro":
                 print(f"  - Engine: KOKORO (Voice: {VOICE_SETTINGS['voice']})")
-                # Explicitly only pass supported arguments to avoid 'lang' issues in newer versions
                 self.engine = KokoroEngine(
                     voice=VOICE_SETTINGS["voice"]
                 )
@@ -66,7 +61,7 @@ class SpeechHandler:
             self.stream = TextToAudioStream(self.engine)
             print("Fallback to SystemEngine active.")
 
-    def listen_for_speech(self, timeout=15, phrase_time_limit=20):
+    def listen_for_speech(self, timeout=15):
         """Ultra-fast local speech detection with RealtimeSTT."""
         print("[JACK Hearing] Local Neural Sensors Active...")
         get_signals().emit_bridge("neural_pulse", 5)
@@ -76,12 +71,9 @@ class SpeechHandler:
                 print("[JACK Hearing] Neural Sensors OFFLINE (STT Init Failed)")
                 return None
 
-            # Use a try-except with shorter timeout to avoid blocking
             start = time.time()
-            text = None
             while time.time() - start < timeout:
                 try:
-                    # RealtimeSTT's text() blocks until speech is detected and transcribed
                     text = self.recorder.text()
                     if text:
                         text = text.strip()
@@ -89,35 +81,9 @@ class SpeechHandler:
                             print(f"[JACK Hearing] Neural Capture: '{text}'")
                             return text
                 except Exception as e:
-                    # If the recorder throws an error (e.g., broken pipe), attempt to continue
                     if "broken" in str(e).lower() or "pipe" in str(e).lower():
                         print(f"[JACK Hearing] Recorder error, reinitializing...")
                         self._reinit_recorder()
-                    # Small delay before retry
-                    time.sleep(0.1)
-            return None
-        except Exception as e:
-            print(f"[JACK Hearing] Capture Error: {e}")
-            return None
-
-            # Use a try-except with shorter timeout to avoid blocking
-            start = time.time()
-            text = None
-            while time.time() - start < timeout:
-                try:
-                    # RealtimeSTT's text() blocks until speech is detected and transcribed
-                    text = self.recorder.text()
-                    if text:
-                        text = text.strip()
-                        if text:
-                            print(f"[JACK Hearing] Neural Capture: '{text}'")
-                            return text
-                except Exception as e:
-                    # If the recorder throws an error (e.g., broken pipe), attempt to continue
-                    if "broken" in str(e).lower() or "pipe" in str(e).lower():
-                        print(f"[JACK Hearing] Recorder error, reinitializing...")
-                        self._reinit_recorder()
-                    # Small delay before retry
                     time.sleep(0.1)
             return None
         except Exception as e:
@@ -128,22 +94,17 @@ class SpeechHandler:
         """Local High-End Streaming TTS. No API delay."""
         if not text: return
 
-        # Cleaning patterns (Persona/Babel Filter)
         text = self._clean_for_speech(text)
         
-        # Visual feedback
         get_signals().emit_bridge("neural_pulse", 8)
         print(f"JACK Speaking (Local): {text}")
 
         with self.speech_lock:
             self.is_speaking = True
             try:
-                # Local streaming TTS
-                # feed() adds text to the stream, play_async() handles output
                 self.stream.feed(text)
                 self.stream.play_async()
                 
-                # Wait for playback completion in a way that respects the lock
                 while self.stream.is_playing():
                     time.sleep(0.1)
             except Exception as e:
@@ -153,13 +114,11 @@ class SpeechHandler:
 
     def _clean_for_speech(self, text):
         """Babel Filter for clean verbalization."""
-        # Strip long technical logs
         if len(text) > 400 or text.count('\n') > 4:
             if "error" in text.lower() or "exception" in text.lower():
                 return "I've encountered a system anomaly, Sir. I've logged the details but prevented a vocal cascade."
             return "Processing complex data stream, Sir. Mission parameters are being finalized."
 
-        # Strip bracketed IDs and HEX codes
         text = re.sub(r'\[.*?\]', '', text)
         text = re.sub(r'0x[a-fA-F0-9]+', '', text)
         text = re.sub(r'[a-zA-Z]:\\[^:\n]*', 'local file path', text)
@@ -178,21 +137,13 @@ class SpeechHandler:
     def calibrate_microphone(self):
         """Standardizes environmental noise levels."""
         print("[JACK Hearing] Calibrating Neural Sensors...")
-        # RealtimeSTT handles VAD internally; just ensure recorder exists
         if self.recorder:
             try:
-                # Attempt to read a small buffer to warm up
+                # Warm up
                 _ = self.recorder.text()
+                return True
             except:
                 pass
-        return True 
-        # we perform a brief wake check.
-        try:
-            if self.recorder:
-                print("  - Environmental noise profile captured.")
-                return True
-        except:
-            pass
         return False
 
     def _reinit_recorder(self):
