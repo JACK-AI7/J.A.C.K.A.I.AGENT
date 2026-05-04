@@ -123,8 +123,8 @@ MODEL_PROFILES = {
         "options": {"temperature": 0.6},
     },
     "eyes": {
-        "model": "llava:latest",
-        "description": "Visual analysis & OCR (LLaVA)",
+        "model": "llama3.2-vision:latest",  # Use official Meta vision model (better support)
+        "description": "Visual analysis & OCR (Meta Llama 3.2 Vision)",
         "options": {"temperature": 0.1},
     },
 }
