@@ -122,12 +122,23 @@ MODEL_PROFILES = {
         "description": "Chain-of-thought reasoning powerhouse (DeepSeek R1)",
         "options": {"temperature": 0.6},
     },
+    "ultra-low": {
+        "model": "llama3.2:1b",
+        "description": "Minimal RAM/GPU usage (Llama 3.2 1B)",
+        "options": {"temperature": 0.1, "num_thread": 2}
+    },
     "eyes": {
-        "model": "llama3.2-vision:latest",  # Use official Meta vision model (better support)
+        "model": "llama3.2-vision:latest",
         "description": "Visual analysis & OCR (Meta Llama 3.2 Vision)",
         "options": {"temperature": 0.1},
     },
 }
+
+# --- PERFORMANCE OPTIMIZATION ---
+LOW_RESOURCE_MODE = False # Set to True to force 1B models and save RAM/GPU
+if LOW_RESOURCE_MODE:
+    ACTIVE_PROFILE = "ultra-low"
+    MODEL_PROFILES["reasoning"]["model"] = "deepseek-r1:1.5b" # Use 1.5B instead of 7B
 
 OLLAMA_SETTINGS = {
     "base_url": "http://localhost:11434",

@@ -15,6 +15,7 @@ class CommandProcessor:
             "/stop": self.stop_work,
             "/sethome": self.set_home,
             "/clear": self.clear_screen,
+            "/optimize": self.optimize_system,
         }
 
     def process(self, text: str) -> Optional[str]:
@@ -80,6 +81,19 @@ class CommandProcessor:
         """Clear the CLI display."""
         os.system('cls' if os.name == 'nt' else 'clear')
         return "Neural display purged."
+
+    def optimize_system(self, args) -> str:
+        """Deep purge of caches and switch to low-resource mode."""
+        from core.tools import system_cleanup
+        cleanup_res = system_cleanup()
+        
+        # Purge mobile build if exists
+        import shutil
+        if os.path.exists("mobile/build"):
+            shutil.rmtree("mobile/build", ignore_errors=True)
+            cleanup_res += "\n- Purged mobile build artifacts (Major RAM save)."
+            
+        return f"### SYSTEM OPTIMIZATION COMPLETE:\n{cleanup_res}\n\nSir, I recommend setting 'LOW_RESOURCE_MODE = True' in core/config.py to further reduce GPU/RAM usage."
 
     def _is_valid_skill(self, skill_name: str) -> bool:
         return os.path.exists(os.path.join("skills", skill_name))
