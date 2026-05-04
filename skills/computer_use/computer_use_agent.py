@@ -71,21 +71,39 @@ Output Format: ACTION: click(500, 250)
                 "model": self.model,
                 "prompt": f"{system_prompt}\nTask: {prompt}\nWhat is the next action?",
                 "images": [screenshot_b64],
-                "stream": False
+                "stream": False,
+                "options": {
+                    "temperature": 0.1,  # More deterministic
+                    "num_predict": 256,
+                }
             }
             
             try:
-                response = requests.post(self.ollama_url, json=payload)
-                result = response.json()
-                response_text = result.get("response", "")
+                print(f"  [Thinking] Step {i+1}: Querying vision model...")
+                response = requests.post(self.ollama_url, json=payload, timeout=30)
                 
-                print(f"TITAN Brain Output: {response_text}")
+                if response.status_code != 200:
+                    print(f"  [ERROR] Ollama API returned {response.status_code}: {response.text}")
+                    # Fallback: try without image? Better to abort
+                    break
+                    
+                result = response.json()
+                response_text = result.get("response", "").strip()
+                
+                if not response_text:
+                    print("  [WARNING] Empty response from model, retrying...")
+                    time.sleep(1)
+                    continue
+                    
+                print(f"  [Thought] {response_text}")
                 
                 # Parse action (relaxed regex to handle brackets or extra spaces)
-                action_match = re.search(r'ACTION:\s*\[?(\w+)\]?\s*\((.*)\)', response_text)
+                action_match = re.search(r'ACTION:\s*\[?(\w+)\]?\s*\((.*)\)', response_text, re.IGNORECASE)
                 if action_match:
                     action_type = action_match.group(1).lower()
-                    params = [p.strip().strip("'").strip('"') for p in action_match.group(2).split(',')]
+                    params = [p.strip().strip("'").strip('"') for p in action_match.group(2).split(',') if p.strip()]
+                    
+                    print(f"  [Action] Executing: {action_type}({params})")
                     
                     # Execute with verification and retry
                     success = self._execute_action_with_retry(action_type, params)
@@ -95,13 +113,62 @@ Output Format: ACTION: click(500, 250)
                     # Human think time between actions
                     time.sleep(random.uniform(0.8, 1.5))
                 else:
-                    if "FINISH" in response_text or "COMPLETE" in response_text:
+                    if "FINISH" in response_text or "COMPLETE" in response_text or "DONE" in response_text:
                         print("Task completed according to brain.")
                         break
-                    print("No recognized action found. Retrying...")
+                    print(f"  [WARNING] No ACTION found in response. Full response: {response_text[:200]}")
+                    # Continue to next iteration to retry
                     
+            except requests.exceptions.RequestException as e:
+                print(f"  [NETWORK ERROR] Ollama request failed: {e}")
+                break
+            except json.JSONDecodeError as e:
+                print(f"  [PARSE ERROR] Invalid JSON response: {e}")
+                break
             except Exception as e:
-                print(f"Local Brain Error: {e}")
+                print(f"  [UNEXPECTED ERROR] {type(e).__name__}: {e}")
+                break
+                    
+                result = response.json()
+                response_text = result.get("response", "").strip()
+                
+                if not response_text:
+                    print("  [WARNING] Empty response from model, retrying...")
+                    time.sleep(1)
+                    continue
+                    
+                print(f"  [Thought] {response_text}")
+                
+                # Parse action (relaxed regex to handle brackets or extra spaces)
+                action_match = re.search(r'ACTION:\s*\[?(\w+)\]?\s*\((.*)\)', response_text, re.IGNORECASE)
+                if action_match:
+                    action_type = action_match.group(1).lower()
+                    params = [p.strip().strip("'").strip('"') for p in action_match.group(2).split(',') if p.strip()]
+                    
+                    print(f"  [Action] Executing: {action_type}({params})")
+                    
+                    # Execute with verification and retry
+                    success = self._execute_action_with_retry(action_type, params)
+                    if not success:
+                        print(f"  [WARNING] Action failed after retries: {action_type}({params})")
+                    
+                    # Human think time between actions
+                    time.sleep(random.uniform(0.8, 1.5))
+                else:
+                    if "FINISH" in response_text or "COMPLETE" in response_text or "DONE" in response_text:
+                        print("Task completed according to brain.")
+                        break
+                    print(f"  [WARNING] No ACTION found in response. Full response: {response_text[:200]}")
+                    # Continue to next iteration to retry
+                    
+            except requests.exceptions.RequestException as e:
+                print(f"  [NETWORK ERROR] Ollama request failed: {e}")
+                break
+            except json.JSONDecodeError as e:
+                print(f"  [PARSE ERROR] Invalid JSON response: {e}")
+                break
+            except Exception as e:
+                print(f"  [UNEXPECTED ERROR] {type(e).__name__}: {e}")
                 break
     
     def _execute_action_with_retry(self, action_type: str, params: list) -> bool:
