@@ -2378,6 +2378,33 @@ def push_to_git(commit_message):
 
 
 
+
+# --- ATTACH SCHEDULER TOOL ---
+def schedule_automation(task_description: str, timing: str):
+    """Tool for JACK to schedule tasks autonomously. Use timing like 'every minute', 'every hour', or 'ISO-timestamp'."""
+    from core.jack_ai_agent import global_agent
+    if hasattr(global_agent, "scheduler"):
+        return global_agent.scheduler.schedule_task(task_description, timing)
+    return "Scheduler not initialized."
+
+def execute_in_docker(code: str):
+    """Tool for JACK to run code in a safe, isolated Docker container. Use this for untrusted code or complex scripts."""
+    from core.docker_executor import execute_in_docker as run_docker
+    return run_docker(code)
+
+def switch_model(profile_name: str):
+    """Switch JACK's neural profile. Available: 'qwen-coder', 'mistral', 'llama3', 'fast', 'reasoning', 'eyes'."""
+    from core.jack_ai_agent import global_agent
+    if hasattr(global_agent, "ai_handler"):
+        return global_agent.ai_handler.switch_model(profile_name)
+    return "AI Handler not initialized."
+
+def execute_on_remote_server(host, username, auth, command):
+    """Tool for JACK to manage remote servers via SSH. 'auth' can be a password or path to a private key."""
+    from core.ssh_executor import execute_on_remote_server as run_ssh
+    return run_ssh(host, username, auth, command)
+
+
 # Mapping from function names to callable functions for the AI tool caller
 FUNCTION_MAP = {
     "get_web_data": get_web_data,
@@ -2505,27 +2532,3 @@ FUNCTION_MAP = {
     "execute_on_remote_server": execute_on_remote_server,
 }
 
-# --- ATTACH SCHEDULER TOOL ---
-def schedule_automation(task_description: str, timing: str):
-    """Tool for JACK to schedule tasks autonomously. Use timing like 'every minute', 'every hour', or 'ISO-timestamp'."""
-    from core.jack_ai_agent import global_agent
-    if hasattr(global_agent, "scheduler"):
-        return global_agent.scheduler.schedule_task(task_description, timing)
-    return "Scheduler not initialized."
-
-def execute_in_docker(code: str):
-    """Tool for JACK to run code in a safe, isolated Docker container. Use this for untrusted code or complex scripts."""
-    from core.docker_executor import execute_in_docker as run_docker
-    return run_docker(code)
-
-def switch_model(profile_name: str):
-    """Switch JACK's neural profile. Available: 'qwen-coder', 'mistral', 'llama3', 'fast', 'reasoning', 'eyes'."""
-    from core.jack_ai_agent import global_agent
-    if hasattr(global_agent, "ai_handler"):
-        return global_agent.ai_handler.switch_model(profile_name)
-    return "AI Handler not initialized."
-
-def execute_on_remote_server(host, username, auth, command):
-    """Tool for JACK to manage remote servers via SSH. 'auth' can be a password or path to a private key."""
-    from core.ssh_executor import execute_on_remote_server as run_ssh
-    return run_ssh(host, username, auth, command)
